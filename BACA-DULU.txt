@@ -1,0 +1,12 @@
+JAM FOKUS (versi desktop)
+
+1. Install Node.js LTS dari https://nodejs.org (sekali aja), lalu restart laptop/terminal.
+2. Coba dulu: klik dua kali  jalankan.bat
+3. Buat file .exe: klik dua kali  build-exe.bat
+   Hasilnya: dist\Jam Fokus 1.0.0.exe  (portable, tinggal klik, nggak perlu install)
+
+Tips:
+- Tombol X cuma menyembunyikan jendela ke tray (ikon dekat jam Windows), timer tetap jalan.
+- Klik kanan ikon tray: Selalu di atas, Buka saat Windows menyala, Keluar.
+- Saat timer selesai, jendela otomatis muncul di atas semua app + musik/beep bunyi.
+- Tombol Mini = jendela kecil terpisah (jam + countdown, tombol jeda, bisa digeser) yang selalu di atas.
