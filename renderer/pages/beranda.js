@@ -122,7 +122,8 @@
 
     var t = selected ? app.findTask(selected) : null;
     var planned = t ? t.left : app.rawState().settings.defaultFocusSec;
-    if (!(planned > 0)) planned = t ? t.durationSec : 1500;
+    if (!(planned > 0)) planned = (t && t.durationSec > 0) ? t.durationSec : app.rawState().settings.defaultFocusSec;
+    if (!(planned > 0)) planned = 1500;
     card.appendChild(ui.el('div.session-clock', ui.fmt.mmss(planned)));
     card.appendChild(ui.el('div.session-sub',
       t ? 'Target task ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')

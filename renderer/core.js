@@ -275,8 +275,30 @@
   });
   idbGet('rst', function (v) { if (v && v.blob) setMusR(v.blob, v.name); });
 
-  function alarmFocus() { if (root.desk) root.desk.popup(); playTrack(au, 'foc'); }
-  function alarmBreak() { if (root.desk) root.desk.popup(); playTrack(auR, 'rst'); }
+  function alarmFocus() { 
+    if (root.desk) root.desk.popup(); 
+    // Completion alarms should not loop - play once then stop
+    var wasLoop = au.loop;
+    au.loop = false;
+    playTrack(au, 'foc');
+    // Restore loop setting after playback ends
+    au.onended = function () { 
+      music.playingFocus = false; 
+      au.loop = wasLoop; 
+      app.emit('music'); 
+    };
+  }
+  function alarmBreak() { 
+    if (root.desk) root.desk.popup(); 
+    var wasLoop = auR.loop;
+    auR.loop = false;
+    playTrack(auR, 'rst'); 
+    auR.onended = function () { 
+      music.playingBreak = false; 
+      auR.loop = wasLoop; 
+      app.emit('music'); 
+    };
+  }
   function notify(title, body) {
     try { if (root.Notification && Notification.permission === 'granted') new Notification(title, { body: body }); } catch (e) {}
   }
@@ -364,7 +386,7 @@
     }
 
     var planned = t ? t.left : state.settings.defaultFocusSec;
-    if (!(planned > 0)) planned = t ? t.durationSec : state.settings.defaultFocusSec;
+    if (!(planned > 0)) planned = (t && t.durationSec > 0) ? t.durationSec : state.settings.defaultFocusSec;
     if (!(planned > 0)) planned = 1500;
     var s = sess.createSession(state, {
       taskId: t ? t.id : null,

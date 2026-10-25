@@ -18,16 +18,16 @@
     var svg = n('svg', { viewBox: '0 0 200 200', role: 'img', 'aria-label': 'Jam analog' });
 
     // Progress ring (outside everything else)
-    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 94, fill: 'none', stroke: '#242836', 'stroke-width': 7 }));
+    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 94, fill: 'none', stroke: '#F2EFE7', 'stroke-width': 7 }));
     var ring = n('circle', {
-      cx: 100, cy: 100, r: 94, fill: 'none', stroke: '#E58B96', 'stroke-width': 7,
+      cx: 100, cy: 100, r: 94, fill: 'none', stroke: '#D8583E', 'stroke-width': 7,
       'stroke-linecap': 'round', 'stroke-dasharray': C.toFixed(1), 'stroke-dashoffset': C.toFixed(1),
       transform: 'rotate(-90 100 100)', id: 'ringProgress'
     });
     svg.appendChild(ring);
 
     // Dial
-    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 86, fill: '#1E212C', stroke: '#313648', 'stroke-width': 1.5 }));
+    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 86, fill: '#FFFFFF', stroke: '#E3E0D6', 'stroke-width': 1.5 }));
 
     // Ticks
     var g = n('g', { id: 'ticks' });
@@ -37,8 +37,8 @@
       g.appendChild(n('line', {
         x1: (100 + r1 * Math.sin(a)).toFixed(2), y1: (100 - r1 * Math.cos(a)).toFixed(2),
         x2: (100 + r2 * Math.sin(a)).toFixed(2), y2: (100 - r2 * Math.cos(a)).toFixed(2),
-        stroke: big ? '#A5A9B7' : '#767B8B', 'stroke-width': big ? 2.6 : 1,
-        opacity: big ? 1 : 0.4
+        stroke: big ? '#5A5E68' : '#D4CFC3', 'stroke-width': big ? 2.6 : 1,
+        opacity: big ? 1 : 0.5
       }));
     }
     svg.appendChild(g);
@@ -49,7 +49,7 @@
       var t = n('text', {
         x: (100 + 58 * Math.sin(b)).toFixed(2), y: (100 - 58 * Math.cos(b)).toFixed(2),
         'text-anchor': 'middle', 'dominant-baseline': 'central',
-        'font-size': 17, 'font-weight': 650, fill: num % 3 === 0 ? '#F2F2F5' : '#C9CCD6',
+        'font-size': 17, 'font-weight': 650, fill: num % 3 === 0 ? '#1A1D23' : '#5A5E68',
         'font-family': 'inherit'
       });
       t.textContent = num;
@@ -57,12 +57,12 @@
     }
 
     // Hands
-    var hh = n('line', { x1: 100, y1: 100, x2: 100, y2: 56, stroke: '#F2F2F5', 'stroke-width': 6, 'stroke-linecap': 'round', id: 'hh' });
-    var mh = n('line', { x1: 100, y1: 100, x2: 100, y2: 34, stroke: '#A5A9B7', 'stroke-width': 4, 'stroke-linecap': 'round', id: 'mh' });
-    var sh = n('line', { x1: 100, y1: 112, x2: 100, y2: 26, stroke: '#E58B96', 'stroke-width': 2, 'stroke-linecap': 'round', id: 'sh' });
+    var hh = n('line', { x1: 100, y1: 100, x2: 100, y2: 56, stroke: '#1A1D23', 'stroke-width': 6, 'stroke-linecap': 'round', id: 'hh' });
+    var mh = n('line', { x1: 100, y1: 100, x2: 100, y2: 34, stroke: '#5A5E68', 'stroke-width': 4, 'stroke-linecap': 'round', id: 'mh' });
+    var sh = n('line', { x1: 100, y1: 112, x2: 100, y2: 26, stroke: '#D8583E', 'stroke-width': 2, 'stroke-linecap': 'round', id: 'sh' });
     svg.appendChild(hh); svg.appendChild(mh); svg.appendChild(sh);
-    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 5.5, fill: '#E58B96' }));
-    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 2, fill: '#1E212C' }));
+    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 5.5, fill: '#D8583E' }));
+    svg.appendChild(n('circle', { cx: 100, cy: 100, r: 2, fill: '#FFFFFF' }));
 
     return { svg: svg, ring: ring, hh: hh, mh: mh, sh: sh };
   }
@@ -78,7 +78,7 @@
         p = Math.max(0, Math.min(1, p));
         parts.ring.setAttribute('stroke-dashoffset', (C * (1 - p)).toFixed(1));
       },
-      setRunning: function (on) { parts.ring.setAttribute('stroke', on ? '#E58B96' : '#3B4157'); },
+      setRunning: function (on) { parts.ring.setAttribute('stroke', on ? '#D8583E' : '#D4CFC3'); },
       /** Wall-clock hands; called every animation frame. */
       hands: function (d) {
         d = d || new Date();

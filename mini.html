@@ -5,28 +5,27 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
 <title>Jam Fokus Mini</title>
 <style>
-:root{--panel:#f6f7f4;--ink:#1d2a2e;--mute:#6b7a7d;--line:#cfd6d1;--face:#fbfbf8;--accent:#d6452f}
-@media (prefers-color-scheme:dark){:root{--panel:#1b2629;--ink:#e6ece8;--mute:#8a9b9e;--line:#2c3a3e;--face:#223034;--accent:#ff6b52}}
+:root{--panel:#FFFFFF;--ink:#1A1D23;--mute:#5A5E68;--line:#E3E0D6;--face:#FDFCF8;--accent:#D8583E;--mint:#5FB896}
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
-html,body{height:100%;background:transparent;overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);user-select:none}
+html,body{height:100%;background:transparent;overflow:hidden;font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);user-select:none}
 body{padding:8px}
-#pill{position:relative;width:280px;height:88px;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;overflow:hidden;-webkit-app-region:drag}
+#pill{position:relative;width:280px;height:88px;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:0 2px 8px rgba(26,29,35,.12),0 4px 16px rgba(26,29,35,.08);display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;overflow:hidden;-webkit-app-region:drag}
 #pill>svg{width:64px;height:64px;flex:none}
 .tx{flex:1;min-width:0}
-#lab{font-size:11px;color:var(--mute)}
-#cd{font-size:32px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+#lab{font-size:11px;color:var(--mute);font-weight:600;letter-spacing:0.02em}
+#cd{font-size:32px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--ink)}
 #pill[data-mode="run"] #cd,#pill[data-mode="brk"] #cd{color:var(--accent)}
 #nm{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bt{display:flex;flex-direction:column;gap:6px;-webkit-app-region:no-drag}
-button{width:26px;height:26px;border:1px solid var(--line);background:transparent;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink);padding:0}
-button:hover{background:var(--line)}
+button{width:26px;height:26px;border:1px solid var(--line);background:transparent;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--mute);padding:0;transition:background .12s ease,border-color .12s ease}
+button:hover{background:#F2EFE7;border-color:#D4CFC3;color:var(--ink)}
 button:focus-visible{outline:2px solid var(--accent)}
 button svg{width:14px;height:14px}
-#pg{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent)}
+#pg{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent);border-radius:0 0 22px 22px}
 #pill.alarm{border-color:var(--accent);animation:fl 1s ease-in-out 10}
-@keyframes fl{50%{box-shadow:0 0 0 3px var(--accent)}}
-@media (prefers-reduced-motion:reduce){#pill.alarm{animation:none;box-shadow:0 0 0 3px var(--accent)}}
+@keyframes fl{50%{box-shadow:0 0 0 3px rgba(216,88,62,.15)}}
+@media (prefers-reduced-motion:reduce){#pill.alarm{animation:none;box-shadow:0 0 0 3px rgba(216,88,62,.15)}}
 #pill.warn8{animation:w8 1.2s ease-in-out 3}
 @keyframes w8{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
 @media (prefers-reduced-motion:reduce){#pill.warn8{animation:none;border-color:var(--accent)}}
@@ -37,8 +36,8 @@ button svg{width:14px;height:14px}
   <svg viewBox="0 0 100 100" aria-hidden="true">
     <circle cx="50" cy="50" r="47" fill="var(--face)" stroke="var(--ink)" stroke-width="4"/>
     <g id="tk"></g>
-    <line id="h" x1="50" y1="50" x2="50" y2="27" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
-    <line id="m" x1="50" y1="50" x2="50" y2="15" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+    <line id="h" x1="50" y1="50" x2="50" y2="27" stroke="#1A1D23" stroke-width="4" stroke-linecap="round"/>
+    <line id="m" x1="50" y1="50" x2="50" y2="15" stroke="#5A5E68" stroke-width="3" stroke-linecap="round"/>
     <line id="s" x1="50" y1="56" x2="50" y2="11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
     <circle cx="50" cy="50" r="3" fill="var(--accent)"/>
   </svg>
@@ -52,7 +51,7 @@ button svg{width:14px;height:14px}
 <script>
 var $=function(i){return document.getElementById(i)},st={mode:"idle"},al=0;
 var tk="";for(var i=0;i<12;i++){var a=i*30*Math.PI/180,r1=i%3==0?36:40;
-tk+='<line x1="'+(50+r1*Math.sin(a)).toFixed(1)+'" y1="'+(50-r1*Math.cos(a)).toFixed(1)+'" x2="'+(50+44*Math.sin(a)).toFixed(1)+'" y2="'+(50-44*Math.cos(a)).toFixed(1)+'" stroke="var(--ink)" stroke-width="'+(i%3==0?3:1.5)+'"/>';}
+tk+='<line x1="'+(50+r1*Math.sin(a)).toFixed(1)+'" y1="'+(50-r1*Math.cos(a)).toFixed(1)+'" x2="'+(50+44*Math.sin(a)).toFixed(1)+'" y2="'+(50-44*Math.cos(a)).toFixed(1)+'" stroke="#5A5E68" stroke-width="'+(i%3==0?3:1.5)+'"/>';}
 $("tk").innerHTML=tk;
 function fmt(s){s=Math.max(0,s);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
 var PAUSE='<path d="M4 2.5v9M10 2.5v9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',PLAY='<path d="M4 2.5l8 4.5-8 4.5z" fill="currentColor"/>';

@@ -19,11 +19,25 @@
     var form = ui.el('form.add-form', { id: 'ta-form', onsubmit: submitQuick });
     form.appendChild(ui.el('input#ta-title', { placeholder: 'Judul task…', maxlength: 120, autocomplete: 'off', value: formState.title }));
     form.appendChild(ui.el('input#ta-date', { type: 'date', value: formState.date || app.today() }));
-    form.appendChild(ui.btn('Tambah', null, { primary: true }));
-    var tog = ui.btn('+ Detail', function () { showDetails = !showDetails; render(); }, { ghost: true });
+    var addBtn = ui.btn('Tambah', null, { primary: true });
+    addBtn.type = 'submit'; // tombol ini bagian dari <form>: harus submit, bukan type=button
+    form.appendChild(addBtn);
+    var tog = ui.btn('+ Detail', function () {
+      var te = document.getElementById('ta-title'), de = document.getElementById('ta-date');
+      if (te) formState.title = te.value;
+      if (de) formState.date = de.value;
+      showDetails = !showDetails;
+      ui.clear(host); mount(host); render();
+      var t2 = document.getElementById('ta-title'); if (t2) t2.focus();
+    }, { ghost: true });
     tog.id = 'ta-tog';
     form.appendChild(tog);
+    form.addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('button');
+      if (b) setDbg('klik tombol "' + b.textContent.trim() + '" (type=' + b.type + ')');
+    }, true);
     add.appendChild(form);
+    add.appendChild(ui.el('div', { id: 'ta-debug', style: { marginTop: '10px', fontSize: '12px', opacity: '0.85', wordBreak: 'break-word' } }, dbgText));
 
     if (showDetails) {
       var det = ui.el('div.form-grid', { style: { marginTop: '12px' } });
@@ -58,7 +72,27 @@
     container.appendChild(ui.el('div', { id: 'ta-list' }));
   }
 
+  var dbgText = 'Diagnosa: belum ada aksi';
+  function setDbg(msg) {
+    dbgText = 'Diagnosa ' + new Date().toLocaleTimeString() + ': ' + msg;
+    var d = document.getElementById('ta-debug'); if (d) d.textContent = dbgText;
+    try { console.log('[JF]', msg); } catch (x) { }
+  }
+  window.addEventListener('error', function (ev) { setDbg('ERROR JS: ' + ev.message); });
   function submitQuick(e) {
+    try {
+      setDbg('form dikirim (submit diterima)');
+      var r = submitQuickInner(e);
+      setDbg('selesai. jumlah task di data = ' + JF.app.state.tasks.length);
+      return r;
+    } catch (err) {
+      if (e && e.preventDefault) e.preventDefault();
+      setDbg('GAGAL: ' + (err && err.message ? err.message : err));
+      try { ui.toast('Gagal: ' + (err && err.message), { kind: 'err' }); } catch (x) { }
+      return false;
+    }
+  }
+  function submitQuickInner(e) {
     e.preventDefault();
     var title = (document.getElementById('ta-title').value || '').trim();
     var date = document.getElementById('ta-date').value;
@@ -80,7 +114,8 @@
     showDetails = false;
     app.save();
     ui.toast('Task ditambahkan: ' + t.title, { kind: 'ok' });
-    render();
+    ui.clear(host); mount(host); render();
+    var t3 = document.getElementById('ta-title'); if (t3) t3.focus();
     return false;
   }
 
@@ -308,8 +343,8 @@
 
     var any = false;
     [[section('Terlambat', late, d), late.length],
-     [section('Hari ini', today, d), today.length],
-     [section('Mendatang', soon, d), soon.length]].forEach(function (pair) {
+    [section('Hari ini', today, d), today.length],
+    [section('Mendatang', soon, d), soon.length]].forEach(function (pair) {
       var node = pair[0]; if (node) { list.appendChild(node); any = true; }
     });
 
