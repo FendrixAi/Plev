@@ -60,7 +60,7 @@
       card.appendChild(stateLine('ISTIRAHAT', ''));
       card.appendChild(ui.el('div.session-task', 'Istirahat ' + ui.fmt.min(Math.round(brk.total / 60)) + (brk.isLong ? ' (panjang)' : '')));
       card.appendChild(ui.el('div.session-clock.run', { id: 'ses-clock' }, ui.fmt.mmss(Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000)))));
-      card.appendChild(ui.el('div.session-sub', brk.nextTaskId ? 'Berikutnya: ' + (app.findTask(brk.nextTaskId) || {}).title : 'Kembali ke task setelah selesai'));
+      card.appendChild(ui.el('div.session-sub', brk.nextTaskId ? 'Berikutnya: ' + (app.findTask(brk.nextTaskId) || {}).title : 'Kembali ke tugas setelah selesai'));
       card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar', style: { width: progressPct(brk.total, Math.max(0, (brk.total - (brk.endAt - Date.now()) / 1000)) / brk.total) } })));
       var ctl = ui.el('div.session-controls');
       ctl.appendChild(ui.btn('Lewati istirahat', function () { app.skipBreak(); }, { primary: true }));
@@ -106,12 +106,12 @@
     if (selected != null && !app.findTask(selected)) selected = null;
     if (selected == null && all.length) selected = all[0].id;
 
-    var pickWrap = ui.el('label.field', { style: { marginTop: '4px' } }, 'Task untuk sesi ini');
+    var pickWrap = ui.el('label.field', { style: { marginTop: '4px' } }, 'Tugas untuk sesi ini');
     var sel = ui.el('select', {
       id: 'ses-pick',
       onchange: function () { selected = this.value || null; app.selectedTaskId = selected; render(); }
     });
-    sel.appendChild(ui.el('option', { value: '' }, 'Tanpa task (fokus umum)'));
+    sel.appendChild(ui.el('option', { value: '' }, 'Tanpa tugas (fokus umum)'));
     all.forEach(function (t) {
       var o = ui.el('option', { value: t.id }, t.title + (t.targetDate !== app.today() ? ' · ' + ui.fmt.dateShort(t.targetDate) : ''));
       if (t.id === selected) o.selected = true;
@@ -126,11 +126,11 @@
     if (!(planned > 0)) planned = 1500;
     card.appendChild(ui.el('div.session-clock', ui.fmt.mmss(planned)));
     card.appendChild(ui.el('div.session-sub',
-      t ? 'Target task ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')
-        : 'Sesi tanpa task · ' + ui.fmt.dur(app.rawState().settings.defaultFocusSec)));
+      t ? 'Target tugas ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')
+        : 'Sesi tanpa tugas · ' + ui.fmt.dur(app.rawState().settings.defaultFocusSec)));
 
     var c3 = ui.el('div.session-controls');
-    c3.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa task', function () {
+    c3.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa tugas', function () {
       app.startTask(selected, { standalone: !selected });
     }, { primary: true }));
     card.appendChild(c3);
@@ -159,7 +159,7 @@
     ui.confirm({
       title: 'Hentikan sesi permanen?',
       body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan ' +
-        'sebagai sesi terputus, tetapi TIDAK dihitung ke total fokus resmi.',
+        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus resmi.',
       okLabel: 'Hentikan permanen', danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
     return false; // keep modal open until confirm resolves
@@ -176,8 +176,8 @@
     ui.clear(els.strip);
     els.strip.appendChild(stat('Fokus resmi hari ini', ui.fmt.dur(st.officialSec), 'accent', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
     els.strip.appendChild(stat('Target harian', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'small',
-      st.target.source === 'override' ? 'override tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
-    els.strip.appendChild(stat('Task selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, 'ok', st.goalDone >= st.tasksGoal ? 'target task tercapai' : 'target ' + st.tasksGoal + ' task'));
+      st.target.source === 'override' ? 'target khusus tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
+    els.strip.appendChild(stat('Tugas selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, 'ok', st.goalDone >= st.tasksGoal ? 'target tugas tercapai' : 'target ' + st.tasksGoal + ' tugas'));
     els.strip.appendChild(stat('Streak', st.streak + ' hari', '', st.streak > 0 ? 'berturut-turut' : 'mulai hari ini'));
   }
 
@@ -200,7 +200,7 @@
     ui.$('bq-count').className = 'chip' + (plan.length && plan.some(function (t) { return !t.done; }) ? '.accent' : '');
     ui.clear(bq);
     if (!plan.length) {
-      bq.appendChild(ui.el('div.empty', ui.el('span.big', 'Belum ada rencana hari ini'), 'Tambahkan task di halaman Tugas.'));
+      bq.appendChild(ui.el('div.empty', ui.el('span.big', 'Belum ada rencana hari ini'), 'Tambahkan tugas di halaman Tugas.'));
     } else {
       plan.slice(0, 6).forEach(function (t) { bq.appendChild(taskRowPreview(t)); });
       if (plan.length > 6) bq.appendChild(ui.el('div.hint', { style: { marginTop: '8px' } }, '+ ' + (plan.length - 6) + ' lainnya'));

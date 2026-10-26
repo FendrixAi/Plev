@@ -132,7 +132,7 @@
     var targets = state.tasks.filter(function (t) { return !t.archived && t.targetDate === selectedDay; });
     var sec1 = ui.el('div.dp-sec', ui.el('h3', 'Target tanggal ini (' + targets.length + ')'));
     if (targets.length) targets.forEach(function (t) { sec1.appendChild(taskLine(t, selectedDay, true)); });
-    else sec1.appendChild(ui.el('div.hint', 'Tidak ada task yang dijadwalkan.'));
+    else sec1.appendChild(ui.el('div.hint', 'Tidak ada tugas yang dijadwalkan.'));
     p.appendChild(sec1);
 
     // Overdue relative to this date
@@ -188,14 +188,14 @@
       ui.toast('Target ' + ui.fmt.dateShort(selectedDay) + ' = ' + ui.fmt.min(r2.min) + ' (laporan lama tidak berubah).', { kind: 'ok' });
     }, { primary: true, sm: true }));
     if (curOvr != null) {
-      row.appendChild(ui.btn('Hapus override', function () {
+      row.appendChild(ui.btn('Hapus target khusus', function () {
         JF.store.clearFocusTargetOverride(state, selectedDay, Date.now());
         app.save(); render();
       }, { sm: true, ghost: true }));
     }
     sec4.appendChild(row);
 
-    var add = ui.btn('+ Tambah task pada tanggal ini', function () { JF.taskUI.prefillAdd(selectedDay); }, { ghost: true, block: true });
+    var add = ui.btn('+ Tambah tugas pada tanggal ini', function () { JF.taskUI.prefillAdd(selectedDay); }, { ghost: true, block: true });
     add.style.marginTop = '14px';
     p.appendChild(add);
     return p;

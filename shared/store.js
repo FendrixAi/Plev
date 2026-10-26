@@ -50,6 +50,15 @@
     return null;
   }
 
+  /** True when a running/paused session currently owns this task's timer. */
+  function hasLiveSession(state, taskId) {
+    for (var i = 0; i < state.sessions.length; i++) {
+      var s = state.sessions[i];
+      if (s.taskId === taskId && (s.state === 'running' || s.state === 'paused')) return true;
+    }
+    return false;
+  }
+
   /* ── create ─────────────────────────────────────────────────────────── */
   function addTask(state, input, now) {
     now = now == null ? Date.now() : now;
@@ -81,9 +90,12 @@
     if (patch.durationSec != null) {
       var d = Math.min(24 * 3600, Math.max(60, Math.round(Number(patch.durationSec))));
       if (isFinite(d) && d !== t.durationSec) {
-        // Only meaningful before a run starts; keep paused remainder consistent.
-        if (t.left === t.durationSec || !(t.left > 0)) { t.durationSec = d; t.left = d; }
-        else t.durationSec = d;
+        t.durationSec = d;
+        // `left` is only a resume point. Without a live session it must follow
+        // the new duration, otherwise a stale remainder would override it when
+        // the timer starts. A running/paused session keeps its own plannedSec
+        // and remaining time; the new duration applies to the next session.
+        if (!hasLiveSession(state, id)) t.left = d;
         changed = true;
       }
     }

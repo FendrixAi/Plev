@@ -14,49 +14,50 @@
 
     // Quick add
     var add = ui.el('div.card');
-    add.appendChild(ui.el('h2', 'Tambah task cepat'));
-    add.appendChild(ui.el('div.sub', 'Setiap task wajib punya tanggal target. Detail lain opsional.'));
+    add.appendChild(ui.el('h2', 'Tambah tugas cepat'));
+    add.appendChild(ui.el('div.sub', 'Setiap tugas wajib punya tanggal target. Detail lain opsional.'));
     var form = ui.el('form.add-form', { id: 'ta-form', onsubmit: submitQuick });
-    form.appendChild(ui.el('input#ta-title', { placeholder: 'Judul task…', maxlength: 120, autocomplete: 'off', value: formState.title }));
+    form.appendChild(ui.el('input#ta-title', { placeholder: 'Judul tugas…', maxlength: 120, autocomplete: 'off', value: formState.title }));
     form.appendChild(ui.el('input#ta-date', { type: 'date', value: formState.date || app.today() }));
     var addBtn = ui.btn('Tambah', null, { primary: true });
     addBtn.type = 'submit'; // tombol ini bagian dari <form>: harus submit, bukan type=button
     form.appendChild(addBtn);
-    var tog = ui.btn('+ Detail', function () {
-      var te = document.getElementById('ta-title'), de = document.getElementById('ta-date');
-      if (te) formState.title = te.value;
-      if (de) formState.date = de.value;
+
+    // Detail selalu ter-mount dan hanya disembunyikan. Dengan begitu nilai yang
+    // sudah diketik (deskripsi, prioritas, durasi) tidak hilang saat panel
+    // dibuka/ditutup berulang kali sebelum menekan Tambah.
+    var det = ui.el('div.form-grid', { id: 'ta-details', style: { marginTop: '12px' } });
+    det.appendChild(ui.el('label.field', 'Deskripsi (opsional)', ui.el('textarea#ta-desc', { placeholder: 'Catatan singkat…', maxlength: 2000 }, formState.desc)));
+    var row = ui.el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } });
+    var pr = ui.el('label.field', 'Prioritas');
+    var sel = ui.el('select#ta-pri');
+    JF.model.PRIORITIES.forEach(function (p) {
+      var o = ui.el('option', { value: p }, JF.model.PRIORITY_LABEL[p]);
+      if (p === formState.priority) o.selected = true;
+      sel.appendChild(o);
+    });
+    pr.appendChild(sel); row.appendChild(pr);
+    var du = ui.el('label.field', 'Durasi fokus (menit)');
+    du.appendChild(ui.el('input#ta-min', { type: 'number', min: 1, max: 600, placeholder: 'bawaan', value: formState.min || '' }));
+    row.appendChild(du);
+    det.appendChild(row);
+    det.hidden = !showDetails;
+
+    var tog = ui.btn('', function () {
       showDetails = !showDetails;
-      ui.clear(host); mount(host); render();
-      var t2 = document.getElementById('ta-title'); if (t2) t2.focus();
+      det.hidden = !showDetails;
+      paintTog();
     }, { ghost: true });
     tog.id = 'ta-tog';
-    form.appendChild(tog);
-    form.addEventListener('click', function (ev) {
-      var b = ev.target.closest && ev.target.closest('button');
-      if (b) setDbg('klik tombol "' + b.textContent.trim() + '" (type=' + b.type + ')');
-    }, true);
-    add.appendChild(form);
-    add.appendChild(ui.el('div', { id: 'ta-debug', style: { marginTop: '10px', fontSize: '12px', opacity: '0.85', wordBreak: 'break-word' } }, dbgText));
-
-    if (showDetails) {
-      var det = ui.el('div.form-grid', { style: { marginTop: '12px' } });
-      det.appendChild(ui.el('label.field', 'Deskripsi (opsional)', ui.el('textarea#ta-desc', { placeholder: 'Catatan singkat…', maxlength: 2000 }, formState.desc)));
-      var row = ui.el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } });
-      var pr = ui.el('label.field', 'Prioritas');
-      var sel = ui.el('select#ta-pri');
-      JF.model.PRIORITIES.forEach(function (p) {
-        var o = ui.el('option', { value: p }, JF.model.PRIORITY_LABEL[p]);
-        if (p === formState.priority) o.selected = true;
-        sel.appendChild(o);
-      });
-      pr.appendChild(sel); row.appendChild(pr);
-      var du = ui.el('label.field', 'Durasi fokus (menit)');
-      du.appendChild(ui.el('input#ta-min', { type: 'number', min: 1, max: 600, placeholder: 'bawaan', value: formState.min || '' }));
-      row.appendChild(du);
-      det.appendChild(row);
-      add.appendChild(det);
+    tog.setAttribute('aria-controls', 'ta-details');
+    function paintTog() {
+      tog.textContent = showDetails ? '− Detail' : '+ Detail';
+      tog.setAttribute('aria-expanded', String(showDetails));
     }
+    paintTog();
+    form.appendChild(tog);
+    add.appendChild(form);
+    add.appendChild(det);
     container.appendChild(add);
 
     // Tabs
@@ -72,27 +73,7 @@
     container.appendChild(ui.el('div', { id: 'ta-list' }));
   }
 
-  var dbgText = 'Diagnosa: belum ada aksi';
-  function setDbg(msg) {
-    dbgText = 'Diagnosa ' + new Date().toLocaleTimeString() + ': ' + msg;
-    var d = document.getElementById('ta-debug'); if (d) d.textContent = dbgText;
-    try { console.log('[JF]', msg); } catch (x) { }
-  }
-  window.addEventListener('error', function (ev) { setDbg('ERROR JS: ' + ev.message); });
   function submitQuick(e) {
-    try {
-      setDbg('form dikirim (submit diterima)');
-      var r = submitQuickInner(e);
-      setDbg('selesai. jumlah task di data = ' + JF.app.state.tasks.length);
-      return r;
-    } catch (err) {
-      if (e && e.preventDefault) e.preventDefault();
-      setDbg('GAGAL: ' + (err && err.message ? err.message : err));
-      try { ui.toast('Gagal: ' + (err && err.message), { kind: 'err' }); } catch (x) { }
-      return false;
-    }
-  }
-  function submitQuickInner(e) {
     e.preventDefault();
     var title = (document.getElementById('ta-title').value || '').trim();
     var date = document.getElementById('ta-date').value;
@@ -103,7 +84,7 @@
     formState.desc = descEl ? descEl.value : '';
     formState.priority = priEl ? priEl.value : 'normal';
     formState.min = minEl ? parseInt(minEl.value, 10) : null;
-    if (!title) { ui.toast('Judul task wajib diisi.', { kind: 'err' }); return false; }
+    if (!title) { ui.toast('Judul tugas wajib diisi.', { kind: 'err' }); return false; }
     if (!JF.dates.isDayKey(date)) { ui.toast('Tanggal target wajib dipilih.', { kind: 'err' }); return false; }
     var t = JF.store.addTask(app.rawState(), {
       title: title, targetDate: date, description: formState.desc,
@@ -113,7 +94,7 @@
     formState = { title: '', date: date, desc: '', priority: 'normal', min: null };
     showDetails = false;
     app.save();
-    ui.toast('Task ditambahkan: ' + t.title, { kind: 'ok' });
+    ui.toast('Tugas ditambahkan: ' + t.title, { kind: 'ok' });
     ui.clear(host); mount(host); render();
     var t3 = document.getElementById('ta-title'); if (t3) t3.focus();
     return false;
@@ -131,7 +112,7 @@
       ui.dayRel(t.targetDate) + ', ' + ui.fmt.dateShort(t.targetDate)));
     if (od) box.appendChild(ui.el('span.chip.danger', 'Terlambat'));
     if (t.done) box.appendChild(ui.el('span.chip.ok', 'Selesai ' + ui.fmt.dateShort(JF.dates.dayKey(t.completedAt || t.firstCompletedAt))));
-    if (t.migrated) box.appendChild(ui.el('span.chip.outline', { title: 'Dimigrasi dari data lama' }, 'Data lama'));
+    if (t.migrated) box.appendChild(ui.el('span.chip.outline', { title: 'Dipindahkan dari data lama' }, 'Data lama'));
     var s = app.currentSession();
     if (s && s.taskId === t.id && s.state === 'running') box.appendChild(ui.el('span.chip.accent', '● berjalan'));
     else if (s && s.taskId === t.id && s.state === 'paused') box.appendChild(ui.el('span.chip.warn', '● dijeda'));
@@ -196,7 +177,7 @@
     body.appendChild(ui.el('label.field', 'Judul', ui.el('input#ed-title', { value: t.title, maxlength: 120 })));
     body.appendChild(ui.el('label.field', 'Deskripsi', ui.el('textarea#ed-desc', { maxlength: 2000 }, t.description || '')));
     var row1 = ui.el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } });
-    var fDate = ui.el('label.field', 'Tanggal target (mengubah jadwal, ID tetap sama)',
+    var fDate = ui.el('label.field', 'Tanggal target (mengubah jadwal tugas)',
       ui.el('input#ed-date', { type: 'date', value: t.targetDate }));
     row1.appendChild(fDate);
     var fPri = ui.el('label.field', 'Prioritas');
@@ -210,6 +191,8 @@
     var fMin = ui.el('label.field', 'Durasi fokus (menit)', ui.el('input#ed-min', { type: 'number', min: 1, max: 600, value: Math.round((t.durationSec || 1500) / 60) }));
     row1.appendChild(fMin);
     body.appendChild(row1);
+    body.appendChild(ui.el('div.hint',
+      'Durasi baru langsung mengatur ulang sisa waktu. Jika sesi tugas ini sedang berjalan atau dijeda, durasi baru berlaku untuk sesi berikutnya.'));
     if (t.targetDateHistory && t.targetDateHistory.length > 1) {
       var hist = t.targetDateHistory.slice(-4).map(function (h) {
         return (h.from ? ui.fmt.dateShort(h.from) + ' → ' : 'mulanya ') + ui.fmt.dateShort(h.to) +
@@ -223,7 +206,7 @@
     }
 
     ui.modal({
-      title: 'Ubah task', body: body, wide: false,
+      title: 'Ubah tugas', body: body, wide: false,
       actions: [
         { label: 'Batal', ghost: true },
         {
@@ -242,7 +225,7 @@
             if (!r.ok) { ui.toast('Gagal menyimpan.', { kind: 'err' }); return false; }
             if (changedDate) {
               var rr = JF.store.rescheduleTask(state, t.id, newDate, Date.now());
-              if (rr.ok && rr.changed) ui.toast('Jadwal dipindah — snapshot hari sebelumnya tidak diubah.');
+              if (rr.ok && rr.changed) ui.toast('Jadwal dipindah — laporan hari sebelumnya tidak diubah.');
             }
             app.save(); render();
             return true;
@@ -255,7 +238,7 @@
   function openRestore(t) {
     var body = ui.el('div.form-grid');
     body.appendChild(ui.el('p.hint',
-      'Pilih tanggal target baru untuk mengaktifkan kembali task ini. Task lama akan tetap memakai ID yang sama.'));
+      'Pilih tanggal target baru untuk mengaktifkan kembali tugas ini.'));
     if (t.targetDate) {
       body.appendChild(ui.el('p.hint', 'Referensi jadwal lama: ' + ui.fmt.date(t.targetDate) +
         ' — tidak otomatis dipakai kembali.'));
@@ -263,7 +246,7 @@
     body.appendChild(ui.el('label.field', 'Tanggal target baru (wajib)',
       ui.el('input#rs-date', { type: 'date', value: '' })));
     ui.modal({
-      title: 'Pulihkan task', body: body,
+      title: 'Pulihkan tugas', body: body,
       actions: [
         { label: 'Batal', ghost: true },
         {
@@ -273,7 +256,7 @@
             var r = JF.store.restoreTask(app.rawState(), t.id, d, Date.now());
             if (!r.ok) { ui.toast('Gagal memulihkan.', { kind: 'err' }); return false; }
             app.save(); tab = 'aktif'; render();
-            ui.toast('Task dipulihkan ke ' + ui.fmt.dateShort(d) + '.', { kind: 'ok' });
+            ui.toast('Tugas dipulihkan ke ' + ui.fmt.dateShort(d) + '.', { kind: 'ok' });
             return true;
           }
         }
@@ -309,7 +292,7 @@
     if (tab === 'arsip') {
       var arch = JF.store.archivedTasks(state).sort(function (a, b) { return (b.archivedAt || 0) - (a.archivedAt || 0); });
       if (!arch.length) {
-        list.appendChild(ui.el('div.empty', ui.el('span.big', 'Arsip kosong'), 'Task yang diarsipkan tetap tersimpan di sini beserta riwayatnya.'));
+        list.appendChild(ui.el('div.empty', ui.el('span.big', 'Arsip kosong'), 'Tugas yang diarsipkan tetap tersimpan di sini beserta riwayatnya.'));
         return;
       }
       list.appendChild(ui.el('div.section-label', 'Diarsipkan (' + arch.length + ')'));
@@ -349,11 +332,11 @@
     });
 
     if (!active.length && !done.length) {
-      list.appendChild(ui.el('div.empty', ui.el('span.big', 'Belum ada task'),
+      list.appendChild(ui.el('div.empty', ui.el('span.big', 'Belum ada tugas'),
         'Tulis judul di atas, pilih tanggal, tekan Tambah.'));
     } else if (!active.length) {
       list.appendChild(ui.el('div.empty', ui.el('span.big', 'Semua tugas aktif selesai'),
-        'Task selesai tetap tersimpan di bawah.'));
+        'Tugas selesai tetap tersimpan di bawah.'));
     }
 
     if (done.length) {
@@ -371,14 +354,14 @@
       if (done.length) {
         var bulk = ui.btn('Arsipkan semua yang selesai', function () {
           ui.confirm({
-            title: 'Arsipkan ' + done.length + ' task selesai?',
-            body: 'Semua task selesai akan dipindahkan ke arsip. Tidak ada data yang dihapus — semua bisa dipulihkan kapan saja.',
+            title: 'Arsipkan ' + done.length + ' tugas selesai?',
+            body: 'Semua tugas selesai akan dipindahkan ke arsip. Tidak ada data yang dihapus — semua bisa dipulihkan kapan saja.',
             okLabel: 'Arsipkan'
           }).then(function (ok) {
             if (!ok) return;
             done.forEach(function (t) { JF.store.archiveTask(app.rawState(), t.id, Date.now()); });
             app.save(); render();
-            ui.toast(done.length + ' task diarsipkan.', { kind: 'ok' });
+            ui.toast(done.length + ' tugas diarsipkan.', { kind: 'ok' });
           });
         }, { ghost: true, sm: true });
         bulk.style.marginTop = '14px';

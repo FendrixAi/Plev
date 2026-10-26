@@ -42,7 +42,7 @@
   function row(s) {
     var r = ui.el('div.hist-row');
     var name = ui.el('div.hname');
-    name.appendChild(ui.el('div.hn', s.taskName || '(Tanpa task)'));
+    name.appendChild(ui.el('div.hn', s.taskName || '(Tanpa tugas)'));
     var range = ui.fmt.time(s.startedAt) + ' – ' + (s.endedAt ? ui.fmt.time(s.endedAt) : '·');
     if (s.completedAt) range += ' · selesai ' + ui.fmt.time(s.completedAt);
     name.appendChild(ui.el('div.ht', range));
@@ -133,7 +133,7 @@
 
   JF.pages.register({
     id: 'riwayat',
-    title: 'Riwayat Fokus',
+    title: 'Riwayat fokus',
     sub: function () {
       var n = app ? app.rawState().sessions.length : 0;
       return n + ' sesi tercatat';

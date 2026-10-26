@@ -10,7 +10,7 @@
     ui = JF.ui; app = JF.app; host = container;
     container.appendChild(ui.el('div.hint', { style: { marginBottom: '14px' } },
       'Laporan dirangkum otomatis saat hari berganti (pukul 00.00 waktu perangkat) dan bersifat final — ' +
-      'catatan hari lama tidak pernah dihitung ulang. Jika ada data terhapus dikemudian hari, ' +
+      'catatan hari lama tidak pernah dihitung ulang. Jika ada data terhapus di kemudian hari, ' +
       'koreksi ditampilkan terpisah di bawah laporan, bukan menimpa angka aslinya.'));
     container.appendChild(ui.el('div', { id: 'lp-list' }));
     container.appendChild(ui.el('div', { id: 'lp-more', style: { marginTop: '6px', textAlign: 'center' } }));
@@ -33,8 +33,8 @@
     var g = ui.el('div.rgrid');
     g.appendChild(kv('Target fokus', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'muted'));
     g.appendChild(kv('Fokus resmi', ui.fmt.dur(st.officialSec)));
-    g.appendChild(kv('Task selesai', String(st.doneToday)));
-    g.appendChild(kv('Task tertunda', String(st.overdue), st.overdue ? '' : 'muted'));
+    g.appendChild(kv('Tugas selesai', String(st.doneToday)));
+    g.appendChild(kv('Tugas tertunda', String(st.overdue), st.overdue ? '' : 'muted'));
     c.appendChild(g);
     return c;
   }
@@ -59,8 +59,8 @@
     g.appendChild(kv('Fokus resmi', ui.fmt.dur(snap.officialFocusSec)));
     g.appendChild(kv('Fokus terputus', snap.interruptedFocusSec > 0 ? ui.fmt.dur(snap.interruptedFocusSec) : 'Tidak ada',
       snap.interruptedFocusSec > 0 ? '' : 'muted'));
-    g.appendChild(kv('Task selesai', String(snap.completedTaskIds.length)));
-    g.appendChild(kv('Task belum selesai', String(snap.unfinishedTaskIds.length),
+    g.appendChild(kv('Tugas selesai', String(snap.completedTaskIds.length)));
+    g.appendChild(kv('Tugas belum selesai', String(snap.unfinishedTaskIds.length),
       snap.unfinishedTaskIds.length ? '' : 'muted'));
     c.appendChild(g);
 
@@ -83,7 +83,7 @@
 
     c.appendChild(ui.el('div.orig',
       'Catatan asli · difinalkan ' + (snap.finalizedAt ? ui.fmt.dateTime(snap.finalizedAt) : '—') +
-      (snap.targetSource ? ' · target: ' + (snap.targetSource === 'override' ? 'override per tanggal' :
+      (snap.targetSource ? ' · target: ' + (snap.targetSource === 'override' ? 'target khusus per tanggal' :
         snap.targetSource === 'default' ? 'target bawaan' : 'tidak diketahui') : '')));
     return c;
   }
@@ -102,7 +102,7 @@
     if (!snaps.length) {
       list.appendChild(ui.el('div.empty',
         ui.el('span.big', 'Belum ada laporan harian'),
-        'Laporan pertama dibuat otomatis setelah hari berganti sejak kamu mulai memakai versi ini.'));
+        'Laporan pertama dibuat otomatis setelah hari berganti sejak versi ini mulai dipakai.'));
       return;
     }
 
@@ -118,7 +118,7 @@
 
   JF.pages.register({
     id: 'laporan',
-    title: 'Laporan Harian',
+    title: 'Laporan harian',
     sub: function () {
       var n = app ? app.rawState().snapshots.length : 0;
       return n + ' hari tercatat';

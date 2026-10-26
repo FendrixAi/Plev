@@ -390,7 +390,7 @@
     if (!(planned > 0)) planned = 1500;
     var s = sess.createSession(state, {
       taskId: t ? t.id : null,
-      taskName: t ? t.title : 'Fokus tanpa task',
+      taskName: t ? t.title : 'Fokus tanpa tugas',
       plannedSec: planned
     }, now);
     warn8Fired = false;
@@ -441,7 +441,7 @@
     var r = store.completeTask(state, id, Date.now(), 'user');
     if (r.ok && r.changed) {
       save(); app.emit('change');
-      JF.ui && JF.ui.toast('Task ditandai selesai: ' + t.title, {
+      JF.ui && JF.ui.toast('Tugas ditandai selesai: ' + t.title, {
         action: { label: 'Urungkan', onClick: function () { app.reopenTask(id); } }, timeout: 7000
       });
     }
@@ -450,7 +450,7 @@
 
   app.reopenTask = function (id) {
     var r = store.reopenTask(state, id, Date.now());
-    if (r.ok && r.changed) { save(); app.emit('change'); JF.ui && JF.ui.toast('Task dikembalikan ke daftar aktif.'); }
+    if (r.ok && r.changed) { save(); app.emit('change'); JF.ui && JF.ui.toast('Tugas dikembalikan ke daftar aktif.'); }
     return r.ok;
   };
 
@@ -494,10 +494,10 @@
         if (isLong) settings.pomoSessCount = 0;
         startBreak(isLong ? settings.longBreakMin : settings.shortBreakMin, next.id, isLong);
         save();
-        JF.ui && JF.ui.toast('Sesi ' + fmtDur(s.plannedSec) + ' selesai · ' + (isLong ? 'Istirahat panjang' : 'Istirahat') + ' ' + (isLong ? settings.longBreakMin : settings.shortBreakMin) + ' mnt, lalu ' + next.title, { timeout: 8000 });
+        JF.ui && JF.ui.toast('Sesi ' + fmtDur(s.plannedSec) + ' selesai · ' + (isLong ? 'Istirahat panjang' : 'Istirahat') + ' ' + (isLong ? settings.longBreakMin : settings.shortBreakMin) + ' menit, lalu ' + next.title, { timeout: 8000 });
       } else {
         save();
-        JF.ui && JF.ui.toast('Sesi selesai — tidak ada task berikutnya.', { kind: 'ok' });
+        JF.ui && JF.ui.toast('Sesi selesai — tidak ada tugas berikutnya.', { kind: 'ok' });
       }
       return;
     }
@@ -513,10 +513,10 @@
         JF.ui.el('div.hint', { style: { marginTop: '4px' } },
           'Fokus resmi ' + JF.ui.fmt.dur(s.plannedSec) + ' · tanpa waktu jeda.'),
         JF.ui.el('p.hint', { style: { marginTop: '10px' } },
-          'Task tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
+          'Tugas tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
       ],
       actions: [
-        { label: 'Kembali ke task', ghost: true, onClick: function () { if (t) app.selectedTaskId = t.id; app.emit('change'); } },
+        { label: 'Kembali ke tugas', ghost: true, onClick: function () { if (t) app.selectedTaskId = t.id; app.emit('change'); } },
         { label: 'Istirahat', ghost: true, onClick: function () { startBreak(state.settings.shortBreakMin, null, false); } },
         { label: 'Lanjut fokus', primary: true, onClick: function () { app.startTask(t ? t.id : null, { standalone: !t }); } }
       ],

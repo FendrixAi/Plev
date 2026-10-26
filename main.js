@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, screen, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -93,9 +93,9 @@ function fmtTip(s) {
   if (!s) return 'Jam Fokus';
   if (s.mode === 'run') {
     const rem = Math.max(0, Math.ceil((s.endAt - Date.now()) / 1000));
-    return String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0') + ' · ' + (s.name || 'Task');
+    return String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0') + ' · ' + (s.name || 'Tugas');
   }
-  if (s.mode === 'pause') return 'Dijeda · ' + (s.name || 'Task');
+  if (s.mode === 'pause') return 'Dijeda · ' + (s.name || 'Tugas');
   if (s.mode === 'brk') {
     const rem = Math.max(0, Math.ceil((s.endAt - Date.now()) / 1000));
     return String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0') + ' · Istirahat';
@@ -111,8 +111,8 @@ if (!app.requestSingleInstanceLock()) {
     loadSettings();
 
     win = new BrowserWindow({
-      width: 440, height: 840, minWidth: 320, minHeight: 300,
-      title: 'Jam Fokus', autoHideMenuBar: true, backgroundColor: '#121a1c',
+      width: 1120, height: 760, minWidth: 640, minHeight: 480,
+      title: 'Jam Fokus', autoHideMenuBar: true, backgroundColor: '#FBF8F1', show: false,
       icon: path.join(__dirname, 'icon.png'),
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
@@ -122,6 +122,8 @@ if (!app.requestSingleInstanceLock()) {
     });
     win.setMenuBarVisibility(false);
     win.loadFile('index.html');
+    // Tampilkan setelah frame pertama selesai digambar (tema sudah diterapkan, tanpa kedip putih)
+    win.once('ready-to-show', () => { if (win) win.show(); });
 
     // Tombol X = sembunyi ke tray, timer tetap jalan
     win.on('close', (e) => { if (!quitting) { e.preventDefault(); win.hide(); } });
@@ -170,6 +172,13 @@ if (!app.requestSingleInstanceLock()) {
     }, 1000);
 
     // Timer selesai: kalau mode mini aktif, mini berkedip; kalau tidak, jendela utama muncul di atas
+    // Mode terang/gelap dari halaman utama: samakan tema sistem agar kartu mini ikut berubah
+    ipcMain.on('theme', (e, mode) => {
+      const dark = mode === 'dark';
+      nativeTheme.themeSource = dark ? 'dark' : 'light';
+      if (win) win.setBackgroundColor(dark ? '#141414' : '#FBF8F1');
+    });
+
     ipcMain.on('popup', () => {
       if (alive(miniWin)) {
         miniWin.webContents.send('alarm');

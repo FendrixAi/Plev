@@ -1,55 +1,135 @@
-/* ════════════════════════════════════════════════════════════════════
-   Jam Fokus — Design System
-   Clean, editorial productivity app with warm backgrounds and restrained
-   terracotta accents. Inspired by premium focus tools.
-   ════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   Jam Fokus — Design system
+   Selaras dengan Partner Center: krem hangat, tinta hijau tua, aksen
+   koral + mint. Tanpa gradient. Font disimpan lokal (tanpa internet).
+   Mode terang = :root, mode gelap = :root[data-theme="dark"].
+   ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@400;500;600;700&display=swap');
+@font-face { font-family: "DM Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/dm-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/dm-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/dm-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/dm-sans-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Outfit"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/outfit-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Outfit"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/outfit-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Outfit"; font-weight: 800; font-style: normal; font-display: swap; src: url("fonts/outfit-latin-800-normal.woff2") format("woff2"); }
 
 :root {
-  /* Core palette: warm cream, dark ink, restrained accents */
-  --cream: #FDFCF8;
-  --paper: #F9F7F2;
-  --sand: #F2EFE7;
-  --ink: #1A1D23;
-  --muted: #5A5E68;
-  --line: #E3E0D6;
-  --line-2: #D4CFC3;
-  
-  /* Accents: terracotta/coral for primary, mint for selected/positive */
-  --coral: #D8583E;
-  --coral-soft: rgba(216, 88, 62, 0.08);
-  --coral-hover: #C24E38;
-  --mint: #5FB896;
-  --mint-soft: rgba(95, 184, 150, 0.10);
-  --mint-hover: #4FA585;
-  
-  /* Supporting colors: yellow warnings, red errors */
-  --yellow: #E09C3A;
-  --yellow-soft: rgba(224, 156, 58, 0.10);
-  --red: #D84848;
-  --red-soft: rgba(216, 72, 72, 0.10);
-  
-  /* Surface hierarchy */
+  color-scheme: light;
+
+  /* Permukaan */
+  --cream: #FBF8F1;
+  --paper: #F6F2E8;
+  --sand: #F1ECDF;
   --surface: #FFFFFF;
-  --surface-2: #FAFAF8;
-  --surface-hover: #F5F4F0;
-  
-  /* Typography */
+  --surface-2: #FBF9F4;
+  --surface-hover: #F4F0E6;
+  --surface-3: var(--sand);
+
+  /* Teks dan garis */
+  --ink: #17322F;
+  --muted: #546B67;
+  --text-2: var(--muted);
+  --text-3: var(--muted);
+  --line: #E5E9E2;
+  --line-2: #D2D9D0;
+
+  /* Aksen */
+  --coral: #C8442A;
+  --coral-hover: #B33A23;
+  --coral-ink: #A93A25;
+  --coral-soft: rgba(238, 118, 93, 0.14);
+  --on-coral: #FFFFFF;
+  --mint: #1F7253;
+  --mint-hover: #185F44;
+  --mint-soft: #E1F1EA;
+  --yellow: #8F560A;
+  --yellow-soft: rgba(224, 156, 58, 0.16);
+  --red: #B83232;
+  --red-soft: rgba(216, 72, 72, 0.10);
+  --on-red: #FFFFFF;
+
+  /* Grafik */
+  --chart-label: #6B7D79;
+  --chart-value: #546B67;
+  --chart-grid: #E5E9E2;
+  --chart-ok: #3E9C7A;
+  --chart-warn: #D9962E;
+  --chart-info: #8C7BC9;
+  --chart-bar: #EE765D;
+  --chart-bar-soft: rgba(238, 118, 93, 0.4);
+
+  /* Tipografi: satu skala, dipakai di seluruh aplikasi */
   --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: "Outfit", var(--font-body);
-  --mono: "SF Mono", "Cascadia Mono", "Consolas", ui-monospace, monospace;
-  
-  /* Layout & spacing */
-  --radius: 10px;
-  --radius-sm: 6px;
-  --radius-lg: 14px;
-  --shadow: 0 1px 3px rgba(26, 29, 35, 0.08), 0 2px 8px rgba(26, 29, 35, 0.04);
-  --shadow-lg: 0 4px 12px rgba(26, 29, 35, 0.10), 0 8px 24px rgba(26, 29, 35, 0.06);
-  --sb: 240px;
-  --sb-min: 68px;
-  --topbar: 64px;
+  --font-display: "Outfit", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", "Consolas", "SF Mono", ui-monospace, monospace;
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+  --fs-3xl: 28px;
+  --fs-display: 54px;
+
+  /* Tata letak */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 3px rgba(23, 50, 47, 0.08), 0 2px 8px rgba(23, 50, 47, 0.04);
+  --shadow-lg: 0 4px 12px rgba(23, 50, 47, 0.10), 0 8px 24px rgba(23, 50, 47, 0.06);
+  --veil: rgba(23, 50, 47, 0.45);
+  --sb: 252px;
+  --sb-min: 96px;
+  --topbar: 66px;
 }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Abu arang netral (bukan hitam pekat) agar nyaman di mata */
+  --cream: #141414;
+  --paper: #181818;
+  --sand: #2A2A2A;
+  --surface: #1E1E1E;
+  --surface-2: #232323;
+  --surface-hover: #2A2A2A;
+
+  /* Teks putih lembut, bukan #FFF */
+  --ink: #E4E4E7;
+  --muted: #A1A1AA;
+  --line: #2E2E33;
+  --line-2: #3F3F46;
+
+  /* Aksen dibuat kalem (kurang jenuh) */
+  --coral: #E5806B;
+  --coral-hover: #EB9482;
+  --coral-ink: #F0988A;
+  --coral-soft: rgba(229, 128, 107, 0.16);
+  --on-coral: #1A100D;
+  --mint: #6BBF9E;
+  --mint-hover: #82CCAF;
+  --mint-soft: rgba(107, 191, 158, 0.14);
+  --yellow: #D9A441;
+  --yellow-soft: rgba(217, 164, 65, 0.16);
+  --red: #E57373;
+  --red-soft: rgba(229, 115, 115, 0.14);
+  --on-red: #1F0C0C;
+
+  --chart-label: #8E8E96;
+  --chart-value: #B4B4BC;
+  --chart-grid: #2A2A2F;
+  --chart-ok: #5FB894;
+  --chart-warn: #D9A441;
+  --chart-info: #A596D9;
+  --chart-bar: #E5806B;
+  --chart-bar-soft: rgba(229, 128, 107, 0.4);
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --veil: rgba(0, 0, 0, 0.62);
+}
+
 
 * { box-sizing: border-box; }
 
@@ -60,7 +140,7 @@ body {
   background: var(--cream);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
@@ -94,7 +174,7 @@ a:hover { text-decoration: underline; }
   border-radius: 6px; 
   border: 2px solid var(--cream); 
 }
-::-webkit-scrollbar-thumb:hover { background: #B8B3A8; }
+::-webkit-scrollbar-thumb:hover { background: var(--line-2); }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ── App shell ────────────────────────────────────────────────────── */
@@ -117,8 +197,7 @@ a:hover { text-decoration: underline; }
 .app.collapsed .side-status,
 .app.collapsed .sidebar .credit { display: none; }
 .app.collapsed .sidebar .nav button { justify-content: center; padding: 10px; }
-.app.collapsed .sidebar .brand { justify-content: center; gap: 8px; padding: 0 8px; }
-.app.collapsed #navToggle { display: none; }
+.app.collapsed .sidebar .brand { justify-content: space-between; gap: 6px; padding: 0 10px; }
 
 .brand {
   display: flex; align-items: center; gap: 10px;
@@ -141,7 +220,7 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
 }
 .brand .ic {
-  margin-left: auto; width: 28px; height: 28px;
+  margin-left: auto; width: 32px; height: 32px;
   background: transparent; border: 1px solid var(--line); 
   border-radius: var(--radius-sm);
   color: var(--muted); display: grid; place-items: center; cursor: pointer;
@@ -209,7 +288,7 @@ a:hover { text-decoration: underline; }
 }
 .nav .badge {
   margin-left: auto; min-width: 20px; padding: 2px 6px;
-  background: var(--red); color: white;
+  background: var(--red); color: var(--on-red);
   border-radius: 999px; font-size: 11px; font-weight: 700; text-align: center;
 }
 .app.collapsed .nav .badge { display: none; }
@@ -259,7 +338,7 @@ a:hover { text-decoration: underline; }
   background: var(--surface);
 }
 .topbar h1 { 
-  font-size: 18px; 
+  font-size: 19px; 
   font-weight: 600;
   color: var(--ink);
 }
@@ -321,7 +400,7 @@ a:hover { text-decoration: underline; }
 .btn.primary { 
   background: var(--coral); 
   border-color: var(--coral); 
-  color: white; 
+  color: var(--on-coral); 
 }
 .btn.primary:hover { 
   background: var(--coral-hover); 
@@ -428,7 +507,7 @@ label.row input[type="checkbox"] {
   padding: 0; 
 }
 .hint { 
-  font-size: 12.5px; 
+  font-size: 13px; 
   color: var(--muted); 
   line-height: 1.45; 
 }
@@ -483,8 +562,8 @@ label.row input[type="checkbox"] {
   display: inline-flex; 
   align-items: center; 
   gap: 5px;
-  font-size: 11.5px; 
-  font-weight: 650;
+  font-size: 12px; 
+  font-weight: 600;
   padding: 4px 10px; 
   border-radius: 999px;
   background: var(--sand); 
@@ -494,7 +573,7 @@ label.row input[type="checkbox"] {
 }
 .chip.accent { 
   background: var(--coral-soft); 
-  color: var(--coral); 
+  color: var(--coral-ink); 
 }
 .chip.ok { 
   background: var(--mint-soft); 
@@ -585,7 +664,7 @@ label.row input[type="checkbox"] {
 }
 .empty .big { 
   display: block; 
-  font-size: 15px; 
+  font-size: 16px; 
   color: var(--ink); 
   font-weight: 600; 
   margin-bottom: 4px; 
@@ -596,7 +675,7 @@ label.row input[type="checkbox"] {
   color: var(--red); 
   border-radius: var(--radius); 
   padding: 12px 16px; 
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .skeleton { 
   background: linear-gradient(90deg, var(--sand), var(--paper), var(--sand)); 
@@ -654,7 +733,7 @@ label.row input[type="checkbox"] {
 .task-row.done .tick { 
   background: var(--mint); 
   border-color: var(--mint); 
-  color: white; 
+  color: var(--on-coral); 
 }
 .task-row .body { flex: 1; min-width: 0; }
 .task-row .tt { 
@@ -753,7 +832,7 @@ label.row input[type="checkbox"] {
 
 .session-task { 
   font-family: var(--font-display);
-  font-size: 18px; 
+  font-size: 19px; 
   font-weight: 600; 
   overflow-wrap: anywhere;
   color: var(--ink);
@@ -832,7 +911,7 @@ label.row input[type="checkbox"] {
 }
 .stat .v { 
   font-family: var(--font-display);
-  font-size: 22px; 
+  font-size: 24px; 
   font-weight: 700; 
   font-variant-numeric: tabular-nums; 
   margin-top: 4px; 
@@ -859,7 +938,7 @@ label.row input[type="checkbox"] {
   gap: 10px;
   padding: 10px 4px; 
   border-bottom: 1px solid var(--line);
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .mini-task:last-child { border-bottom: 0; }
 .mini-task .mt-name { 
@@ -903,7 +982,7 @@ label.row input[type="checkbox"] {
 .cal-grid.week { grid-template-columns: repeat(7, 1fr); }
 .cal-grid.month { grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .cal-dow { 
-  font-size: 10px; 
+  font-size: 11px; 
   font-weight: 700; 
   text-transform: uppercase; 
   letter-spacing: 0.08em; 
@@ -947,7 +1026,7 @@ label.row input[type="checkbox"] {
 }
 .cal-cell.today .dnum { color: var(--coral); }
 .cal-cell .dnum .tmark { 
-  font-size: 9px; 
+  font-size: 11px; 
   color: var(--muted); 
   font-weight: 600;
   text-transform: uppercase;
@@ -983,9 +1062,9 @@ label.row input[type="checkbox"] {
 .cal-chip.completed .cn { text-decoration: line-through; }
 .cal-chip.target.completed { border-left-color: var(--coral); }
 .cal-more { 
-  font-size: 10px; 
+  font-size: 11px; 
   color: var(--muted); 
-  font-weight: 650; 
+  font-weight: 600; 
   padding: 2px 4px; 
   background: none; 
   border: 0; 
@@ -1029,8 +1108,8 @@ label.row input[type="checkbox"] {
 .cal-focus {
   margin-top: auto; 
   padding-top: 4px;
-  font-size: 10px; 
-  font-weight: 650; 
+  font-size: 11px; 
+  font-weight: 600; 
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   border-top: 1px solid var(--line);
@@ -1062,7 +1141,7 @@ label.row input[type="checkbox"] {
   gap: 10px; 
   padding: 8px 0; 
   border-bottom: 1px solid var(--line); 
-  font-size: 13.5px; 
+  font-size: 14px; 
 }
 .dp-item:last-child { border-bottom: 0; }
 .dp-item .di-name { 
@@ -1124,7 +1203,7 @@ label.row input[type="checkbox"] {
   border: 1px solid var(--line);
   border-radius: var(--radius); 
   padding: 10px 12px; 
-  font-size: 12.5px;
+  font-size: 13px;
   box-shadow: var(--shadow-lg); 
   min-width: 130px;
   transform: translate(-50%, calc(-100% - 10px));
@@ -1148,7 +1227,7 @@ label.row input[type="checkbox"] {
 .chart-tip .r .vv { 
   margin-left: auto; 
   color: var(--ink); 
-  font-weight: 650; 
+  font-weight: 600; 
   font-variant-numeric: tabular-nums; 
 }
 .chart-tip .note { 
@@ -1162,7 +1241,7 @@ label.row input[type="checkbox"] {
   border: 1px solid var(--mint);
   border-radius: var(--radius);
   padding: 14px 16px;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--ink);
 }
 .forecast-box .fh { 
@@ -1213,7 +1292,7 @@ label.row input[type="checkbox"] {
 }
 .report .rgrid .kv .v { 
   font-family: var(--font-display);
-  font-size: 18px; 
+  font-size: 19px; 
   font-weight: 700; 
   font-variant-numeric: tabular-nums; 
   margin-top: 2px;
@@ -1221,7 +1300,7 @@ label.row input[type="checkbox"] {
 }
 .report .rgrid .kv .v.muted { 
   color: var(--muted); 
-  font-size: 15px; 
+  font-size: 16px; 
   font-weight: 600; 
 }
 .report .corrections { 
@@ -1279,7 +1358,7 @@ label.row input[type="checkbox"] {
 }
 .hist-row .hn2 { text-align: right; }
 .hist-row .hn2 .k { 
-  font-size: 10px; 
+  font-size: 11px; 
   color: var(--muted); 
   font-weight: 700; 
   text-transform: uppercase; 
@@ -1287,7 +1366,7 @@ label.row input[type="checkbox"] {
 }
 .hist-row .hn2 .v { 
   font-family: var(--font-display);
-  font-size: 15px; 
+  font-size: 16px; 
   font-weight: 700; 
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -1302,7 +1381,7 @@ label.row input[type="checkbox"] {
   margin: 22px 0 12px; 
 }
 .day-head h3 { 
-  font-size: 15px;
+  font-size: 16px;
   color: var(--ink);
 }
 .day-head .ds { 
@@ -1315,7 +1394,7 @@ label.row input[type="checkbox"] {
   position: fixed; 
   inset: 0; 
   z-index: 60;
-  background: rgba(26, 29, 35, 0.45);
+  background: var(--veil);
   display: flex; 
   align-items: center; 
   justify-content: center;
@@ -1360,7 +1439,7 @@ label.row input[type="checkbox"] {
 }
 .modal .m-head h2 { 
   font-family: var(--font-display);
-  font-size: 17px; 
+  font-size: 16px; 
   flex: 1;
   color: var(--ink);
 }
@@ -1399,7 +1478,7 @@ label.row input[type="checkbox"] {
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink); 
-  font-size: 13.5px;
+  font-size: 14px;
   border-radius: var(--radius); 
   padding: 11px 16px;
   box-shadow: var(--shadow-lg);
@@ -1419,7 +1498,7 @@ label.row input[type="checkbox"] {
 }
 .toast .btn { 
   padding: 5px 11px; 
-  font-size: 12.5px; 
+  font-size: 13px; 
 }
 @media (prefers-reduced-motion: reduce) { 
   .toast { animation: none; } 
@@ -1431,17 +1510,6 @@ label.row input[type="checkbox"] {
   .grid.cols-4 { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 880px) {
-  .sidebar { width: var(--sb-min); }
-  .sidebar .bname, 
-  .sidebar .nav span, 
-  .sidebar .mini-btn span, 
-  .side-status,
-  .sidebar .credit { display: none; }
-  .sidebar .nav button { 
-    justify-content: center; 
-    padding: 10px; 
-  }
-  #navToggle { display: none; }
   .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; }
   .stat-strip { grid-template-columns: 1fr 1fr; }
 }
@@ -1453,3 +1521,77 @@ label.row input[type="checkbox"] {
     justify-content: space-between; 
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Lapisan akhir: hirarki tipografi, shell, tombol tema
+   Skala ukuran: 11 · 12 · 13 · 14 · 16 · 19 · 24 · 28 · 54
+   Bobot: 400 isi · 500 sekunder · 600 label/tombol · 700 judul/angka
+   ═══════════════════════════════════════════════════════════════ */
+body { font-family: var(--font-body); font-size: var(--fs-md); font-weight: 400; background: var(--cream); color: var(--ink); }
+input, select, textarea, button { font-family: inherit; }
+input, select, textarea { font-size: var(--fs-md); font-weight: 500; }
+input::placeholder, textarea::placeholder { font-weight: 400; }
+
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--ink); }
+.topbar h1 { font: 700 var(--fs-3xl)/1.1 var(--font-display); letter-spacing: -0.035em; }
+.topbar .crumb { font-size: var(--fs-sm); font-weight: 400; color: var(--muted); }
+.card h2, .card-head h2, .day-panel .dp-head h2 { font: 700 var(--fs-xl)/1.2 var(--font-display); letter-spacing: -0.025em; }
+.card h3, .dp-sec h3, .day-head h3 { font: 600 var(--fs-lg)/1.25 var(--font-display); letter-spacing: -0.015em; }
+.card .sub { font-size: var(--fs-sm); font-weight: 400; color: var(--muted); }
+
+.section-label, .stat .k, .hist-row .hn2 .k, .report .rgrid .kv .k, .session-state, .cal-dow {
+  font-size: var(--fs-2xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.section-label, .stat .k, .hist-row .hn2 .k, .report .rgrid .kv .k { color: var(--muted); }
+.stat .v { font: 700 var(--fs-2xl)/1.1 var(--font-display); letter-spacing: -0.03em; }
+.stat .u { font-size: var(--fs-xs); font-weight: 400; color: var(--muted); }
+.hist-row .hn2 .v, .report .rgrid .kv .v { font: 600 var(--fs-lg)/1.2 var(--font-display); }
+
+label.field { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
+.hint { font-size: var(--fs-sm); font-weight: 400; color: var(--muted); }
+.chip { font-size: var(--fs-xs); font-weight: 600; }
+.btn { font-size: var(--fs-md); font-weight: 600; }
+.btn.sm { font-size: var(--fs-sm); font-weight: 600; }
+.btn.primary, .btn.primary:hover { color: var(--on-coral); }
+.tabs button, .seg button, .mini-btn { font-size: var(--fs-sm); font-weight: 600; }
+.task-row .tt { font-size: var(--fs-md); font-weight: 600; }
+.task-row .desc, .task-row .meta { font-size: var(--fs-xs); font-weight: 400; }
+.session-clock { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-display); }
+.cal-more { font-family: inherit; font-size: var(--fs-2xs); font-weight: 600; }
+.digt { font-family: var(--mono); font-size: var(--fs-sm); }
+.nav .badge { color: var(--on-red); font-size: var(--fs-2xs); font-weight: 700; }
+
+/* ── Shell mengikuti referensi: sidebar 252px, brand, link nav ── */
+.brand .mark { width: 34px; height: 34px; border-radius: 10px; }
+.brand .bname { font: 800 18px/1 var(--font-display); letter-spacing: -0.04em; color: var(--ink); }
+.credit { text-align: right; padding: 10px 20px 12px; font-size: var(--fs-xs); line-height: 1.4; }
+.credit .app-name, .credit .author { font-weight: 500; color: var(--muted); }
+.nav { padding: 10px 12px; }
+.nav button { font-size: var(--fs-md); font-weight: 600; border-radius: 12px; }
+.nav button.on { background: var(--mint-soft); color: var(--ink); font-weight: 600; }
+.nav button.on svg { color: var(--coral-ink); }
+.topbar { background: var(--surface); gap: 14px; }
+.stat { border-radius: var(--radius-lg); }
+.card { border-radius: var(--radius-lg); }
+
+/* ── Tombol mode terang/gelap ── */
+.theme-toggle {
+  display: grid; place-items: center; flex: none;
+  width: 38px; height: 38px; margin-left: 4px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); color: var(--ink); cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.theme-toggle:hover { background: var(--sand); border-color: var(--line-2); }
+.theme-toggle svg { width: 19px; height: 19px; }
+.theme-toggle .i-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .i-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
+.topbar .top-actions { margin-left: auto; }
+.topbar .top-actions:empty + .theme-toggle { margin-left: auto; }
+.chip.ok, .chip.lilac { color: var(--mint); }
+:root:not([data-theme="dark"]) .chip.ok, :root:not([data-theme="dark"]) .chip.lilac { color: #185F44; }
+
+/* ── Sidebar terlipat: tombol buka tetap terlihat ── */
+.app.collapsed .sidebar .brand { justify-content: space-between; gap: 6px; padding: 0 10px; }
+.app.collapsed #navToggle { display: grid; transform: rotate(180deg); }

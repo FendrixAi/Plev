@@ -66,11 +66,24 @@
     var appEl = document.getElementById('app');
     appEl.classList.toggle('collapsed', collapsed);
     var tog = document.getElementById('navToggle');
-    tog.setAttribute('aria-expanded', String(!collapsed));
-    tog.addEventListener('click', function () {
+    function paintToggle(on) {
+      var label = on ? 'Buka navigasi (Ctrl+B)' : 'Ciutkan navigasi (Ctrl+B)';
+      tog.setAttribute('aria-expanded', String(!on));
+      tog.setAttribute('aria-label', label);
+      tog.title = label;
+    }
+    function toggleSidebar() {
       var on = appEl.classList.toggle('collapsed');
       try { localStorage.setItem('jamfokus.ui.collapsed', on ? '1' : '0'); } catch (e) {}
-      tog.setAttribute('aria-expanded', String(!on));
+      paintToggle(on);
+    }
+    paintToggle(collapsed);
+    tog.addEventListener('click', toggleSidebar);
+    // Pintasan keyboard Ctrl+B (seperti di VS Code) selalu tersedia
+    document.addEventListener('keydown', function (ev) {
+      if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && !ev.altKey && (ev.key === 'b' || ev.key === 'B')) {
+        ev.preventDefault(); toggleSidebar();
+      }
     });
     document.querySelectorAll('#nav button').forEach(function (b) {
       b.addEventListener('click', function () { location.hash = '#' + b.getAttribute('data-page'); });
@@ -117,7 +130,7 @@
     refreshBadges();
 
     if (info && info.migrated) {
-      ui.toast('Data lama dimigrasi ke skema baru' + (info.backupWritten ? ' — cadangan tersimpan di kunci jamfokus.v1.backup.' : '.'), { timeout: 9000 });
+      ui.toast('Data lama berhasil dipindahkan ke format baru' + (info.backupWritten ? '. Salinan cadangan disimpan otomatis.' : '.'), { timeout: 9000 });
     }
     if (info && info.backfilled && info.backfilled.length) {
       ui.toast(info.backfilled.length + ' laporan harian lama dirangkum dari catatan yang ada.', { timeout: 8000 });

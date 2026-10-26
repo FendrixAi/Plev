@@ -69,11 +69,11 @@
     var s = st();
     var c = ui.el('div.card');
     c.appendChild(ui.el('h2', 'Sesi & timer'));
-    c.appendChild(ui.el('div.sub', 'Durasi bawaan untuk sesi fokus tanpa task dan task baru.'));
+    c.appendChild(ui.el('div.sub', 'Durasi bawaan untuk sesi fokus tanpa tugas dan tugas baru.'));
     var g = ui.el('div.grid.cols-2');
     g.appendChild(numField('Durasi sesi fokus bawaan (menit)', Math.round((s.settings.defaultFocusSec || 1500) / 60),
       1, 600, function (v) { setSetting('defaultFocusSec', v * 60, 'Durasi sesi'); },
-      'Task yang sudah dibuat memakai durasinya sendiri; ubah lewat "Ubah" di halaman Tugas.'));
+      'Tugas yang sudah dibuat memakai durasinya sendiri; ubah lewat "Ubah" di halaman Tugas.'));
     g.appendChild(ui.el('div'));
     c.appendChild(g);
     c.appendChild(toggle('Peringatan 8 detik sebelum sesi selesai', s.settings.warn8, function (v) {
@@ -93,10 +93,10 @@
 
     var defInput = ui.el('input', { type: 'number', min: 1, max: 1440, value: cur.min || '' , placeholder: 'mis. 120' });
     g.appendChild(ui.el('label.field', 'Target bawaan (menit/hari)', defInput,
-      ui.el('span.hint', cur.source === 'unknown' ? 'Belum diatur — Analitik akan menampilkan "target tidak diketahui".' : 'Berlaku untuk semua hari tanpa override.')));
+      ui.el('span.hint', cur.source === 'unknown' ? 'Belum diatur — Analitik akan menampilkan "target tidak diketahui".' : 'Berlaku untuk semua hari tanpa target khusus.')));
 
     var ovrDate = ui.el('input', { type: 'date', value: app.today() });
-    g.appendChild(ui.el('label.field', 'Tanggal override', ovrDate));
+    g.appendChild(ui.el('label.field', 'Tanggal khusus', ovrDate));
     var ovrMin = ui.el('input', { type: 'number', min: 1, max: 1440, value: cur.min || '' });
     var ovrWrap = ui.el('label.field', 'Target khusus (menit)', ovrMin);
     g.appendChild(ovrWrap);
@@ -110,7 +110,7 @@
       app.save(); ui.toast('Target bawaan: ' + ui.fmt.min(r.min) + '.', { kind: 'ok' });
       render();
     }, { primary: true }));
-    btnRow.appendChild(ui.btn('Terapkan override tanggal', function () {
+    btnRow.appendChild(ui.btn('Terapkan target khusus', function () {
       var d = ovrDate.value, v = Math.round(Number(ovrMin.value));
       var r = JF.store.setFocusTargetOverride(st(), d, v, Date.now());
       if (!r.ok) { ui.toast('Tanggal/nilai tidak valid.', { kind: 'err' }); return; }
@@ -121,7 +121,7 @@
 
     var ovr = Object.keys(s.settings.targetOverrides).sort().reverse();
     if (ovr.length) {
-      c.appendChild(ui.el('div.section-label', 'Override tersimpan (' + ovr.length + ')'));
+      c.appendChild(ui.el('div.section-label', 'Target khusus tersimpan (' + ovr.length + ')'));
       var list = ui.el('div');
       ovr.forEach(function (d) {
         var row = ui.el('div.mini-task');
@@ -136,7 +136,7 @@
       });
       c.appendChild(list);
       c.appendChild(ui.el('div.hint', { style: { marginTop: '6px' } },
-        'Menghapus override membuat tanggal itu memakai target bawaan. Laporan lama tidak berubah.'));
+        'Menghapus target khusus membuat tanggal itu memakai target bawaan. Laporan lama tidak berubah.'));
     }
     return c;
   }
@@ -145,20 +145,20 @@
   function pomoCard() {
     var s = st();
     var c = ui.el('div.card');
-    c.appendChild(ui.el('h2', 'Pomodoro & jeda'));
-    c.appendChild(ui.el('div.sub', 'Mode lama tetap tersedia: setelah sesi selesai, jeda otomatis lalu lanjut ke task berikutnya.'));
-    c.appendChild(toggle('Aktifkan mode pomodoro (jeda otomatis lalu lanjut)', s.settings.pomoOn, function (v) {
+    c.appendChild(ui.el('h2', 'Pomodoro & istirahat'));
+    c.appendChild(ui.el('div.sub', 'Setelah sesi selesai, istirahat dimulai otomatis lalu lanjut ke tugas berikutnya.'));
+    c.appendChild(toggle('Aktifkan mode pomodoro (istirahat otomatis lalu lanjut)', s.settings.pomoOn, function (v) {
       setSetting('pomoOn', v, 'Mode pomodoro');
-    }, s.settings.pomoOn ? 'Dengan mode ini sesi berikutnya dimulai otomatis setelah jeda — pilihanmu sendiri.' : ''));
+    }, s.settings.pomoOn ? 'Sesi berikutnya dimulai otomatis setelah istirahat selesai.' : ''));
     var g = ui.el('div.grid.cols-2', { style: { marginTop: '12px' } });
-    g.appendChild(numField('Jeda pendek (menit)', s.settings.shortBreakMin, 1, 60,
-      function (v) { setSetting('shortBreakMin', v, 'Jeda pendek'); }));
-    g.appendChild(numField('Jeda panjang (menit)', s.settings.longBreakMin, 1, 120,
-      function (v) { setSetting('longBreakMin', v, 'Jeda panjang'); }));
-    g.appendChild(numField('Jeda panjang tiap N sesi', s.settings.longBreakEvery, 2, 12,
-      function (v) { setSetting('longBreakEvery', v, 'Interval jeda panjang'); }));
-    g.appendChild(numField('Target task per hari (streak)', s.settings.tasksPerDay, 1, 50,
-      function (v) { setSetting('tasksPerDay', v, 'Target task harian'); },
+    g.appendChild(numField('Istirahat pendek (menit)', s.settings.shortBreakMin, 1, 60,
+      function (v) { setSetting('shortBreakMin', v, 'Istirahat pendek'); }));
+    g.appendChild(numField('Istirahat panjang (menit)', s.settings.longBreakMin, 1, 120,
+      function (v) { setSetting('longBreakMin', v, 'Istirahat panjang'); }));
+    g.appendChild(numField('Istirahat panjang tiap N sesi', s.settings.longBreakEvery, 2, 12,
+      function (v) { setSetting('longBreakEvery', v, 'Interval istirahat panjang'); }));
+    g.appendChild(numField('Target tugas per hari (streak)', s.settings.tasksPerDay, 1, 50,
+      function (v) { setSetting('tasksPerDay', v, 'Target tugas harian'); },
       'Dipakai perhitungan streak di Beranda.'));
     c.appendChild(g);
     return c;
@@ -168,7 +168,7 @@
   function musicCard() {
     var c = ui.el('div.card');
     c.appendChild(ui.el('h2', 'Alarm & musik'));
-    c.appendChild(ui.el('div.sub', 'Tetap memakai beep bawaan jika tidak ada lagu pilihanmu.'));
+    c.appendChild(ui.el('div.sub', 'Memakai bunyi beep bawaan jika belum ada lagu yang dipilih.'));
 
     var fileF = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true });
     var fileR = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true });
@@ -179,14 +179,14 @@
     });
     fileR.addEventListener('change', function () {
       var f = this.files && this.files[0];
-      if (f) { app.music.pickBreak(f, f.name); ui.toast('Lagu jeda disimpan.', { kind: 'ok' }); render(); }
+      if (f) { app.music.pickBreak(f, f.name); ui.toast('Lagu istirahat disimpan.', { kind: 'ok' }); render(); }
       this.value = '';
     });
 
     function trackBlock(title, name, pick, test, del) {
       var b = ui.el('div', { style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' } });
-      b.appendChild(ui.el('div.k', { style: { fontSize: '11.5px', color: 'var(--text-3)', fontWeight: '650' } }, title));
-      b.appendChild(ui.el('div', { style: { fontSize: '13.5px', fontWeight: '600', margin: '3px 0 8px' } }, name));
+      b.appendChild(ui.el('div.k', { style: { fontSize: '12px', color: 'var(--muted)', fontWeight: '600' } }, title));
+      b.appendChild(ui.el('div', { style: { fontSize: '14px', fontWeight: '600', margin: '3px 0 8px' } }, name));
       var r = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } });
       r.appendChild(ui.btn('Pilih lagu', pick, { sm: true }));
       r.appendChild(ui.btn('Tes', test, { sm: true, ghost: true }));
@@ -200,7 +200,7 @@
       function () { fileF.click(); }, function () { app.music.testFocus(); }, function () {
         app.music.clearFocus(); ui.toast('Balik ke beep bawaan.'); render();
       }));
-    c.appendChild(trackBlock('Saat jeda selesai', app.music.breakName,
+    c.appendChild(trackBlock('Saat istirahat selesai', app.music.breakName,
       function () { fileR.click(); }, function () { app.music.testBreak(); }, function () {
         app.music.clearBreak(); ui.toast('Balik ke beep bawaan.'); render();
       }));
@@ -260,7 +260,7 @@
 
     var g = ui.el('div.grid.cols-2');
     var info = ui.el('div');
-    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Skema data'), ui.el('span.chip.accent', 'v' + (s.version || 2))));
+    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Versi data'), ui.el('span.chip.accent', 'v' + (s.version || 2))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Task'), ui.el('span.chip', String(s.tasks.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Sesi fokus'), ui.el('span.chip', String(s.sessions.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Laporan harian'), ui.el('span.chip', String(s.snapshots.length))));
@@ -273,10 +273,10 @@
     try { hasV1 = !!localStorage.getItem('jamfokus.v1'); } catch (e) {}
     bk.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Cadangan data lama'),
       ui.el('span.chip' + (hasBackup ? '.ok' : ''), hasBackup ? 'Tersimpan' : 'Tidak ada')));
-    bk.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Kunci asli jamfokus.v1'),
+    bk.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Data versi lama (v1)'),
       ui.el('span.chip' + (hasV1 ? '.ok' : '.outline'), hasV1 ? 'Dipertahankan' : 'Tidak ada')));
     bk.appendChild(ui.el('div.hint', { style: { marginTop: '6px' } },
-      'Migrasi v1 → v2 bersifat idempoten; data lama tidak pernah dihapus.'));
+      'Data versi lama tidak pernah dihapus saat pembaruan.'));
     g.appendChild(bk);
     c.appendChild(g);
 

@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('desk', {
+  setTheme: (mode) => ipcRenderer.send('theme', mode),
   popup: () => ipcRenderer.send('popup'),
   mini: (on) => ipcRenderer.send('mini', on),
   state: (s) => ipcRenderer.send('state', s),

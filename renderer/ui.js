@@ -67,13 +67,13 @@
       var m = Math.floor(sec / 60), s = sec % 60;
       return pad(m) + ':' + pad(s);
     },
-    /** Human duration: "1 jam 5 mnt" / "18 mnt" / "45 dtk". */
+    /** Human duration: "1 jam 5 menit" / "18 menit" / "45 detik". */
     dur: function (sec) {
       sec = Math.max(0, Math.round(sec || 0));
-      if (sec < 60) return sec + ' dtk';
+      if (sec < 60) return sec + ' detik';
       var m = Math.floor(sec / 60), h = Math.floor(m / 60);
-      if (h > 0) return h + ' jam ' + (m % 60) + ' mnt';
-      return m + ' mnt';
+      if (h > 0) return h + ' jam ' + (m % 60) + ' menit';
+      return m + ' menit';
     },
     /** Compact: "1j 05m" / "18m". */
     durShort: function (sec) {
@@ -84,8 +84,8 @@
     },
     min: function (m) {
       m = Math.max(0, Math.round(m || 0));
-      if (m >= 60) { var h = Math.floor(m / 60); return h + ' jam' + (m % 60 ? ' ' + (m % 60) + ' mnt' : ''); }
-      return m + ' mnt';
+      if (m >= 60) { var h = Math.floor(m / 60); return h + ' jam' + (m % 60 ? ' ' + (m % 60) + ' menit' : ''); }
+      return m + ' menit';
     },
     date: function (day) { return parseDayLabel(day); },
     dateShort: function (day) {
@@ -139,14 +139,18 @@
   function modal(opts) {
     opts = opts || {};
     var root = $('modalRoot');
+    var trigger = document.activeElement;
+    var dismissible = opts.dismiss !== false;
     var veil = el('div.modal-veil');
     var box = el('div.modal' + (opts.wide ? '.wide' : ''), { role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.title || 'Dialog' });
     var head = el('div.m-head', el('h2', opts.title || ''));
-    var closeBtn = el('button.icb', {
-      type: 'button', title: 'Tutup', 'aria-label': 'Tutup',
-      onclick: function () { close(false); }
-    }, svg('<path d="M6 6l12 12M18 6L6 18"/>', 16));
-    head.appendChild(closeBtn);
+    if (dismissible) {
+      var closeBtn = el('button.icb', {
+        type: 'button', title: 'Tutup', 'aria-label': 'Tutup',
+        onclick: function () { close(false); }
+      }, svg('<path d="M6 6l12 12M18 6L6 18"/>', 16));
+      head.appendChild(closeBtn);
+    }
     var body = el('div.m-body');
     append(body, opts.body || '');
     var foot = el('div.m-foot');
@@ -161,7 +165,32 @@
     veil.appendChild(box);
     root.appendChild(veil);
 
-    function onKey(e) { if (e.key === 'Escape') close(false); }
+    function focusables() {
+      var list = box.querySelectorAll(
+        'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'
+      );
+      return Array.prototype.filter.call(list, function (n) {
+        return n.offsetParent !== null || n === document.activeElement;
+      });
+    }
+    function onKey(e) {
+      // Only the top-most dialog reacts, so nested dialogs do not all close.
+      if (modalStack[modalStack.length - 1] !== api) return;
+      if (e.key === 'Escape') {
+        if (dismissible) { e.preventDefault(); close(false); }
+        return;
+      }
+      if (e.key === 'Tab') {
+        var list = focusables();
+        if (!list.length) { e.preventDefault(); return; }
+        var first = list[0], last = list[list.length - 1], active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === first || !box.contains(active)) { e.preventDefault(); last.focus(); }
+        } else if (active === last || !box.contains(active)) {
+          e.preventDefault(); first.focus();
+        }
+      }
+    }
     document.addEventListener('keydown', onKey);
 
     var closed = false;
@@ -170,15 +199,23 @@
       document.removeEventListener('keydown', onKey);
       veil.remove();
       modalStack = modalStack.filter(function (m) { return m !== api; });
+      if (trigger && trigger.focus && document.contains(trigger)) {
+        try { trigger.focus(); } catch (e) {}
+      }
       if (opts.onClose) opts.onClose(!!confirmed, value);
     }
-    veil.addEventListener('mousedown', function (e) { if (e.target === veil && opts.dismiss !== false) close(false); });
+    veil.addEventListener('mousedown', function (e) { if (e.target === veil && dismissible) close(false); });
 
-    var api = { close: close, body: body, box: box, focus: function () { closeBtn.focus(); } };
+    var api = {
+      close: close, body: body, box: box,
+      focus: function () {
+        var f = body.querySelector('input,select,textarea,button') || box.querySelector('button');
+        if (f) f.focus();
+      }
+    };
     modalStack.push(api);
     setTimeout(function () {
-      var f = body.querySelector('input,select,textarea,button');
-      (f || closeBtn).focus();
+      if (!closed) api.focus();
     }, 30);
     return api;
   }

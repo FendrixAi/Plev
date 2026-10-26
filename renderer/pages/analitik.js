@@ -1,4 +1,4 @@
-/* Jam Fokus — Analitik: two large graphs (task performance + dashed lilac
+/* Jam Fokus — Analitik: two large graphs (task performance + dashed ungu
    forecast, official focus duration vs per-day target), then statistics.
    Default period: last 7 days, always including today (live data).
    Days with incomplete snapshots are flagged, never treated as zero. */
@@ -21,24 +21,24 @@
       }, p[1]));
     });
     head.appendChild(seg);
-    head.appendChild(ui.el('span', { id: 'an-scope', style: { color: 'var(--text-3)', fontSize: '12.5px' } }));
+    head.appendChild(ui.el('span', { id: 'an-scope', style: { color: 'var(--muted)', fontSize: '13px' } }));
     container.appendChild(head);
 
-    container.appendChild(chartCard('Performa task',
-      'Task selesai vs belum selesai per hari. Garis putus-putus lilac = perkiraan laju ke depan.',
+    container.appendChild(chartCard('Performa tugas',
+      'Tugas selesai vs belum selesai per hari. Garis putus-putus ungu = perkiraan laju ke depan.',
       'an-c1', [
-        { name: 'Task selesai', color: '#7FBFA3' },
-        { name: 'Belum selesai', color: '#E0B56B' },
-        { name: 'Perkiraan (perkiraan, bukan hasil)', color: '#B4A5D8', dashed: true },
-        { name: 'Data tidak lengkap', color: '#E0B56B', kind: '.box' }
+        { name: 'Tugas selesai', color: JF.theme.css('--chart-ok') },
+        { name: 'Belum selesai', color: JF.theme.css('--chart-warn') },
+        { name: 'Perkiraan (perkiraan, bukan hasil)', color: JF.theme.css('--chart-info'), dashed: true },
+        { name: 'Data tidak lengkap', color: JF.theme.css('--chart-warn'), kind: '.box' }
       ]));
 
     container.appendChild(chartCard('Fokus resmi vs target',
       'Durasi fokus resmi per hari (batang) dibanding target harian (garis). Hari diarsir = datanya tidak lengkap.',
       'an-c2', [
-        { name: 'Fokus resmi', color: '#E58B96', kind: '.box' },
-        { name: 'Target harian', color: '#7FBFA3' },
-        { name: 'Batang diarsir = data tidak lengkap', color: '#E0B56B', kind: '.box' }
+        { name: 'Fokus resmi', color: JF.theme.css('--chart-bar'), kind: '.box' },
+        { name: 'Target harian', color: JF.theme.css('--chart-ok') },
+        { name: 'Batang diarsir = data tidak lengkap', color: JF.theme.css('--chart-warn'), kind: '.box' }
       ]));
 
     container.appendChild(ui.el('div.stat-strip', { id: 'an-stats' }));
@@ -138,12 +138,12 @@
       labels: lr.labels,
       markToday: lr.todayIdx,
       pointNotes: incompleteNotes(lr.rows),
-      tipFormat: function (v) { var r = Math.round(v * 10) / 10; return (r % 1 === 0 ? r : String(r).replace('.', ',')) + ' task'; },
+      tipFormat: function (v) { var r = Math.round(v * 10) / 10; return (r % 1 === 0 ? r : String(r).replace('.', ',')) + ' tugas'; },
       emptyText: 'Belum ada data',
       series: [
-        { type: 'line', name: 'Task selesai', color: '#7FBFA3', values: selesai },
-        { type: 'line', name: 'Belum selesai', color: '#E0B56B', values: belum },
-        { type: 'line', name: 'Perkiraan', color: '#B4A5D8', values: proj, dashed: true, dots: false }
+        { type: 'line', name: 'Tugas selesai', color: JF.theme.css('--chart-ok'), values: selesai },
+        { type: 'line', name: 'Belum selesai', color: JF.theme.css('--chart-warn'), values: belum },
+        { type: 'line', name: 'Perkiraan', color: JF.theme.css('--chart-info'), values: proj, dashed: true, dots: false }
       ]
     };
   }
@@ -162,8 +162,8 @@
       tipFormat: function (v) { return ui.fmt.dur(v); },
       emptyText: 'Belum ada data',
       series: [
-        { type: 'bar', name: 'Fokus resmi', color: '#E58B96', values: bars, hatch: true },
-        { type: 'line', name: 'Target harian', color: '#7FBFA3', values: target, width: 2, dots: false }
+        { type: 'bar', name: 'Fokus resmi', color: JF.theme.css('--chart-bar'), values: bars, hatch: true },
+        { type: 'line', name: 'Target harian', color: JF.theme.css('--chart-ok'), values: target, width: 2, dots: false }
       ]
     };
   }
@@ -207,14 +207,14 @@
     var periodNote = days + ' hari terakhir';
 
     // 1. unique first completions in period
-    box.appendChild(stat('Task pertama kali selesai', String(firstCompletionsInWindow()),
-      periodNote + ' · task unik; penyelesaian ulang tidak dihitung ganda', 'ok'));
+    box.appendChild(stat('Tugas pertama kali selesai', String(firstCompletionsInWindow()),
+      periodNote + ' · tugas unik; penyelesaian ulang tidak dihitung ganda', 'ok'));
 
     // 2. currently open work (live, not period-bound)
     var active = JF.store.activeTasks(state, app.today());
     var upcoming = JF.store.upcomingTasks(state, app.today());
     var overdue = JF.store.overdueTasks(state, app.today());
-    box.appendChild(stat('Task aktif saat ini', String(active.length),
+    box.appendChild(stat('Tugas aktif saat ini', String(active.length),
       'terlambat: ' + overdue.length + ' · mendatang: ' + upcoming.length, active.length ? 'accent' : ''));
 
     // 3. official focus in period (completed sessions only)
@@ -236,13 +236,13 @@
     var f = JF.forecast.compute(app.rawState(), app.today());
     var d = JF.forecast.describe(f);
     box.appendChild(ui.el('h2', 'Perkiraan'));
-    box.appendChild(ui.el('div', { style: { fontSize: '15px', fontWeight: '700', margin: '4px 0 6px' } }, d.title));
+    box.appendChild(ui.el('div', { style: { fontSize: '16px', fontWeight: '600', margin: '4px 0 6px' } }, d.title));
     box.appendChild(ui.el('div', d.body));
     var meta = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' } });
     meta.appendChild(ui.el('span.chip', 'Hari aktif: ' + f.activeDays + ' (min ' + f.minDays + ')'));
     meta.appendChild(ui.el('span.chip' + (f.ratePerDay != null ? '.accent' : ''),
       'Laju: ' + (f.ratePerDay != null ? f.ratePerDay + ' task/hari' : '—')));
-    meta.appendChild(ui.el('span.chip', 'Sisa task: ' + f.remainingCount));
+    meta.appendChild(ui.el('span.chip', 'Sisa tugas: ' + f.remainingCount));
     if (f.etaDate) meta.appendChild(ui.el('span.chip.ok', 'Perkiraan selesai: ' + ui.fmt.date(f.etaDate)));
     box.appendChild(meta);
     box.appendChild(ui.el('div.hint', { style: { marginTop: '10px' } },

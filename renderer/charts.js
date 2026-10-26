@@ -5,6 +5,8 @@
 (function (root) {
   'use strict';
   var JF = root.JF = root.JF || {};
+  function T(name) { return JF.theme ? JF.theme.css(name) : ''; }
+  function bodyFont() { return JF.theme ? JF.theme.bodyFont() : 'sans-serif'; }
 
   var PAD = { l: 46, r: 14, t: 14, b: 30 };
 
@@ -37,7 +39,7 @@
       var labels = s.labels || [];
       var n = labels.length;
       if (!n) {
-        ctx.fillStyle = '#767B8B'; ctx.font = '13px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = T('--chart-label'); ctx.font = '13px ' + bodyFont(); ctx.textAlign = 'center';
         ctx.fillText(s.emptyText || 'Belum ada data', dim.w / 2, dim.h / 2);
         geom = null; return;
       }
@@ -52,8 +54,8 @@
 
       // gridlines + y labels
       var ticks = 4;
-      ctx.strokeStyle = '#262A37'; ctx.lineWidth = 1;
-      ctx.fillStyle = '#767B8B'; ctx.font = '11px "Segoe UI", sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.strokeStyle = T('--chart-grid'); ctx.lineWidth = 1;
+      ctx.fillStyle = T('--chart-label'); ctx.font = '11px ' + bodyFont(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
       for (var g = 0; g <= ticks; g++) {
         var v = (yMax / ticks) * g;
         var y = Math.round(yAt(v)) + 0.5;
@@ -66,13 +68,13 @@
       var stepLbl = Math.max(1, Math.ceil(n / Math.max(3, Math.floor(iw / 62))));
       for (var i = 0; i < n; i++) {
         if (i % stepLbl !== 0 && i !== n - 1) continue;
-        ctx.fillStyle = (s.markToday != null && i === s.markToday) ? '#E58B96' : '#767B8B';
+        ctx.fillStyle = (s.markToday != null && i === s.markToday) ? T('--chart-bar') : T('--chart-label');
         ctx.fillText(labels[i], xAt(i), dim.h - PAD.b + 9);
       }
 
       // "incomplete day" marks (honest data-quality flags)
       if (s.pointNotes) {
-        ctx.fillStyle = '#E0B56B';
+        ctx.fillStyle = T('--chart-warn');
         Object.keys(s.pointNotes).forEach(function (k) {
           var i2 = +k; if (!(i2 >= 0 && i2 < n)) return;
           ctx.beginPath(); ctx.arc(xAt(i2), dim.h - PAD.b + 20, 2.5, 0, Math.PI * 2); ctx.fill();
@@ -81,7 +83,7 @@
 
       // today marker
       if (s.markToday != null && s.markToday >= 0 && s.markToday < n) {
-        ctx.save(); ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(229,139,150,0.4)';
+        ctx.save(); ctx.setLineDash([3, 4]); ctx.strokeStyle = T('--chart-bar-soft');
         ctx.beginPath(); ctx.moveTo(xAt(s.markToday), PAD.t); ctx.lineTo(xAt(s.markToday), PAD.t + ih); ctx.stroke(); ctx.restore();
       }
 
@@ -101,7 +103,7 @@
             ctx.fillRect(xi, y, bw, Math.max(1, y0 - y));
           }
           if (v > 0 && x.showValues && n <= 10) {
-            ctx.fillStyle = '#A5A9B7'; ctx.font = '10.5px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillStyle = T('--chart-value'); ctx.font = '11px ' + bodyFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
             ctx.fillText(String(v), xAt(i), y - 4);
           }
         });
