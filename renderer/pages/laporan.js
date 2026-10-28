@@ -29,12 +29,12 @@
     head.appendChild(ui.el('span.chip.accent', 'Hari ini — berjalan'));
     c.appendChild(head);
     c.appendChild(ui.el('div.hint', { style: { marginTop: '4px' } },
-      'Angka hari ini masih berubah sampai pukul 00.00 dan belum difinalkan.'));
+      'Angka hari ini masih berubah sampai pukul 00.00 dan belum dikunci.'));
     var g = ui.el('div.rgrid');
     g.appendChild(kv('Target fokus', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'muted'));
-    g.appendChild(kv('Fokus resmi', ui.fmt.dur(st.officialSec)));
+    g.appendChild(kv('Fokus', ui.fmt.dur(st.officialSec)));
     g.appendChild(kv('Tugas selesai', String(st.doneToday)));
-    g.appendChild(kv('Tugas tertunda', String(st.overdue), st.overdue ? '' : 'muted'));
+    g.appendChild(kv('Tugas terlambat', String(st.overdue), st.overdue ? '' : 'muted'));
     c.appendChild(g);
     return c;
   }
@@ -56,7 +56,7 @@
 
     var g = ui.el('div.rgrid');
     g.appendChild(kv('Target fokus', snap.targetMin != null ? ui.fmt.min(snap.targetMin) : 'Tidak diketahui', snap.targetMin != null ? '' : 'muted'));
-    g.appendChild(kv('Fokus resmi', ui.fmt.dur(snap.officialFocusSec)));
+    g.appendChild(kv('Fokus', ui.fmt.dur(snap.officialFocusSec)));
     g.appendChild(kv('Fokus terputus', snap.interruptedFocusSec > 0 ? ui.fmt.dur(snap.interruptedFocusSec) : 'Tidak ada',
       snap.interruptedFocusSec > 0 ? '' : 'muted'));
     g.appendChild(kv('Tugas selesai', String(snap.completedTaskIds.length)));
@@ -76,13 +76,13 @@
     });
     if (notes.length) {
       var box = ui.el('div.corrections');
-      box.appendChild(ui.el('div.ch', 'Koreksi / interpretasi saat ini'));
+      box.appendChild(ui.el('div.ch', 'Perubahan sejak laporan dibuat'));
       notes.forEach(function (n) { box.appendChild(ui.el('div.ci', n)); });
       c.appendChild(box);
     }
 
     c.appendChild(ui.el('div.orig',
-      'Catatan asli · difinalkan ' + (snap.finalizedAt ? ui.fmt.dateTime(snap.finalizedAt) : '—') +
+      'Catatan asli · dikunci ' + (snap.finalizedAt ? ui.fmt.dateTime(snap.finalizedAt) : '—') +
       (snap.targetSource ? ' · target: ' + (snap.targetSource === 'override' ? 'target khusus per tanggal' :
         snap.targetSource === 'default' ? 'target bawaan' : 'tidak diketahui') : '')));
     return c;

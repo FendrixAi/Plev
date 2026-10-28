@@ -17,8 +17,8 @@
     add.appendChild(ui.el('h2', 'Tambah tugas cepat'));
     add.appendChild(ui.el('div.sub', 'Setiap tugas wajib punya tanggal target. Detail lain opsional.'));
     var form = ui.el('form.add-form', { id: 'ta-form', onsubmit: submitQuick });
-    form.appendChild(ui.el('input#ta-title', { placeholder: 'Judul tugas…', maxlength: 120, autocomplete: 'off', value: formState.title }));
-    form.appendChild(ui.el('input#ta-date', { type: 'date', value: formState.date || app.today() }));
+    form.appendChild(ui.el('input#ta-title', { 'aria-label': 'Judul tugas', placeholder: 'Judul tugas…', maxlength: 120, autocomplete: 'off', value: formState.title }));
+    form.appendChild(ui.el('input#ta-date', { 'aria-label': 'Tanggal target', type: 'date', value: formState.date || app.today() }));
     var addBtn = ui.btn('Tambah', null, { primary: true });
     addBtn.type = 'submit'; // tombol ini bagian dari <form>: harus submit, bukan type=button
     form.appendChild(addBtn);
@@ -38,7 +38,7 @@
     });
     pr.appendChild(sel); row.appendChild(pr);
     var du = ui.el('label.field', 'Durasi fokus (menit)');
-    du.appendChild(ui.el('input#ta-min', { type: 'number', min: 1, max: 600, placeholder: 'bawaan', value: formState.min || '' }));
+    du.appendChild(ui.el('input#ta-min', { 'aria-label': 'Durasi fokus (menit)', type: 'number', min: 1, max: 600, placeholder: 'bawaan', value: formState.min || '' }));
     row.appendChild(du);
     det.appendChild(row);
     det.hidden = !showDetails;
@@ -240,7 +240,7 @@
     body.appendChild(ui.el('p.hint',
       'Pilih tanggal target baru untuk mengaktifkan kembali tugas ini.'));
     if (t.targetDate) {
-      body.appendChild(ui.el('p.hint', 'Referensi jadwal lama: ' + ui.fmt.date(t.targetDate) +
+      body.appendChild(ui.el('p.hint', 'Jadwal sebelumnya: ' + ui.fmt.date(t.targetDate) +
         ' — tidak otomatis dipakai kembali.'));
     }
     body.appendChild(ui.el('label.field', 'Tanggal target baru (wajib)',

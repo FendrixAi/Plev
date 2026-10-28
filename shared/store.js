@@ -19,6 +19,7 @@
       sessions: [],
       snapshots: [],
       legacyHist: [],      // preserved verbatim from v1 (never mutated)
+      journals: {},        // 'YYYY-MM-DD' -> daily journal entry
       settings: defaultSettings(),
       events: []           // global audit trail: {at, kind, taskId, data}
     };

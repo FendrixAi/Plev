@@ -1,5 +1,5 @@
 /* Jam Fokus — Beranda: analog focus clock, session controls, daily summary,
-   "Rencana hari ini" and "Tugas tertunda" previews. */
+   "Rencana hari ini" and "Tugas terlambat" previews. */
 (function (root) {
   'use strict';
   var JF = root.JF;
@@ -38,7 +38,7 @@
     c1.appendChild(h1);
     c1.appendChild(ui.el('div', { id: 'bq-list' }));
     var c2 = ui.el('div.card');
-    c2.appendChild(ui.el('div.card-head', ui.el('h2', 'Tugas tertunda'), ui.el('span.chip.danger', { id: 'td-count' }), ui.el('span.grow')));
+    c2.appendChild(ui.el('div.card-head', ui.el('h2', 'Tugas terlambat'), ui.el('span.chip.danger', { id: 'td-count' }), ui.el('span.grow')));
     c2.appendChild(ui.el('div', { id: 'td-list' }));
     cols.appendChild(c1); cols.appendChild(c2);
     container.appendChild(cols);
@@ -69,7 +69,7 @@
     }
 
     if (s && s.state === 'running') {
-      card.appendChild(stateLine('SEDANG BERJALAN', 'run'));
+      card.appendChild(stateLine('Sedang berjalan', 'run'));
       card.appendChild(taskLine(s));
       card.appendChild(ui.el('div.session-clock.run', { id: 'ses-clock' }, ui.fmt.mmss(sessRem(s))));
       card.appendChild(ui.el('div.session-sub', { id: 'ses-sub' },
@@ -77,7 +77,7 @@
       card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
       var c1 = ui.el('div.session-controls');
       c1.appendChild(ui.btn('Jeda', function () { app.pause(); }, { primary: true }));
-      c1.appendChild(ui.btn('Berhenti permanen', confirmStop, { danger: true }));
+      c1.appendChild(ui.btn('Hentikan sesi', confirmStop, { danger: true }));
       card.appendChild(c1);
       if (app.music.playingFocus) card.appendChild(musicStopRow());
       return;
@@ -92,13 +92,13 @@
       card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
       var c2 = ui.el('div.session-controls');
       c2.appendChild(ui.btn('Lanjutkan', function () { app.resume(); }, { primary: true }));
-      c2.appendChild(ui.btn('Berhenti permanen', confirmStop, { danger: true }));
+      c2.appendChild(ui.btn('Hentikan sesi', confirmStop, { danger: true }));
       card.appendChild(c2);
       return;
     }
 
     // Idle — choose a task (or a standalone session) and start.
-    card.appendChild(stateLine('SIAP FOKUS', ''));
+    card.appendChild(stateLine('Siap fokus', ''));
     var active = JF.store.activeTasks(app.rawState(), app.today());
     var upcoming = JF.store.upcomingTasks(app.rawState(), app.today());
     var all = active.concat(upcoming);
@@ -157,10 +157,10 @@
 
   function confirmStop() {
     ui.confirm({
-      title: 'Hentikan sesi permanen?',
+      title: 'Hentikan sesi ini?',
       body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan ' +
-        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus resmi.',
-      okLabel: 'Hentikan permanen', danger: true
+        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus.',
+      okLabel: 'Ya, hentikan', danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
     return false; // keep modal open until confirm resolves
   }
@@ -174,7 +174,7 @@
   function renderStrip() {
     var st = app.todayStats();
     ui.clear(els.strip);
-    els.strip.appendChild(stat('Fokus resmi hari ini', ui.fmt.dur(st.officialSec), 'accent', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
+    els.strip.appendChild(stat('Fokus hari ini', ui.fmt.dur(st.officialSec), 'accent', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
     els.strip.appendChild(stat('Target harian', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'small',
       st.target.source === 'override' ? 'target khusus tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
     els.strip.appendChild(stat('Tugas selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, 'ok', st.goalDone >= st.tasksGoal ? 'target tugas tercapai' : 'target ' + st.tasksGoal + ' tugas'));
@@ -209,7 +209,7 @@
     ui.$('td-count').textContent = late.length ? late.length + ' terlambat' : '0';
     ui.clear(td);
     if (!late.length) {
-      td.appendChild(ui.el('div.empty', ui.el('span.big', 'Tidak ada tugas tertunda'), 'Semua target sudah tercapai atau maju.'));
+      td.appendChild(ui.el('div.empty', ui.el('span.big', 'Tidak ada tugas terlambat'), 'Semua target sudah tercapai atau maju.'));
     } else {
       late.slice(0, 6).forEach(function (t) { td.appendChild(taskRowPreview(t, { overdue: true })); });
       if (late.length > 6) td.appendChild(ui.el('div.hint', { style: { marginTop: '8px' } }, '+ ' + (late.length - 6) + ' lainnya'));

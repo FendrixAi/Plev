@@ -20,9 +20,9 @@ test('tombol sidebar tetap terlihat dan berukuran 32px', () => {
   assert.match(css, /\.app\.collapsed #navToggle \{ display: grid;/);
 });
 
-test('sidebar terlipat memakai posisi brand yang stabil (bukan kolom)', () => {
+test('sidebar terlipat memusatkan tombol tunggal di brand (bukan kolom)', () => {
   assert.doesNotMatch(css, /\.app\.collapsed \.sidebar \.brand \{[^}]*flex-direction:\s*column/);
-  assert.match(css, /\.app\.collapsed \.sidebar \.brand \{[^}]*justify-content:\s*space-between/);
+  assert.match(css, /\.app\.collapsed \.sidebar \.brand \{[^}]*justify-content:\s*center/);
 });
 
 test('lebar minimum sidebar cukup untuk brand 34px + tombol 32px', () => {

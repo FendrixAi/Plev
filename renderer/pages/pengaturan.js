@@ -87,7 +87,7 @@
     var s = st();
     var c = ui.el('div.card');
     c.appendChild(ui.el('h2', 'Target fokus harian'));
-    c.appendChild(ui.el('div.sub', 'Target menit fokus resmi per hari. Tanggal tertentu bisa ditimpa tanpa mengubah hari lain.'));
+    c.appendChild(ui.el('div.sub', 'Target menit fokus per hari. Tanggal tertentu bisa ditimpa tanpa mengubah hari lain.'));
     var cur = JF.store.focusTargetFor(s, app.today());
     var g = ui.el('div.grid.cols-3', { style: { alignItems: 'end' } });
 
@@ -168,10 +168,10 @@
   function musicCard() {
     var c = ui.el('div.card');
     c.appendChild(ui.el('h2', 'Alarm & musik'));
-    c.appendChild(ui.el('div.sub', 'Memakai bunyi beep bawaan jika belum ada lagu yang dipilih.'));
+    c.appendChild(ui.el('div.sub', 'Memakai bunyi bawaan jika belum ada lagu yang dipilih.'));
 
-    var fileF = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true });
-    var fileR = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true });
+    var fileF = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true, 'aria-label': 'Pilih lagu untuk akhir sesi fokus' });
+    var fileR = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true, 'aria-label': 'Pilih lagu untuk akhir istirahat' });
     fileF.addEventListener('change', function () {
       var f = this.files && this.files[0];
       if (f) { app.music.pickFocus(f, f.name); ui.toast('Lagu sesi fokus disimpan.', { kind: 'ok' }); render(); }
@@ -190,7 +190,7 @@
       var r = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } });
       r.appendChild(ui.btn('Pilih lagu', pick, { sm: true }));
       r.appendChild(ui.btn('Tes', test, { sm: true, ghost: true }));
-      r.appendChild(ui.btn('Pakai beep', del, { sm: true, ghost: true }));
+      r.appendChild(ui.btn('Pakai bunyi bawaan', del, { sm: true, ghost: true }));
       r.appendChild(ui.btn('Hentikan', function () { app.music.stopAllMusic(); }, { sm: true, ghost: true }));
       b.appendChild(r);
       return b;
@@ -198,11 +198,11 @@
 
     c.appendChild(trackBlock('Saat sesi fokus selesai', app.music.focusName,
       function () { fileF.click(); }, function () { app.music.testFocus(); }, function () {
-        app.music.clearFocus(); ui.toast('Balik ke beep bawaan.'); render();
+        app.music.clearFocus(); ui.toast('Kembali ke bunyi bawaan.'); render();
       }));
     c.appendChild(trackBlock('Saat istirahat selesai', app.music.breakName,
       function () { fileR.click(); }, function () { app.music.testBreak(); }, function () {
-        app.music.clearBreak(); ui.toast('Balik ke beep bawaan.'); render();
+        app.music.clearBreak(); ui.toast('Kembali ke bunyi bawaan.'); render();
       }));
 
     c.appendChild(toggle('Ulangi lagu selama alarm berbunyi', app.music.loop, function (v) {
@@ -261,9 +261,10 @@
     var g = ui.el('div.grid.cols-2');
     var info = ui.el('div');
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Versi data'), ui.el('span.chip.accent', 'v' + (s.version || 2))));
-    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Task'), ui.el('span.chip', String(s.tasks.length))));
+    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Tugas'), ui.el('span.chip', String(s.tasks.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Sesi fokus'), ui.el('span.chip', String(s.sessions.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Laporan harian'), ui.el('span.chip', String(s.snapshots.length))));
+    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Catatan jurnal'), ui.el('span.chip', String(JF.journal.count(s)))));
     g.appendChild(info);
 
     var bk = ui.el('div');
@@ -280,25 +281,79 @@
     g.appendChild(bk);
     c.appendChild(g);
 
-    var exp = ui.btn('Ekspor cadangan JSON', function () {
-      try {
-        var payload = JSON.stringify({ app: 'jam-fokus', exportedAt: new Date().toISOString(), state: st() }, null, 2);
-        var blob = new Blob([payload], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'jam-fokus-cadangan-' + app.today() + '.json';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-        ui.toast('Cadangan diunduh.', { kind: 'ok' });
-      } catch (e) {
-        ui.toast('Gagal mengekspor: ' + e.message, { kind: 'err' });
-      }
+    function downloadBackup(prefix) {
+      var payload = JSON.stringify({ app: 'jam-fokus', exportedAt: new Date().toISOString(), state: st() }, null, 2);
+      var blob = new Blob([payload], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = prefix + app.today() + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+    function kb(n) { return Math.max(1, Math.round(n / 1024)).toLocaleString('id-ID') + ' KB'; }
+
+    var use = app.storageUsage();
+    var storage = ui.el('div.mini-task', ui.el('span.mt-name', 'Penyimpanan terpakai'),
+      ui.el('span.chip' + (use.total > use.limit * 0.8 ? '.warn' : ''), kb(use.total) + ' dari ±' + kb(use.limit)));
+    bk.appendChild(storage);
+
+    var actions = ui.el('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' } });
+    var exp = ui.btn('Ekspor cadangan', function () {
+      try { downloadBackup('jam-fokus-cadangan-'); ui.toast('Cadangan diunduh.', { kind: 'ok' }); }
+      catch (e) { ui.toast('Gagal mengekspor: ' + e.message, { kind: 'err' }); }
     }, { ghost: true });
-    exp.style.marginTop = '14px';
-    c.appendChild(exp);
+    actions.appendChild(exp);
+
+    var fileIn = ui.el('input', { type: 'file', accept: '.json,application/json', 'aria-label': 'Pilih berkas cadangan' });
+    fileIn.hidden = true;
+    var imp = ui.btn('Pulihkan dari cadangan', function () { fileIn.click(); }, { ghost: true });
+    fileIn.addEventListener('change', function () {
+      var f = fileIn.files && fileIn.files[0];
+      fileIn.value = '';
+      if (!f) return;
+      if (f.size > JF.backup.MAX_CHARS) { ui.toast('Berkas terlalu besar untuk dipulihkan.', { kind: 'err' }); return; }
+      f.text().then(function (text) {
+        var r = JF.backup.validate(text);
+        if (!r.ok) { ui.toast(r.error, { kind: 'err', timeout: 8000 }); return; }
+        var sm = r.summary;
+        var when = sm.exportedAt ? ' (dibuat ' + new Date(sm.exportedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ')' : '';
+        return ui.confirm({
+          title: 'Pulihkan dari cadangan?',
+          body: 'Cadangan berisi ' + sm.tasks + ' tugas, ' + sm.sessions + ' sesi fokus, dan ' + sm.snapshots + ' laporan harian' +
+                (sm.journals ? ', serta ' + sm.journals + ' catatan jurnal' : '') + when + '. ' +
+                'Data yang sekarang akan diganti. Salinan data saat ini diunduh otomatis lebih dulu sebagai pengaman.',
+          okLabel: 'Ganti data', danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          try { downloadBackup('jam-fokus-sebelum-pemulihan-'); } catch (e) { /* tetap lanjut; pengguna sudah mengonfirmasi */ }
+          app.replaceState(r.state);
+          ui.toast('Data berhasil dipulihkan dari cadangan.', { kind: 'ok' });
+          render();
+        });
+      }).catch(function () { ui.toast('Berkas tidak bisa dibaca.', { kind: 'err' }); });
+    });
+    actions.appendChild(imp);
+    actions.appendChild(fileIn);
+
+    if (use.hasLegacy) {
+      var clean = ui.btn('Hapus salinan data lama', function () {
+        ui.confirm({
+          title: 'Hapus salinan data lama?',
+          body: 'Salinan data versi lama (v1) dan cadangannya akan dihapus untuk membebaskan sekitar ' + kb(use.legacy) + '. Data yang sedang dipakai tidak terpengaruh. Disarankan ekspor cadangan dulu.',
+          okLabel: 'Hapus', danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          var freed = app.removeLegacyCopies();
+          ui.toast('Salinan lama dihapus (' + kb(freed) + ' dibebaskan).', { kind: 'ok' });
+          render();
+        });
+      }, { ghost: true });
+      actions.appendChild(clean);
+    }
+    c.appendChild(actions);
     return c;
   }
 

@@ -12,16 +12,13 @@
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
     <div class="brand">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
-      </span>
       <span class="bname">Jam Fokus</span>
       <button type="button" class="ic" id="navToggle" title="Ciutkan navigasi" aria-label="Ciutkan navigasi" aria-expanded="true">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
     </div>
 
-    <div class="credit"><span class="app-name">Ini Jam Yahh</span> - <span class="author">Built by Iqbal Rafi</span></div>
+    <div class="credit"><span class="app-name">MM</span> - <span class="author">Built by Iqbal Rafi</span></div>
 
     <nav class="nav" id="nav">
       <button type="button" data-page="beranda" class="on">
@@ -47,6 +44,10 @@
       <button type="button" data-page="laporan">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></svg>
         <span>Laporan harian</span>
+      </button>
+      <button type="button" data-page="jurnal">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8 3.5v17M11.5 8.5h4M11.5 12h4"/></svg>
+        <span>Journaling</span>
       </button>
       <button type="button" data-page="pengaturan">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5h7M15 7.5h5M4 16.5h5M13 16.5h7"/><circle cx="13" cy="7.5" r="2.2"/><circle cx="11" cy="16.5" r="2.2"/></svg>
@@ -83,6 +84,7 @@
       <section class="page" id="page-analitik" data-page="analitik" hidden></section>
       <section class="page" id="page-riwayat" data-page="riwayat" hidden></section>
       <section class="page" id="page-laporan" data-page="laporan" hidden></section>
+      <section class="page" id="page-jurnal" data-page="jurnal" hidden></section>
       <section class="page" id="page-pengaturan" data-page="pengaturan" hidden></section>
     </main>
   </div>
@@ -94,8 +96,10 @@
 <script src="shared/dates.js"></script>
 <script src="shared/model.js"></script>
 <script src="shared/store.js"></script>
+<script src="shared/backup.js"></script>
 <script src="shared/sessions.js"></script>
 <script src="shared/snapshots.js"></script>
+<script src="shared/journal.js"></script>
 <script src="shared/forecast.js"></script>
 <script src="shared/migrate.js"></script>
 <script src="renderer/theme.js"></script>
@@ -109,6 +113,7 @@
 <script src="renderer/pages/analitik.js"></script>
 <script src="renderer/pages/riwayat.js"></script>
 <script src="renderer/pages/laporan.js"></script>
+<script src="renderer/pages/jurnal.js"></script>
 <script src="renderer/pages/pengaturan.js"></script>
 <script src="renderer/boot.js"></script>
 </body>

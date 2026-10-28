@@ -1,12 +1,40 @@
-JAM FOKUS (versi desktop)
+JAM FOKUS - catatan singkat
+===========================
 
-1. Install Node.js LTS dari https://nodejs.org (sekali aja), lalu restart laptop/terminal.
-2. Coba dulu: klik dua kali  jalankan.bat
-3. Buat file .exe: klik dua kali  build-exe.bat
-   Hasilnya: dist\Jam Fokus 1.0.0.exe  (portable, tinggal klik, nggak perlu install)
+ISI FOLDER
+  main.js, preload.js, mini-preload.js  Mesin aplikasi (jendela, tray, kartu mini)
+  index.html, mini.html                 Kerangka tampilan utama dan kartu mini
+  renderer\                             Halaman, logika tampilan, tema (theme.css), font
+  shared\                               Logika data (tugas, sesi, laporan, cadangan)
+  tests\                                Tes otomatis
+  package.json                          Perintah dan pengaturan build
+  node_modules\  dist\                  Dibuat otomatis. Jangan diedit. Boleh dihapus.
 
-Tips:
-- Tombol X cuma menyembunyikan jendela ke tray (ikon dekat jam Windows), timer tetap jalan.
-- Klik kanan ikon tray: Selalu di atas, Buka saat Windows menyala, Keluar.
-- Saat timer selesai, jendela otomatis muncul di atas semua app + musik/beep bunyi.
-- Tombol Mini = jendela kecil terpisah (jam + countdown, tombol jeda, bisa digeser) yang selalu di atas.
+MENJALANKAN (butuh Node.js LTS)
+  1. Klik dua kali  jalankan.bat      (atau: npm install lalu npm start)
+  2. Tes otomatis:  npm test
+
+MEMBUAT INSTALLER
+  1. Tutup aplikasi sepenuhnya (klik kanan ikon tray, Keluar).
+  2. Klik dua kali  build-exe.bat     (atau: npm run build:installer)
+  3. Hasil: dist\Jam Fokus Setup <versi>.exe
+     Versi portable (opsional): npm run build  ->  dist\Jam Fokus Portable <versi>.exe
+  4. Naikkan "version" di package.json tiap rilis supaya nama file tidak tertukar.
+
+MEMASANG DAN MEM-PIN
+  - Jalankan file Setup, lalu cari "Jam Fokus" di Start Menu dan pin dari sana.
+  - Jangan mem-pin dari jendela yang sedang jalan atau dari versi portable:
+    lokasinya sementara, pin akan rusak.
+
+CADANGAN DATA
+  Pengaturan > Data dan cadangan:
+  - Ekspor cadangan   : simpan semua data ke berkas .json
+  - Pulihkan dari cadangan : muat berkas .json (data sekarang diganti; salinan
+    data saat ini diunduh otomatis lebih dulu)
+  - Hapus salinan data lama : membebaskan ruang dari data versi v1
+
+PINTASAN DAN TIPS
+  - Ctrl+B melipat atau membuka sidebar. Di jendela sempit sidebar terlipat otomatis.
+  - Tombol bulan/matahari di pojok kanan atas mengganti mode terang/gelap.
+  - Tombol X hanya menyembunyikan jendela ke tray; timer tetap jalan.
+    Keluar sepenuhnya: klik kanan ikon tray, Keluar.

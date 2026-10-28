@@ -6,7 +6,7 @@
   var currentId = null;
 
   function pageIdFromHash() {
-    var h = (location.hash || '').replace(/^#/, '');
+    var h = (location.hash || '').replace(/^#/, '').split('?')[0];
     if (h && JF.pages.get(h)) return h;
     return 'beranda';
   }
@@ -61,23 +61,35 @@
 
   /* ── sidebar collapse ─────────────────────────────────────────── */
   function initSidebar() {
-    var collapsed = false;
-    try { collapsed = localStorage.getItem('jamfokus.ui.collapsed') === '1'; } catch (e) {}
+    var pref = false;                      // pilihan yang disimpan pengguna
+    try { pref = localStorage.getItem('jamfokus.ui.collapsed') === '1'; } catch (e) {}
     var appEl = document.getElementById('app');
-    appEl.classList.toggle('collapsed', collapsed);
     var tog = document.getElementById('navToggle');
+    var narrow = window.matchMedia ? window.matchMedia('(max-width: 900px)') : { matches: false };
+
     function paintToggle(on) {
       var label = on ? 'Buka navigasi (Ctrl+B)' : 'Ciutkan navigasi (Ctrl+B)';
       tog.setAttribute('aria-expanded', String(!on));
       tog.setAttribute('aria-label', label);
       tog.title = label;
     }
-    function toggleSidebar() {
-      var on = appEl.classList.toggle('collapsed');
-      try { localStorage.setItem('jamfokus.ui.collapsed', on ? '1' : '0'); } catch (e) {}
+    function setCollapsed(on) {
+      appEl.classList.toggle('collapsed', on);
       paintToggle(on);
     }
-    paintToggle(collapsed);
+    // Di jendela sempit sidebar otomatis terlipat agar isi tidak meluber.
+    // Pilihan tersimpan baru dipakai lagi saat jendela cukup lebar.
+    setCollapsed(narrow.matches ? true : pref);
+    if (narrow.addEventListener) narrow.addEventListener('change', function () { setCollapsed(narrow.matches ? true : pref); });
+
+    function toggleSidebar() {
+      var on = !appEl.classList.contains('collapsed');
+      setCollapsed(on);
+      if (!narrow.matches) {
+        pref = on;
+        try { localStorage.setItem('jamfokus.ui.collapsed', on ? '1' : '0'); } catch (e) {}
+      }
+    }
     tog.addEventListener('click', toggleSidebar);
     // Pintasan keyboard Ctrl+B (seperti di VS Code) selalu tersedia
     document.addEventListener('keydown', function (ev) {

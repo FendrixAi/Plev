@@ -74,6 +74,7 @@
       state.legacyHist = state.legacyHist || [];
       state.events = state.events || [];
       state.tasks = state.tasks || [];
+      if (!state.journals || typeof state.journals !== 'object' || Array.isArray(state.journals)) state.journals = {};
     } else {
       var v1 = parse(lsGet(K_V1));
       var pomo = parse(lsGet(K_POMO));
@@ -217,7 +218,7 @@
 
   var au = new Audio(), auR = new Audio(), musURL = null, musRURL = null;
   var music = {
-    focusName: 'Bawaan (beep)', breakName: 'Bawaan (beep)',
+    focusName: 'Bawaan (bunyi pendek)', breakName: 'Bawaan (bunyi pendek)',
     loop: lsGet('jamfokus.loop') === '1',
     playingFocus: false, playingBreak: false
   };
@@ -226,14 +227,14 @@
     if (musURL) URL.revokeObjectURL(musURL);
     musURL = blob ? URL.createObjectURL(blob) : null;
     if (musURL) au.src = musURL; else au.removeAttribute('src');
-    music.focusName = blob ? name : 'Bawaan (beep)';
+    music.focusName = blob ? name : 'Bawaan (bunyi pendek)';
     app.emit('music');
   }
   function setMusR(blob, name) {
     if (musRURL) URL.revokeObjectURL(musRURL);
     musRURL = blob ? URL.createObjectURL(blob) : null;
     if (musRURL) auR.src = musRURL; else auR.removeAttribute('src');
-    music.breakName = blob ? name : 'Bawaan (beep)';
+    music.breakName = blob ? name : 'Bawaan (bunyi pendek)';
     app.emit('music');
   }
   function playTrack(au2, key) {
@@ -382,7 +383,7 @@
       // Another (or same but fresh) run: stop the previous one, honestly.
       sess.stopSession(state, cur, now);
       syncTaskLeft(cur);
-      if (!opts.quiet) JF.ui && JF.ui.toast('Sesi sebelumnya dihentikan (terputus, tidak dihitung resmi).', { kind: 'ok' });
+      if (!opts.quiet) JF.ui && JF.ui.toast('Sesi sebelumnya dihentikan (terputus, tidak dihitung ke total fokus).', { kind: 'ok' });
     }
 
     var planned = t ? t.left : state.settings.defaultFocusSec;
@@ -425,7 +426,7 @@
     sess.stopSession(state, s, Date.now());
     syncTaskLeft(s);
     save(); app.emit('change'); pushState();
-    JF.ui && JF.ui.toast('Sesi dihentikan permanen — ' + fmtDur(s.activeSec) + ' tersimpan sebagai sesi terputus.', { kind: 'ok' });
+    JF.ui && JF.ui.toast('Sesi dihentikan — ' + fmtDur(s.activeSec) + ' tersimpan sebagai sesi terputus.', { kind: 'ok' });
     return true;
   };
 
@@ -478,7 +479,7 @@
     alarmFocus();
     app.emit('session-complete', s, t);
     app.emit('change');
-    notify('Sesi selesai: ' + s.taskName, 'Fokus ' + fmtDur(s.plannedSec) + ' tercatat resmi.');
+    notify('Sesi selesai: ' + s.taskName, 'Fokus ' + fmtDur(s.plannedSec) + ' tercatat.');
 
     var settings = state.settings;
     if (settings.pomoOn) {
@@ -511,7 +512,7 @@
       body: [
         JF.ui.el('div', JF.ui.el('strong', s.taskName)),
         JF.ui.el('div.hint', { style: { marginTop: '4px' } },
-          'Fokus resmi ' + JF.ui.fmt.dur(s.plannedSec) + ' · tanpa waktu jeda.'),
+          'Fokus ' + JF.ui.fmt.dur(s.plannedSec) + ' · tanpa waktu jeda.'),
         JF.ui.el('p.hint', { style: { marginTop: '10px' } },
           'Tugas tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
       ],
@@ -653,10 +654,10 @@
         JF.ui.el('p.hint', { style: { marginTop: '8px' } },
           'Waktu ketika aplikasi tidak berjalan tidak dihitung sebagai fokus. Fokus tercatat sejauh ' +
           JF.ui.fmt.dur(s.activeSec) + ' dari target ' + JF.ui.fmt.dur(s.plannedSec) + '.'),
-        JF.ui.el('p.hint', { style: { marginTop: '8px' } }, 'Lanjutkan sesi ini atau hentikan permanen?')
+        JF.ui.el('p.hint', { style: { marginTop: '8px' } }, 'Lanjutkan sesi ini atau hentikan?')
       ],
       actions: [
-        { label: 'Hentikan permanen', danger: true, onClick: function () { stopRecovered(recovered); } },
+        { label: 'Hentikan sesi', danger: true, onClick: function () { stopRecovered(recovered); } },
         { label: 'Lanjutkan', primary: true, onClick: function () { continueRecovered(recovered); } }
       ],
       onClose: function (confirmed) {
@@ -668,7 +669,7 @@
     var now = Date.now();
     list.forEach(function (s) { if (s.state === 'paused') { sess.stopSession(state, s, now); syncTaskLeft(s); } });
     save(); app.emit('change');
-    JF.ui.toast('Sesi dihentikan permanen — fokus tercatat tidak dihitung resmi.', { kind: 'ok' });
+    JF.ui.toast('Sesi dihentikan — fokus tercatat tidak dihitung ke total fokus.', { kind: 'ok' });
   }
   function continueRecovered(list) {
     var now = Date.now();
@@ -683,5 +684,42 @@
   }
 
   app.rawState = function () { return state; };
+
+  /* ── pemulihan cadangan & pembersihan salinan lama ── */
+  /** Ganti seluruh data dengan state hasil validasi JF.backup (sudah diperiksa pemanggil). */
+  app.replaceState = function (s) {
+    state = s;
+    state.sessions = state.sessions || [];
+    state.snapshots = state.snapshots || [];
+    state.legacyHist = state.legacyHist || [];
+    state.events = state.events || [];
+    state.tasks = state.tasks || [];
+    if (!state.journals || typeof state.journals !== 'object' || Array.isArray(state.journals)) state.journals = {};
+    normalizeSettings(state.settings);
+    app.state = state;
+    var now = Date.now();
+    sess.recover(state, now);
+    var today = dates.todayKey();
+    snapshots.backfill(state, today, now);
+    state.settings.lastDay = today;
+    save();
+    app.emit('change');
+    return state;
+  };
+  function lsSize(k) { var v = lsGet(k); return v ? (k.length + v.length) : 0; }
+  /** Ukuran (karakter ≈ byte) penyimpanan lokal: terpakai, salinan lama, dan batas perkiraan. */
+  app.storageUsage = function () {
+    var total = 0;
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); total += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
+    return { total: total, legacy: lsSize(K_V1) + lsSize(K_BACKUP), hasLegacy: !!(lsGet(K_V1) || lsGet(K_BACKUP)), limit: 5 * 1024 * 1024 };
+  };
+  /** Hapus salinan data versi lama (v1 dan cadangannya). Data aktif (v2) tidak disentuh. */
+  app.removeLegacyCopies = function () {
+    if (!lsGet(K_V2)) return 0;                      // jangan hapus kalau data aktif belum tersimpan
+    var freed = lsSize(K_V1) + lsSize(K_BACKUP);
+    try { localStorage.removeItem(K_V1); localStorage.removeItem(K_BACKUP); } catch (e) {}
+    return freed;
+  };
+
   JF.app = app;
 })(typeof self !== 'undefined' ? self : this);

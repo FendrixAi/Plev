@@ -8,6 +8,17 @@ app.setAppUserModelId('xyz.levia.jamfokus');
 let win, tray, miniWin = null, quitting = false, pinned = false, popTimer = null;
 const alive = (w) => w && !w.isDestroyed();
 
+// Hanya jendela milik aplikasi ini (utama dan kartu mini) yang boleh memanggil IPC.
+const trusted = (e) => !!e && !!e.sender &&
+  ((alive(win) && e.sender === win.webContents) || (alive(miniWin) && e.sender === miniWin.webContents));
+const onTrusted = (channel, fn) => ipcMain.on(channel, (e, ...args) => { if (trusted(e)) fn(e, ...args); });
+const handleTrusted = (channel, fn) => ipcMain.handle(channel, (e, ...args) => (trusted(e) ? fn(e, ...args) : null));
+// Aplikasi ini tidak pernah membuka halaman luar: tolak jendela baru dan perpindahan alamat.
+const lockNavigation = (w) => {
+  w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  w.webContents.on('will-navigate', (ev) => ev.preventDefault());
+};
+
 // ── Simpan/baca posisi & pengaturan kartu mini dari userData ─────────────────
 const settingsPath = () => path.join(app.getPath('userData'), 'mini-settings.json');
 let miniSettings = { x: null, y: null, opacity: 1.0, solidOnHover: false };
@@ -73,12 +84,15 @@ function createMini() {
     webPreferences: {
       preload: path.join(__dirname, 'mini-preload.js'),
       contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
       backgroundThrottling: false
     }
   });
   miniWin.setAlwaysOnTop(true, 'floating');
   miniWin.setOpacity(miniSettings.opacity);
   miniWin.loadFile('mini.html');
+  lockNavigation(miniWin);
   miniWin.on('moved', () => {
     const b = miniWin.getBounds();
     miniSettings.x = b.x; miniSettings.y = b.y;
@@ -117,11 +131,14 @@ if (!app.requestSingleInstanceLock()) {
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
         backgroundThrottling: false
       }
     });
     win.setMenuBarVisibility(false);
     win.loadFile('index.html');
+    lockNavigation(win);
     // Tampilkan setelah frame pertama selesai digambar (tema sudah diterapkan, tanpa kedip putih)
     win.once('ready-to-show', () => { if (win) win.show(); });
 
@@ -157,8 +174,8 @@ if (!app.requestSingleInstanceLock()) {
       console.error('[Jam Fokus] Gagal inisialisasi system tray:', err);
       tray = null;
       try {
-        dialog.showErrorBox('Jam Fokus — system tray tidak tersedia',
-          'Ikon system tray gagal dibuat, sehingga jendela yang disembunyikan tidak bisa dikembalikan lewat tray.\n\n'
+        dialog.showErrorBox('Jam Fokus — ikon tray tidak tersedia',
+          'Ikon di area notifikasi (tray) gagal dibuat, sehingga jendela yang disembunyikan tidak bisa dikembalikan lewat tray.\n\n'
           + 'Untuk membuka aplikasi kembali, jalankan Jam Fokus sekali lagi (jendela akan muncul kembali).\n\n'
           + 'Detail: ' + (err && err.message ? err.message : String(err)));
       } catch (e) { /* dialog juga bisa gagal; log di atas sudah cukup */ }
@@ -173,13 +190,13 @@ if (!app.requestSingleInstanceLock()) {
 
     // Timer selesai: kalau mode mini aktif, mini berkedip; kalau tidak, jendela utama muncul di atas
     // Mode terang/gelap dari halaman utama: samakan tema sistem agar kartu mini ikut berubah
-    ipcMain.on('theme', (e, mode) => {
+    onTrusted('theme', (e, mode) => {
       const dark = mode === 'dark';
       nativeTheme.themeSource = dark ? 'dark' : 'light';
       if (win) win.setBackgroundColor(dark ? '#141414' : '#FBF8F1');
     });
 
-    ipcMain.on('popup', () => {
+    onTrusted('popup', () => {
       if (alive(miniWin)) {
         miniWin.webContents.send('alarm');
         return;
@@ -192,27 +209,30 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     // Peringatan 8 detik: kirim ke mini jika aktif, untuk denyut halus
-    ipcMain.on('warn8', () => {
+    onTrusted('warn8', () => {
       if (alive(miniWin)) miniWin.webContents.send('warn8');
     });
 
     // Mini mode: jendela utama di-minimize (bukan hide) supaya ikon taskbar
     // tetap ada; klik ikon taskbar akan me-restore dan menutup widget (lihat
     // win.on('restore') di atas). Widget sendiri tetap skipTaskbar.
-    ipcMain.on('mini', (e, on) => { if (on) { createMini(); if (alive(win)) win.minimize(); } else showWin(); });
-    ipcMain.on('state', (e, s) => {
+    onTrusted('mini', (e, on) => { if (on) { createMini(); if (alive(win)) win.minimize(); } else showWin(); });
+    onTrusted('state', (e, s) => {
       _trayState = s;
       if (alive(miniWin)) miniWin.webContents.send('state', s);
     });
-    ipcMain.on('mini-ready', () => {
+    onTrusted('mini-ready', () => {
       win.webContents.send('cmd', 'push');
       // Kirim settings ke mini setelah ready
       if (alive(miniWin)) miniWin.webContents.send('mini-settings', miniSettings);
     });
-    ipcMain.on('mini-cmd', (e, c) => { if (c === 'expand') showWin(); else win.webContents.send('cmd', c); });
+    onTrusted('mini-cmd', (e, c) => {
+      if (c === 'expand') showWin();
+      else if (c === 'toggle' && alive(win)) win.webContents.send('cmd', c);   // perintah lain diabaikan
+    });
 
     // Opacity & hover dari mini.html
-    ipcMain.on('mini-hover', (e, hovering) => {
+    onTrusted('mini-hover', (e, hovering) => {
       if (!alive(miniWin)) return;
       if (miniSettings.solidOnHover) {
         miniWin.setOpacity(hovering ? 1.0 : miniSettings.opacity);
@@ -220,7 +240,8 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     // Simpan pengaturan mini dari index.html (opacity, solidOnHover)
-    ipcMain.on('save-mini-settings', (e, s) => {
+    onTrusted('save-mini-settings', (e, s) => {
+      if (!s || typeof s !== 'object') return;
       if (typeof s.opacity === 'number') miniSettings.opacity = Math.min(1, Math.max(0.4, s.opacity));
       if (typeof s.solidOnHover === 'boolean') miniSettings.solidOnHover = s.solidOnHover;
       saveSettings();
@@ -231,7 +252,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     // Renderer minta settings saat ini (invoke = dengan return value)
-    ipcMain.handle('get-mini-settings', () => miniSettings);
+    handleTrusted('get-mini-settings', () => miniSettings);
   });
   app.on('before-quit', () => { quitting = true; });
   // Sengaja TIDAK keluar otomatis saat semua jendela tertutup: aplikasi tetap

@@ -24,7 +24,7 @@
     container.appendChild(head);
 
     container.appendChild(ui.el('div.hint', { style: { marginBottom: '12px' } },
-      'Sesi resmi hanya dihitung dari sesi yang benar-benar mencapai target waktunya. ' +
+      'Hanya sesi yang benar-benar mencapai target waktunya yang dihitung ke total fokus. ' +
       'Waktu jeda dan sesi terputus tetap tersimpan, tetapi tidak masuk total fokus. ' +
       'Sesi dari data lama ditandai "Data lama".'));
 
@@ -56,8 +56,8 @@
     nums.appendChild(f); nums.appendChild(p); nums.appendChild(t);
     var chips = ui.el('div.hn2', { style: { display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' } });
     if (s.legacy) chips.appendChild(ui.el('span.chip.outline', { title: 'Dipindahkan dari riwayat lama' }, 'Data lama'));
-    if (s.state === 'completed') chips.appendChild(ui.el('span.chip.ok', 'Resmi'));
-    else if (s.state === 'interrupted') chips.appendChild(ui.el('span.chip.danger', 'Tidak resmi'));
+    if (s.state === 'completed') chips.appendChild(ui.el('span.chip.ok', 'Terhitung'));
+    else if (s.state === 'interrupted') chips.appendChild(ui.el('span.chip.danger', 'Tidak terhitung'));
     else chips.appendChild(stateChip(s));
     nums.appendChild(chips);
     r.appendChild(nums);
@@ -82,8 +82,8 @@
       if (s.state === 'interrupted') totalPutus++;
     });
     [
-      [totalDone + ' sesi resmi', 'ok'],
-      [ui.fmt.dur(totalSec) + ' fokus resmi', 'accent'],
+      [totalDone + ' sesi selesai', 'ok'],
+      [ui.fmt.dur(totalSec) + ' total fokus', 'accent'],
       [totalPutus + ' terputus', 'danger']
     ].forEach(function (p) { sum.appendChild(ui.el('span.chip.' + p[1], p[0])); });
 
@@ -115,7 +115,7 @@
         var dayOfficial = windowCache[d];
         var head = ui.el('div.day-head');
         head.appendChild(ui.el('h3', ui.fmt.date(d)));
-        head.appendChild(ui.el('span.ds', ui.dayRel(d) + ' · fokus resmi ' + ui.fmt.dur(dayOfficial)));
+        head.appendChild(ui.el('span.ds', ui.dayRel(d) + ' · fokus ' + ui.fmt.dur(dayOfficial)));
         list.appendChild(head);
         dayBox = ui.el('div');
         list.appendChild(dayBox);

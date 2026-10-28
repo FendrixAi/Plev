@@ -29,14 +29,14 @@
       'an-c1', [
         { name: 'Tugas selesai', color: JF.theme.css('--chart-ok') },
         { name: 'Belum selesai', color: JF.theme.css('--chart-warn') },
-        { name: 'Perkiraan (perkiraan, bukan hasil)', color: JF.theme.css('--chart-info'), dashed: true },
+        { name: 'Perkiraan (bukan hasil aktual)', color: JF.theme.css('--chart-info'), dashed: true },
         { name: 'Data tidak lengkap', color: JF.theme.css('--chart-warn'), kind: '.box' }
       ]));
 
-    container.appendChild(chartCard('Fokus resmi vs target',
-      'Durasi fokus resmi per hari (batang) dibanding target harian (garis). Hari diarsir = datanya tidak lengkap.',
+    container.appendChild(chartCard('Fokus vs target',
+      'Durasi fokus per hari (batang) dibanding target harian (garis). Hari diarsir = datanya tidak lengkap.',
       'an-c2', [
-        { name: 'Fokus resmi', color: JF.theme.css('--chart-bar'), kind: '.box' },
+        { name: 'Fokus', color: JF.theme.css('--chart-bar'), kind: '.box' },
         { name: 'Target harian', color: JF.theme.css('--chart-ok') },
         { name: 'Batang diarsir = data tidak lengkap', color: JF.theme.css('--chart-warn'), kind: '.box' }
       ]));
@@ -162,7 +162,7 @@
       tipFormat: function (v) { return ui.fmt.dur(v); },
       emptyText: 'Belum ada data',
       series: [
-        { type: 'bar', name: 'Fokus resmi', color: JF.theme.css('--chart-bar'), values: bars, hatch: true },
+        { type: 'bar', name: 'Fokus', color: JF.theme.css('--chart-bar'), values: bars, hatch: true },
         { type: 'line', name: 'Target harian', color: JF.theme.css('--chart-ok'), values: target, width: 2, dots: false }
       ]
     };
@@ -207,7 +207,7 @@
     var periodNote = days + ' hari terakhir';
 
     // 1. unique first completions in period
-    box.appendChild(stat('Tugas pertama kali selesai', String(firstCompletionsInWindow()),
+    box.appendChild(stat('Tugas selesai (unik)', String(firstCompletionsInWindow()),
       periodNote + ' · tugas unik; penyelesaian ulang tidak dihitung ganda', 'ok'));
 
     // 2. currently open work (live, not period-bound)
@@ -219,7 +219,7 @@
 
     // 3. official focus in period (completed sessions only)
     var offSec = JF.sessions.officialSeconds(state.sessions, w.start, w.end);
-    box.appendChild(stat('Total fokus resmi', ui.fmt.dur(offSec),
+    box.appendChild(stat('Total fokus', ui.fmt.dur(offSec),
       periodNote + ' · rata-rata ' + ui.fmt.dur(Math.round(offSec / days)) + '/hari'));
 
     // 4. target achievement (days without a target are excluded, not zeroed)
@@ -241,7 +241,7 @@
     var meta = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' } });
     meta.appendChild(ui.el('span.chip', 'Hari aktif: ' + f.activeDays + ' (min ' + f.minDays + ')'));
     meta.appendChild(ui.el('span.chip' + (f.ratePerDay != null ? '.accent' : ''),
-      'Laju: ' + (f.ratePerDay != null ? f.ratePerDay + ' task/hari' : '—')));
+      'Laju: ' + (f.ratePerDay != null ? f.ratePerDay + ' tugas/hari' : '—')));
     meta.appendChild(ui.el('span.chip', 'Sisa tugas: ' + f.remainingCount));
     if (f.etaDate) meta.appendChild(ui.el('span.chip.ok', 'Perkiraan selesai: ' + ui.fmt.date(f.etaDate)));
     box.appendChild(meta);
@@ -271,7 +271,7 @@
     title: 'Analitik',
     sub: function () {
       var f = app ? JF.forecast.compute(app.rawState(), app.today()) : null;
-      return f ? (f.ready ? 'Perkiraan: laju ' + (f.ratePerDay != null ? f.ratePerDay : 0) + ' task/hari' : 'Belum cukup data untuk perkiraan') : '';
+      return f ? (f.ready ? 'Perkiraan: laju ' + (f.ratePerDay != null ? f.ratePerDay : 0) + ' tugas/hari' : 'Belum cukup data untuk perkiraan') : '';
     },
     mount: mount,
     render: render

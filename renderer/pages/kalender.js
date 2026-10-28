@@ -21,7 +21,7 @@
       ui.el('span', ui.el('i', { style: { background: 'var(--accent)' } }), 'Target tugas'),
       ui.el('span', ui.el('i', { style: { background: 'var(--ok)' } }), 'Selesai'),
       ui.el('span', ui.el('i', { style: { background: 'var(--surface-3)', border: '1px solid var(--line-2)' } }), 'Nama tugas'),
-      ui.el('span', 'Angka jam = fokus resmi hari itu')));
+      ui.el('span', 'Angka jam = total fokus hari itu')));
   }
 
   function startOfWeek(day) {
@@ -162,13 +162,19 @@
       });
     } else sec3.appendChild(ui.el('div.hint', 'Belum ada penyelesaian pada tanggal ini.'));
     p.appendChild(sec3);
+    p.appendChild(ui.el('div.dp-journal-link-wrap',
+      ui.el('button.cal-journal-link', {
+        type: 'button',
+        title: 'Buka jurnal tanggal ini',
+        onclick: function () { location.hash = '#jurnal?date=' + selectedDay; }
+      }, 'See journaling')));
 
     // Focus summary for the date
     var f = focusFor(selectedDay);
     var t = JF.store.focusTargetFor(state, selectedDay);
     var sec4 = ui.el('div.dp-sec', ui.el('h3', 'Fokus'));
     var g = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } });
-    g.appendChild(ui.el('span.chip.accent', 'Resmi: ' + (f ? ui.fmt.dur(f.sec) : '—')));
+    g.appendChild(ui.el('span.chip.accent', 'Fokus: ' + (f ? ui.fmt.dur(f.sec) : '—')));
     g.appendChild(ui.el('span.chip', 'Target: ' + (t.min ? ui.fmt.min(t.min) : 'tidak diketahui')));
     if (f && !f.live) g.appendChild(ui.el('span.chip' + (f.complete ? '.ok' : '.warn'), f.complete ? 'Lengkap' : 'Data tidak lengkap'));
     if (f && f.live) g.appendChild(ui.el('span.chip.lilac', 'berjalan'));

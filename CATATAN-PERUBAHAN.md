@@ -1,8 +1,16 @@
 # Catatan perubahan
 
-- **Tugas**: tombol Tambah, "+ Detail", dan pengosongan form diperbaiki; kode diagnosa dihapus.
-- **Font**: DM Sans dan Outfit disimpan di `renderer/fonts` (tanpa internet), CSP diperbarui.
-- **Tampilan**: mengikuti referensi Partner Center (sidebar 252 px, header, kartu, statistik). Skala huruf 11-12-13-14-16-19-24-28-54, bobot 400/500/600/700.
-- **Mode terang/gelap**: tombol di pojok kanan atas, tersimpan, berlaku di semua halaman, grafik, jam analog, dan kartu mini.
-- **Teks**: "Tugas" dipakai konsisten, istilah teknis diganti bahasa sehari-hari, "menit"/"detik" ditulis penuh, "istirahat" untuk jeda panjang/pendek.
-- **Jendela**: ukuran awal 1120 x 760, tampil setelah frame pertama (tanpa kedip putih).
+## Perbaikan
+- **Sidebar**: logo jam dihapus; teks kredit diganti menjadi "MM - Built by Iqbal Rafi"; teks brand dan kredit
+  sejajar ikon menu, tombol lipat sejajar tepi menu, dan saat terlipat berada tepat di tengah kolom ikon.
+- **Jendela sempit**: sidebar terlipat otomatis di bawah 900 px (pilihan tersimpan tidak berubah), sehingga isi tidak meluber.
+- **Kata-kata**: "resmi" dihapus ("Fokus hari ini", "Terhitung / Tidak terhitung"); "Tugas" dipakai konsisten;
+  "terlambat" menggantikan "tertunda"; "istirahat" untuk jeda pomodoro; istilah teknis diganti bahasa sehari-hari.
+- **Cadangan**: ditambah *Pulihkan dari cadangan* (dengan validasi dan salinan pengaman otomatis) dan
+  *Hapus salinan data lama*; penggunaan penyimpanan ditampilkan.
+- **Aksesibilitas**: kolom judul, tanggal, dan durasi tugas punya label.
+- **Keamanan**: IPC hanya diterima dari jendela aplikasi sendiri, jendela baru dan navigasi diblokir, jendela memakai sandbox.
+- **Build**: nama installer dan portable dibedakan (`Jam Fokus Setup`, `Jam Fokus Portable`).
+
+## Dibersihkan
+- Dihapus: `cek.bat`, `REDESIGN_SUMMARY.md`, `TIMER_FIX_SUMMARY.md`, catatan lama yang usang.
