@@ -88,13 +88,16 @@
       }
 
       // bar series
-      series.filter(function (x) { return x.type === 'bar'; }).forEach(function (x) {
-        var bw = Math.min(30, (iw / n) * 0.5);
+      var barSeries = series.filter(function (x) { return x.type === 'bar'; });
+      barSeries.forEach(function (x, bi) {
+        var groupW = Math.min(30 * barSeries.length, (iw / n) * (barSeries.length > 1 ? 0.7 : 0.5));
+        var bw = groupW / barSeries.length;
+        var off = -groupW / 2 + bw * bi + bw / 2;
         (x.values || []).forEach(function (v, i) {
           if (v == null) return;
           var y = yAt(v), y0 = yAt(0);
           ctx.fillStyle = x.color;
-          var xi = xAt(i) - bw / 2;
+          var xi = xAt(i) + off - bw / 2;
           if (x.hatch && s.pointNotes && s.pointNotes[i]) {
             ctx.save(); ctx.globalAlpha = 0.55;
             ctx.fillRect(xi, y, bw, y0 - y);
@@ -104,7 +107,7 @@
           }
           if (v > 0 && x.showValues && n <= 10) {
             ctx.fillStyle = T('--chart-value'); ctx.font = '11px ' + bodyFont(); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(String(v), xAt(i), y - 4);
+            ctx.fillText(String(v), xAt(i) + off, y - 4);
           }
         });
       });
@@ -133,6 +136,7 @@
         }
       });
 
+      if (s.summary) { canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', s.summary); }
       geom = { n: n, xAt: xAt, yAt: yAt, labels: labels, spec: s, w: dim.w, h: dim.h };
     }
 
