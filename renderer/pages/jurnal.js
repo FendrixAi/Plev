@@ -198,9 +198,70 @@
 
     card.appendChild(head);
     card.appendChild(grid);
+    card.appendChild(buildGoalLink());
     card.appendChild(ui.el('div.jr-foot.hint',
       'Perubahan tersimpan otomatis di perangkat ini. Tidak ada catatan yang dikirim ke internet.'));
     host.appendChild(card);
+  }
+
+  /* Optional, unobtrusive goal context for the day's entry. Never progress. */
+  function buildGoalLink() {
+    var wrap = ui.el('div.jr-goal-link');
+    var label = ui.el('label.jr-goal-label', { for: 'jr-goal' }, 'Terkait goal (opsional)');
+    els.goalSel = ui.el('select.jr-goal-select', { id: 'jr-goal', 'aria-describedby': 'jr-goal-hint' });
+    els.goalSel.addEventListener('change', onGoalChange);
+    els.goalHint = ui.el('span.hint.jr-goal-hint', { id: 'jr-goal-hint' });
+    wrap.appendChild(label);
+    wrap.appendChild(els.goalSel);
+    wrap.appendChild(els.goalHint);
+    return wrap;
+  }
+
+  function linkValue(link) {
+    return link ? link.goalId + (link.milestoneId ? '::' + link.milestoneId : '') : '';
+  }
+
+  function updateGoalLink(entry) {
+    if (!els.goalSel || !JF.goals) return;
+    var state = app.rawState();
+    var link = entry && entry.goal ? entry.goal : null;
+    var opts = [['', 'Tidak ada']];
+    JF.goals.list(state).forEach(function (g) {
+      if (g.archived && !(link && link.goalId === g.id)) return;
+      opts.push([g.id, g.title + (g.archived ? ' (diarsipkan)' : '')]);
+      g.milestones.forEach(function (m) { opts.push([g.id + '::' + m.id, g.title + ' › ' + m.title]); });
+    });
+    var value = linkValue(link);
+    if (value && !opts.some(function (o) { return o[0] === value; })) opts.push([value, 'Goal tidak ditemukan']);
+    var sig = JSON.stringify(opts);
+    if (els.goalSel.dataset.sig !== sig) {
+      ui.clear(els.goalSel);
+      opts.forEach(function (o) { els.goalSel.appendChild(ui.el('option', { value: o[0] }, o[1])); });
+      els.goalSel.dataset.sig = sig;
+    }
+    if (document.activeElement !== els.goalSel) els.goalSel.value = value;
+    els.goalHint.textContent = opts.length > 1
+      ? 'Hanya sebagai konteks; tidak mengubah progres goal.'
+      : 'Belum ada goal. Buat goal di halaman Goals.';
+  }
+
+  function onGoalChange() {
+    var day = selected, raw = els.goalSel.value;
+    var parts = raw ? raw.split('::') : null;
+    var link = parts ? { goalId: parts[0], milestoneId: parts[1] || null } : null;
+    function apply() {
+      if (day !== selected) return;
+      var r = JF.journal.setGoalLink(app.rawState(), day, link, Date.now());
+      if (!r.ok) {
+        updateGoalLink(JF.journal.entryFor(app.rawState(), day));
+        if (r.reason === 'no-entry') ui.toast('Tulis catatan dulu sebelum menautkan goal.', { kind: 'err' });
+        else ui.toast('Tautan goal tidak bisa disimpan.', { kind: 'err' });
+        return;
+      }
+      if (r.changed && !app.save()) ui.toast('Tautan goal belum tersimpan. Periksa ruang penyimpanan.', { kind: 'err', timeout: 9000 });
+    }
+    if (saver && saver.isDirty()) saver.flush().then(function (ok) { if (ok) apply(); else updateGoalLink(JF.journal.entryFor(app.rawState(), day)); });
+    else apply();
   }
 
   function updateSummary() {
@@ -236,6 +297,7 @@
       ? 'Terakhir diperbarui ' + ui.fmt.time(entry.updatedAt) + '.'
       : 'Belum ada catatan untuk tanggal ini. Mulai dari bagian mana pun.';
     updateSummary();
+    updateGoalLink(entry);
   }
 
   function load(day) {

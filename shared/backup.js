@@ -55,6 +55,21 @@
         if (!isObj(s.journals[days[j]])) return fail('Ada catatan jurnal yang rusak pada cadangan.');
       }
     }
+    if (s.goals !== undefined && !Array.isArray(s.goals)) return fail('Bagian "goals" pada cadangan rusak.');
+    if (Array.isArray(s.goals)) {
+      for (var g = 0; g < s.goals.length; g++) {
+        var gl = s.goals[g];
+        if (!isObj(gl) || typeof gl.title !== 'string' || (gl.id !== undefined && typeof gl.id !== 'string')) return fail('Ada goal yang rusak pada cadangan (urutan ke-' + (g + 1) + ').');
+        if (gl.milestones !== undefined && !Array.isArray(gl.milestones)) return fail('Milestone pada goal urutan ke-' + (g + 1) + ' rusak.');
+        if (gl.taskIds !== undefined && !Array.isArray(gl.taskIds)) return fail('Tautan tugas pada goal urutan ke-' + (g + 1) + ' rusak.');
+        var ms = gl.milestones || [];
+        for (var mi = 0; mi < ms.length; mi++) {
+          if (!isObj(ms[mi]) || typeof ms[mi].title !== 'string' || (ms[mi].taskIds !== undefined && !Array.isArray(ms[mi].taskIds))) {
+            return fail('Ada milestone yang rusak pada goal urutan ke-' + (g + 1) + '.');
+          }
+        }
+      }
+    }
     for (var t = 0; t < s.tasks.length; t++) {
       var tk = s.tasks[t];
       if (!isObj(tk) || tk.id === undefined || tk.id === null || typeof tk.title !== 'string') return fail('Ada tugas yang rusak pada cadangan (urutan ke-' + (t + 1) + ').');
@@ -68,6 +83,7 @@
       summary: {
         tasks: s.tasks.length, sessions: s.sessions.length, snapshots: s.snapshots.length,
         journals: isObj(s.journals) ? Object.keys(s.journals).length : 0,
+        goals: Array.isArray(s.goals) ? s.goals.length : 0,
         exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : null
       }
     };

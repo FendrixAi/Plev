@@ -265,6 +265,7 @@
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Sesi fokus'), ui.el('span.chip', String(s.sessions.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Laporan harian'), ui.el('span.chip', String(s.snapshots.length))));
     info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Catatan jurnal'), ui.el('span.chip', String(JF.journal.count(s)))));
+    info.appendChild(ui.el('div.mini-task', ui.el('span.mt-name', 'Goals'), ui.el('span.chip', String(JF.goals.list(s).length))));
     g.appendChild(info);
 
     var bk = ui.el('div');
@@ -323,7 +324,8 @@
         return ui.confirm({
           title: 'Pulihkan dari cadangan?',
           body: 'Cadangan berisi ' + sm.tasks + ' tugas, ' + sm.sessions + ' sesi fokus, dan ' + sm.snapshots + ' laporan harian' +
-                (sm.journals ? ', serta ' + sm.journals + ' catatan jurnal' : '') + when + '. ' +
+                (sm.journals ? ', serta ' + sm.journals + ' catatan jurnal' : '') +
+                (sm.goals ? ', dan ' + sm.goals + ' goal' : '') + when + '. ' +
                 'Data yang sekarang akan diganti. Salinan data saat ini diunduh otomatis lebih dulu sebagai pengaman.',
           okLabel: 'Ganti data', danger: true
         }).then(function (ok) {

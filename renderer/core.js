@@ -88,6 +88,7 @@
       migrated = r.migrated;
     }
     normalizeSettings(state.settings);
+    if (JF.goals) JF.goals.normalize(state);
     app.state = state;
     return { migrated: migrated, backupWritten: backupWritten };
   }
@@ -696,6 +697,7 @@
     state.tasks = state.tasks || [];
     if (!state.journals || typeof state.journals !== 'object' || Array.isArray(state.journals)) state.journals = {};
     normalizeSettings(state.settings);
+    if (JF.goals) JF.goals.normalize(state);
     app.state = state;
     var now = Date.now();
     sess.recover(state, now);
