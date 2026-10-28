@@ -70,11 +70,44 @@
 
     var entry = { date: day };
     SECTIONS.forEach(function (key) { entry[key] = next[key]; });
+    if (current && isObj(current.goal)) entry.goal = current.goal;   // optional goal context survives edits
     entry.createdAt = current && current.createdAt != null ? current.createdAt : now;
     entry.updatedAt = now;
     map[day] = entry;
     store.ev(state, now, current ? 'journal.updated' : 'journal.created', null, { day: day });
     return { ok: true, changed: true, removed: false, entry: entry };
+  }
+
+  /** Optional goal/milestone context of a day's entry ({goalId, milestoneId} or null). */
+  function goalLinkOf(state, day) {
+    var entry = entryFor(state, day);
+    return entry && isObj(entry.goal) ? entry.goal : null;
+  }
+
+  /**
+   * Attach (or clear with null) a goal/milestone link on an EXISTING entry.
+   * Purely contextual: never edits text and never counts as goal progress.
+   */
+  function setGoalLink(state, day, link, now) {
+    if (!validDay(day)) return { ok: false, reason: 'invalid-day' };
+    var entry = entryFor(state, day);
+    if (!entry) return { ok: false, reason: 'no-entry' };
+    now = now == null ? Date.now() : now;
+    var next = null;
+    if (link != null) {
+      var gid = isObj(link) && typeof link.goalId === 'string' && link.goalId ? link.goalId : null;
+      if (!gid) return { ok: false, reason: 'invalid-link' };
+      var mid = typeof link.milestoneId === 'string' && link.milestoneId ? link.milestoneId : null;
+      next = { goalId: gid, milestoneId: mid };
+    }
+    var cur = isObj(entry.goal) ? entry.goal : null;
+    if ((!cur && !next) || (cur && next && cur.goalId === next.goalId && (cur.milestoneId || null) === next.milestoneId)) {
+      return { ok: true, changed: false, link: cur };
+    }
+    if (next) entry.goal = next; else delete entry.goal;
+    if (!Array.isArray(state.events)) state.events = [];
+    store.ev(state, now, 'journal.goalLinked', null, { day: day, goalId: next ? next.goalId : null });
+    return { ok: true, changed: true, link: next };
   }
 
   function count(state) {
@@ -194,6 +227,8 @@
     contentOf: contentOf,
     save: save,
     count: count,
+    goalLinkOf: goalLinkOf,
+    setGoalLink: setGoalLink,
     summary: summary,
     createAutosave: createAutosave
   };
