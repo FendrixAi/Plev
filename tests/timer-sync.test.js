@@ -147,3 +147,37 @@ test('selecting a different task before starting uses the newly selected task du
   planned = t.left > 0 ? t.left : (t.durationSec > 0 ? t.durationSec : s.settings.defaultFocusSec);
   assert.equal(planned, 1800, 'changed selection should be 1800 sec (30 min), not the previous 1200');
 });
+
+test('rendered timer label displays expected Indonesian text without unexpected characters', () => {
+  const vm = require('vm');
+  const fs = require('fs');
+  const path = require('path');
+  const ctx = { document: { getElementById: () => null } };
+  ctx.self = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'renderer', 'ui.js'), 'utf8'), ctx);
+  const ui = ctx.JF.ui;
+
+  // Task with 1 minute duration and 57 seconds remaining (the exact case from user report)
+  const task = { durationSec: 60, left: 57 };
+  const label = task
+    ? 'Target tugas ' + ui.fmt.dur(task.durationSec) + (task.left < task.durationSec ? ' · sisa ' + ui.fmt.mmss(task.left) : '')
+    : 'Sesi tanpa tugas · ' + ui.fmt.dur(1500);
+
+  assert.equal(label, 'Target tugas 1 menit · sisa 00:57');
+  assert.ok(!label.includes('Â'), 'label must not contain Â');
+  assert.ok(!label.includes('A ·'), 'label must not contain unexpected A character');
+});
+
+test('beranda.js contains only valid middle dot separators without mojibake artifacts', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const berandaSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer', 'pages', 'beranda.js'), 'utf8');
+
+  // Verify no U+00C2 (Â) exists before middle dot
+  assert.doesNotMatch(berandaSrc, /Â/);
+  assert.doesNotMatch(berandaSrc, /\u00C2\u00B7/);
+  // Verify expected separator exists
+  assert.match(berandaSrc, /'Target tugas ' \+ ui\.fmt\.dur\(t\.durationSec\) \+ \(t\.left < t\.durationSec \? ' · sisa ' \+ ui\.fmt\.mmss\(t\.left\) : ''\)/);
+  assert.match(berandaSrc, /'Sesi tanpa tugas · ' \+ ui\.fmt\.dur\(app\.rawState\(\)\.settings\.defaultFocusSec\)/);
+});

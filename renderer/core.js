@@ -371,6 +371,14 @@
 
     // Leaving a break: cancel it (v1 start() set brk=null).
     if (brk) { brk = null; saveBrk(); }
+    // Stop any playing alarm/music when starting a focus session
+    try {
+      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
+        JF.app.music.stopAllMusic();
+      } else if (music && typeof music.stopAllMusic === 'function') {
+        music.stopAllMusic();
+      }
+    } catch (e) {}
 
     var cur = current();
     if (cur) {
@@ -528,6 +536,14 @@
 
   /* ── breaks ──────────────────────────────────────────────────────── */
   function startBreak(mins, nextTaskId, isLong) {
+    // Stop any playing alarm/music when entering break mode
+    try {
+      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
+        JF.app.music.stopAllMusic();
+      } else if (music && typeof music.stopAllMusic === 'function') {
+        music.stopAllMusic();
+      }
+    } catch (e) {}
     brk = {
       endAt: Date.now() + mins * 60000, total: mins * 60,
       nextTaskId: nextTaskId || null, isLong: !!isLong
@@ -539,6 +555,14 @@
 
   function endBreak(autoStart) {
     var nextId = brk && brk.nextTaskId;
+    // Stop alarm/music when break ends/continues
+    try {
+      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
+        JF.app.music.stopAllMusic();
+      } else if (music && typeof music.stopAllMusic === 'function') {
+        music.stopAllMusic();
+      }
+    } catch (e) {}
     brk = null; saveBrk();
     state.events.push({ at: Date.now(), kind: 'break.ended', taskId: nextId || null });
     var nt = autoStart && nextId ? findTask(nextId) : null;
@@ -548,9 +572,22 @@
     } else {
       save(); app.emit('change'); pushState();
     }
-    alarmBreak();
+    if (autoStart) {
+      alarmBreak();
+    }
   }
-  app.skipBreak = function () { if (brk) { endBreak(false); JF.ui && JF.ui.toast('Istirahat dilewati.'); } };
+  app.skipBreak = function () { if (brk) { 
+    // Stop alarm/music when skipping break/continuing to task
+    try {
+      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
+        JF.app.music.stopAllMusic();
+      } else if (music && typeof music.stopAllMusic === 'function') {
+        music.stopAllMusic();
+      }
+    } catch (e) {}
+    endBreak(false); 
+    JF.ui && JF.ui.toast('Istirahat dilewati.'); 
+  } };
 
   /* ── per-second check (v1's setInterval(check,500) semantics) ────── */
   var lastPush = 0;

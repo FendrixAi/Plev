@@ -14,7 +14,12 @@
 
     // Quick add
     var add = ui.el('div.card');
-    add.appendChild(ui.el('h2', 'Tambah tugas cepat'));
+    var addHead = ui.el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' } });
+    addHead.appendChild(ui.el('h2', 'Tambah tugas cepat'));
+    var bulkBtn = ui.btn('Tambah Banyak Tugas', openBulkModal, { ghost: true, sm: true });
+    bulkBtn.id = 'btn-bulk-tasks';
+    addHead.appendChild(bulkBtn);
+    add.appendChild(addHead);
     add.appendChild(ui.el('div.sub', 'Setiap tugas wajib punya tanggal target. Detail lain opsional.'));
     var form = ui.el('form.add-form', { id: 'ta-form', onsubmit: submitQuick });
     form.appendChild(ui.el('input#ta-title', { 'aria-label': 'Judul tugas', placeholder: 'Judul tugas…', maxlength: 120, autocomplete: 'off', value: formState.title }));
@@ -262,6 +267,236 @@
         }
       ]
     });
+  }
+
+  function openBulkModal() {
+    var defaultDate = (document.getElementById('ta-date') && document.getElementById('ta-date').value) || app.today();
+    var isSubmitting = false;
+
+    var body = ui.el('div.form-grid.bulk-modal-body');
+
+    // Format hint box
+    var hint = ui.el('div.bulk-help',
+      ui.el('div.bulk-help-title', 'Format pengisian (satu tugas per baris):'),
+      ui.el('div.bulk-help-code', 'nama tugas_waktu_prioritas_deskripsi'),
+      ui.el('ul.bulk-help-list',
+        ui.el('li', ui.el('strong', 'nama tugas: '), 'Wajib diisi (hindari tanda underscore _ dalam nama)'),
+        ui.el('li', ui.el('strong', 'waktu: '), 'Wajib, durasi dalam menit (contoh: ', ui.el('code', '25'), ', ', ui.el('code', '60'), ')'),
+        ui.el('li', ui.el('strong', 'prioritas: '), 'Wajib: ', ui.el('code', 'rendah'), ', ', ui.el('code', 'normal'), ', atau ', ui.el('code', 'tinggi')),
+        ui.el('li', ui.el('strong', 'deskripsi: '), 'Opsional, boleh dikosongkan (contoh: ', ui.el('code', 'Apply lowongan kerja_45_tinggi'), ' atau ', ui.el('code', 'Baca materi audit internal_30_normal_'), ')')
+      )
+    );
+    body.appendChild(hint);
+
+    // Target date field
+    var dateInput = ui.el('input#bulk-date', { type: 'date', value: defaultDate, style: { width: '160px' } });
+    var dateWrap = ui.el('div', { style: { display: 'flex', gap: '12px', alignItems: 'center', margin: '4px 0 10px' } },
+      ui.el('label.field', { style: { margin: '0' } }, 'Tanggal target untuk semua tugas', dateInput)
+    );
+    body.appendChild(dateWrap);
+
+    // Multiline textarea
+    var textarea = ui.el('textarea#bulk-input', {
+      placeholder: 'Tempel tugas di sini…\nContoh:\nBelajar PSAK 216_60_normal_Mempelajari pengakuan dan pengukuran aset tetap\nLatihan Excel SUMIFS_20_tinggi_Latihan rekap transaksi\nBaca materi audit internal_30_normal_\nApply lowongan kerja_45_tinggi\nOlahraga_15_rendah_Peregangan ringan',
+      rows: 6,
+      style: { width: '100%', fontFamily: 'monospace', fontSize: '13px', resize: 'vertical' }
+    });
+    body.appendChild(ui.el('label.field', 'Daftar tugas', textarea));
+
+    // Summary bar & warning alert
+    var summaryWrap = ui.el('div.bulk-summary-bar');
+    var statBadge = ui.el('span.chip', { id: 'bulk-stat-badge' }, '0 baris');
+    var warnNotice = ui.el('div.bulk-warn-notice', { style: { display: 'none' } });
+    summaryWrap.appendChild(statBadge);
+    summaryWrap.appendChild(warnNotice);
+    body.appendChild(summaryWrap);
+
+    // Preview table — urutan kolom mengikuti urutan format:
+    // nama_durasi_prioritas[_deskripsi], lalu tanggal target & status.
+    var tableWrap = ui.el('div.bulk-table-wrap');
+    var table = ui.el('table.bulk-table', { style: { display: 'none' } });
+    var thead = ui.el('thead',
+      ui.el('tr',
+        ui.el('th', 'Nama Tugas'),
+        ui.el('th.num', 'Durasi'),
+        ui.el('th', 'Prioritas'),
+        ui.el('th', 'Deskripsi'),
+        ui.el('th', 'Tanggal'),
+        ui.el('th', 'Status')
+      )
+    );
+    var tbody = ui.el('tbody#bulk-tbody');
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+
+    var emptyNotice = ui.el('div.bulk-empty', 'Belum ada data. Masukkan atau tempel definisi tugas di atas untuk melihat pratinjau.');
+    tableWrap.appendChild(emptyNotice);
+    body.appendChild(tableWrap);
+
+    var currentParseResult = null;
+    var modalApi = null;
+
+    function getParser() {
+      if (JF.bulkTasks) return JF.bulkTasks;
+      if (typeof require === 'function') {
+        try { return require('../../shared/bulkTasks.js'); } catch (e) { return null; }
+      }
+      return null;
+    }
+
+    function primaryBtn() {
+      return modalApi && modalApi.box ? modalApi.box.querySelector('.m-foot button.primary') : null;
+    }
+
+    function updatePreview() {
+      var text = textarea.value;
+      var parser = getParser();
+      if (!parser) {
+        // Jangan diam saja: tanpa parser tombol simpan harus terkunci.
+        warnNotice.textContent = 'Pratinjau tidak tersedia: modul parser belum dimuat. Muat ulang aplikasi.';
+        warnNotice.style.display = 'block';
+        var lockedBtn = primaryBtn();
+        if (lockedBtn) lockedBtn.disabled = true;
+        return;
+      }
+
+      var res = parser.parseBulkInput(text);
+      currentParseResult = res;
+
+      ui.clear(tbody);
+      var saveBtn = primaryBtn();
+      var targetDate = dateInput.value;
+      var dateLabel = JF.dates.isDayKey(targetDate) ? ui.fmt.dateShort(targetDate) : '—';
+
+      if (!res.totalLines) {
+        table.style.display = 'none';
+        emptyNotice.style.display = 'block';
+        statBadge.textContent = '0 baris';
+        statBadge.className = 'chip';
+        warnNotice.style.display = 'none';
+        if (saveBtn) saveBtn.disabled = true;
+        return;
+      }
+
+      table.style.display = 'table';
+      emptyNotice.style.display = 'none';
+
+      var summaryText = res.totalLines + ' baris: ' + res.totalValid + ' valid';
+      if (res.totalInvalid > 0) summaryText += ', ' + res.totalInvalid + ' tidak valid';
+      statBadge.textContent = summaryText;
+      statBadge.className = 'chip' + (res.totalInvalid > 0 ? ' danger' : ' ok');
+
+      if (res.totalInvalid > 0) {
+        warnNotice.textContent = res.totalInvalid + ' baris tidak valid akan dilewati. Hanya ' + res.totalValid + ' tugas valid yang akan disimpan.';
+        warnNotice.style.display = 'block';
+      } else {
+        warnNotice.style.display = 'none';
+      }
+
+      res.rows.forEach(function (r) {
+        var tr = ui.el('tr' + (r.valid ? '' : '.row-invalid'));
+        tr.appendChild(ui.el('td', r.valid ? r.taskName : (r.taskName || ui.el('span.muted', '(Baris ' + r.lineNumber + ')'))));
+        tr.appendChild(ui.el('td.num', r.durationMin ? r.durationMin + ' menit' : '—'));
+        tr.appendChild(ui.el('td', r.valid
+          ? ui.el('span.chip' + (r.priority === 'high' ? '.danger' : (r.priority === 'low' ? '.outline' : '')), r.priorityLabel)
+          : (r.priorityLabel || '—')));
+        tr.appendChild(ui.el('td', r.description ? r.description : '—'));
+        tr.appendChild(ui.el('td', dateLabel));
+        tr.appendChild(ui.el('td', r.valid
+          ? ui.el('span.chip.ok', 'Valid')
+          : ui.el('span.chip.danger', { title: r.error }, r.error)));
+        tbody.appendChild(tr);
+      });
+
+      if (saveBtn) {
+        saveBtn.disabled = res.totalValid === 0;
+      }
+    }
+
+    textarea.addEventListener('input', updatePreview);
+    dateInput.addEventListener('change', updatePreview);
+
+    modalApi = ui.modal({
+      title: 'Tambah Banyak Tugas',
+      body: body,
+      wide: true,
+      actions: [
+        { label: 'Batal', ghost: true },
+        {
+          label: 'Pratinjau Tugas',
+          ghost: true,
+          onClick: function () {
+            updatePreview();
+            return false;
+          }
+        },
+        {
+          label: 'Tambah Semua Tugas',
+          primary: true,
+          onClick: function () {
+            if (isSubmitting) return false;
+            updatePreview();
+            var parser = getParser();
+            if (!parser) {
+              ui.toast('Modul parser belum dimuat. Muat ulang aplikasi lalu coba lagi.', { kind: 'err' });
+              return false;
+            }
+            if (!currentParseResult || currentParseResult.totalValid === 0) {
+              ui.toast('Tidak ada tugas valid untuk ditambahkan.', { kind: 'err' });
+              return false;
+            }
+            var targetDate = dateInput.value;
+            if (!JF.dates.isDayKey(targetDate)) {
+              ui.toast('Tanggal target wajib dipilih.', { kind: 'err' });
+              return false;
+            }
+
+            var saveBtn = primaryBtn();
+            if (saveBtn) {
+              saveBtn.disabled = true;
+              saveBtn.textContent = 'Menyimpan…';
+            }
+            isSubmitting = true;
+
+            // Baca state terbaru (bukan snapshot saat modal dibuka) agar
+            // perubahan lain yang terjadi di latar belakang tidak tertimpa.
+            var state = app.rawState();
+            var created = [];
+            try {
+              created = parser.addBulkTasks(state, currentParseResult.validRows, targetDate, Date.now());
+            } catch (e) {
+              console.error('[bulk-add]', e);
+              parser.removeCreated(state, created);
+              isSubmitting = false;
+              if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Tambah Semua Tugas'; }
+              ui.toast('Gagal menambahkan tugas: ' + (e && e.message ? e.message : e), { kind: 'err' });
+              return false;
+            }
+
+            if (!app.save()) {
+              // Penyimpanan gagal: batalkan tugas yang baru dibuat di memori
+              // supaya percobaan ulang tidak membuat duplikat, dan modal
+              // tetap terbuka dengan pesan error yang jelas.
+              parser.removeCreated(state, created);
+              isSubmitting = false;
+              if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Tambah Semua Tugas'; }
+              ui.toast('Gagal menyimpan ' + created.length + ' tugas ke penyimpanan lokal. Ruang penyimpanan mungkin penuh — periksa Pengaturan › Data & cadangan.', { kind: 'err', timeout: 9000 });
+              return false;
+            }
+
+            render();
+            ui.toast(created.length + ' tugas berhasil ditambahkan.', { kind: 'ok' });
+            return true;
+          }
+        }
+      ]
+    });
+
+    if (modalApi && modalApi.box) {
+      modalApi.box.classList.add('modal-bulk');
+    }
+    updatePreview();
   }
 
   function section(label, tasks, d, opts) {

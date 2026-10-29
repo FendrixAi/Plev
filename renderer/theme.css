@@ -1952,3 +1952,22 @@ label.field { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
 @media (max-width: 520px) {
   .an-kpis { grid-template-columns: 1fr; }
 }
+
+/* ── Bulk Add Tasks modal & preview table ───────────────────────── */
+.modal.modal-bulk { max-width: 780px; width: 92vw; }
+.bulk-help { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; font-size: var(--fs-xs); }
+.bulk-help-title { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.bulk-help-code { font-family: monospace; background: var(--sand); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; font-weight: 600; color: var(--ink); }
+.bulk-help-list { margin: 0; padding-left: 18px; color: var(--muted); }
+.bulk-help-list li { margin: 2px 0; }
+.bulk-summary-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 10px 0 8px; }
+.bulk-warn-notice { font-size: var(--fs-xs); color: var(--coral-ink); font-weight: 600; }
+.bulk-table-wrap { max-height: 240px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.bulk-table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+.bulk-table th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font-size: var(--fs-2xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; z-index: 1; }
+.bulk-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.bulk-table tr:last-child td { border-bottom: 0; }
+.bulk-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bulk-table tr.row-invalid { background: rgba(200, 68, 42, 0.06); }
+.bulk-empty { padding: 24px 12px; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
+
