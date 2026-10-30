@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -253,6 +253,157 @@ if (!app.requestSingleInstanceLock()) {
 
     // Renderer minta settings saat ini (invoke = dengan return value)
     handleTrusted('get-mini-settings', () => miniSettings);
+  });
+
+  // ── Library storage (managed copies only) ─────────────────────────────
+  const crypto = require('crypto');
+  const LIB_MAX_BYTES = 25 * 1024 * 1024;
+  const LIB_ALLOWED_EXT = new Set(['.docx','.xlsx','.pdf','.png','.jpg','.jpeg','.gif','.webp','.txt','.md','.js','.ts','.json','.csv','.html','.css']);
+  const libTokens = new Map();
+  function libDir() { const d = path.join(app.getPath('userData'), 'library', 'files'); if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); return d; }
+  function libSafeName(name) { return String(name || '').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'file'; }
+  function libResolve(rel) {
+    if (typeof rel !== 'string' || !rel || path.isAbsolute(rel)) return null;
+    const base = path.resolve(libDir());
+    const full = path.resolve(base, rel);
+    if (full !== base && !full.startsWith(base + path.sep)) return null;
+    try {
+      const realBase = fs.realpathSync(base);
+      const realFull = fs.realpathSync(full);
+      if (realFull !== realBase && !realFull.startsWith(realBase + path.sep)) return null;
+    } catch (e) { /* file may not exist yet */ }
+    try { const st = fs.lstatSync(full); if (st.isSymbolicLink()) return null; } catch (e) {}
+    return full;
+  }
+  handleTrusted('library:pick', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], title: 'Pilih file untuk Library' });
+    if (r.canceled || !r.filePaths || !r.filePaths.length) return { canceled: true };
+    const src = r.filePaths[0];
+    let st;
+    try { st = fs.lstatSync(src); } catch (err) { return { canceled: false, error: 'source-missing' }; }
+    if (!st.isFile()) return { canceled: false, error: 'not-file' };
+    if (st.size > LIB_MAX_BYTES) return { canceled: false, error: 'too-large' };
+    const ext = path.extname(src).toLowerCase();
+    if (!LIB_ALLOWED_EXT.has(ext)) return { canceled: false, error: 'unsupported-type' };
+    const token = crypto.randomBytes(16).toString('hex');
+    libTokens.set(token, { sourcePath: src, originalName: path.basename(src), size: st.size, ext: ext, expiresAt: Date.now() + 60000 });
+    return { canceled: false, token: token, originalName: path.basename(src), size: st.size, ext: ext };
+  });
+  handleTrusted('library:import', async (e, req) => {
+    req = req || {};
+    const token = req.token;
+    const entry = libTokens.get(token);
+    if (!entry) return { ok: false, reason: 'bad-token' };
+    libTokens.delete(token);
+    if (entry.expiresAt < Date.now()) return { ok: false, reason: 'token-expired' };
+    const src = entry.sourcePath;
+    let st;
+    try { st = fs.lstatSync(src); } catch (err) { return { ok: false, reason: 'source-missing' }; }
+    if (!st.isFile()) return { ok: false, reason: 'not-file' };
+    if (st.size > LIB_MAX_BYTES) return { ok: false, reason: 'too-large' };
+    const ext = path.extname(src).toLowerCase();
+    if (!LIB_ALLOWED_EXT.has(ext)) return { ok: false, reason: 'unsupported-type' };
+    const id = 'libfile_' + crypto.randomBytes(8).toString('hex');
+    const managedName = id + '_' + libSafeName(path.basename(src));
+    const dest = path.join(libDir(), managedName);
+    const tmp = dest + '.tmp';
+    try {
+      const srcFd = fs.openSync(src, 'r');
+      const tmpFd = fs.openSync(tmp, 'wx');
+      const buf = Buffer.alloc(64 * 1024);
+      let pos = 0;
+      while (true) {
+        const b = fs.readSync(srcFd, buf, 0, buf.length, pos);
+        if (b === 0) break;
+        fs.writeSync(tmpFd, buf, 0, b);
+        pos += b;
+      }
+      fs.closeSync(srcFd);
+      fs.closeSync(tmpFd);
+      const tst = fs.statSync(tmp);
+      if (!tst.isFile() || tst.size !== st.size) { try { fs.unlinkSync(tmp); } catch (x) {} return { ok: false, reason: 'copy-failed' }; }
+      fs.renameSync(tmp, dest);
+    } catch (err) { try { fs.unlinkSync(tmp); } catch (x) {} return { ok: false, reason: 'copy-failed' }; }
+    return { ok: true, id: id, fileName: managedName, originalName: entry.originalName, size: st.size, ext: ext };
+  });
+  handleTrusted('library:open', async (e, req) => {
+    req = req || {};
+    const full = libResolve(req.fileName);
+    if (!full) return { ok: false, reason: 'bad-path' };
+    let st;
+    try { st = fs.lstatSync(full); } catch (err) { return { ok: false, reason: 'missing' }; }
+    if (st.isSymbolicLink() || !st.isFile()) return { ok: false, reason: 'not-file' };
+    const err = await shell.openPath(full);
+    if (err) return { ok: false, reason: 'open-failed', message: err };
+    return { ok: true };
+  });
+  handleTrusted('library:delete-file', async (e, req) => {
+    req = req || {};
+    const full = libResolve(req.fileName);
+    if (!full) return { ok: false, reason: 'bad-path' };
+    try {
+      const st = fs.lstatSync(full);
+      if (st.isSymbolicLink() || !st.isFile()) return { ok: false, reason: 'not-file' };
+    } catch (err) { return { ok: true, alreadyMissing: true }; }
+    const pending = readPending();
+    if (!pending.includes(req.fileName)) { pending.push(req.fileName); writePending(pending); }
+    try { fs.unlinkSync(full); } catch (err) { return { ok: false, reason: 'delete-failed' }; }
+    const after = readPending().filter(n => n !== req.fileName);
+    writePending(after);
+    return { ok: true };
+  });
+  const libPendingPath = () => path.join(app.getPath('userData'), 'library', 'pending-deletions.json');
+  function readPending() { try { const raw = fs.readFileSync(libPendingPath(), 'utf8'); const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function writePending(list) { try { fs.writeFileSync(libPendingPath(), JSON.stringify(list)); } catch (e) {} }
+  function recoverPending() {
+    const list = readPending();
+    const remaining = [];
+    const deleted = [];
+    for (const name of list) {
+      const full = libResolve(name);
+      if (!full) continue;
+      try {
+        const st = fs.lstatSync(full);
+        if (st.isSymbolicLink() || !st.isFile()) { remaining.push(name); continue; }
+      } catch (e) { continue; } // already gone
+      try { fs.unlinkSync(full); deleted.push(name); } catch (e) { remaining.push(name); }
+    }
+    writePending(remaining);
+    return { processed: list.length, remaining: remaining.length, deleted: deleted };
+  }
+  // Run recovery once app is ready, before window load? after libDir exists.
+  app.whenReady().then(() => { try { recoverPending(); } catch (e) {} });
+  handleTrusted('library:cleanup-pending', async (e, req) => {
+    const list = Array.isArray(req && req.fileNames) ? req.fileNames : [];
+    const out = [];
+    for (const name of list) {
+      const full = libResolve(name);
+      if (!full) { out.push({ fileName: name, ok: false, reason: 'bad-path' }); continue; }
+      try {
+        const st = fs.lstatSync(full);
+        if (st.isSymbolicLink() || !st.isFile()) { out.push({ fileName: name, ok: false, reason: 'not-file' }); continue; }
+      } catch (err) { out.push({ fileName: name, ok: true, alreadyMissing: true }); continue; }
+      try { fs.unlinkSync(full); out.push({ fileName: name, ok: true }); } catch (err) { out.push({ fileName: name, ok: false, reason: 'delete-failed' }); }
+    }
+    return { ok: true, results: out };
+  });
+  handleTrusted('library:recover-deletions', async () => {
+    return recoverPending();
+  });
+  handleTrusted('library:check-files', async (e, req) => {
+    req = req || {};
+    const list = Array.isArray(req.fileNames) ? req.fileNames : [];
+    const out = {};
+    for (const name of list) {
+      const full = libResolve(name);
+      if (!full) { out[name] = { exists: false, reason: 'bad-path' }; continue; }
+      try {
+        const st = fs.lstatSync(full);
+        if (st.isSymbolicLink()) { out[name] = { exists: false, reason: 'symlink' }; continue; }
+        out[name] = { exists: st.isFile(), regular: st.isFile() };
+      } catch (err) { out[name] = { exists: false, reason: 'missing' }; }
+    }
+    return { ok: true, files: out };
   });
   app.on('before-quit', () => { quitting = true; });
   // Sengaja TIDAK keluar otomatis saat semua jendela tertutup: aplikasi tetap

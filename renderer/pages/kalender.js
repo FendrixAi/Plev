@@ -18,8 +18,8 @@
       ui.el('div', { id: 'cal-gridwrap' }),
       ui.el('div', { id: 'cal-panel' })));
     container.appendChild(ui.el('div.cal-legend',
-      ui.el('span', ui.el('i', { style: { background: 'var(--accent)' } }), 'Target tugas'),
-      ui.el('span', ui.el('i', { style: { background: 'var(--ok)' } }), 'Selesai'),
+      ui.el('span', ui.el('i', { style: { background: 'var(--coral)' } }), 'Target tugas'),
+      ui.el('span', ui.el('i', { style: { background: 'var(--mint)' } }), 'Selesai'),
       ui.el('span', ui.el('i', { style: { background: 'var(--surface-3)', border: '1px solid var(--line-2)' } }), 'Nama tugas'),
       ui.el('span', 'Angka jam = total fokus hari itu')));
   }
@@ -119,8 +119,8 @@
     var p = ui.el('div.card.day-panel');
     var head = ui.el('div.dp-head');
     head.appendChild(ui.el('h2', ui.fmt.date(selectedDay)));
-    head.appendChild(ui.btn('‹', function () { selected = JF.dates.addDays(selectedDay, -1); render(); }, { sm: true, ghost: true, title: 'Hari sebelumnya' }));
-    head.appendChild(ui.btn('›', function () { selected = JF.dates.addDays(selectedDay, 1); render(); }, { sm: true, ghost: true, title: 'Hari berikutnya' }));
+    head.appendChild(ui.btn('‹', function () { selected = JF.dates.addDays(selectedDay, -1); render(); }, { sm: true, ghost: true, title: 'Hari sebelumnya', ariaLabel: 'Hari sebelumnya' }));
+    head.appendChild(ui.btn('›', function () { selected = JF.dates.addDays(selectedDay, 1); render(); }, { sm: true, ghost: true, title: 'Hari berikutnya', ariaLabel: 'Hari berikutnya' }));
     head.appendChild(ui.el('button.icb', {
       type: 'button', title: 'Tutup panel', 'aria-label': 'Tutup panel',
       onclick: function () { selected = null; render(); }
@@ -221,13 +221,13 @@
       if (view === 'minggu') anchor = JF.dates.addDays(anchor, -7);
       else { var p = JF.dates.parseDay(anchor); anchor = JF.dates.buildDay(p.m === 1 ? p.y - 1 : p.y, p.m === 1 ? 12 : p.m - 1, 1); }
       render();
-    }, { ghost: true, sm: true, title: 'Sebelumnya' }));
+    }, { ghost: true, sm: true, title: 'Periode sebelumnya', ariaLabel: 'Periode sebelumnya' }));
     head.appendChild(ui.el('div.range', label));
     head.appendChild(ui.btn('›', function () {
       if (view === 'minggu') anchor = JF.dates.addDays(anchor, 7);
       else { var p = JF.dates.parseDay(anchor); anchor = JF.dates.buildDay(p.m === 12 ? p.y + 1 : p.y, p.m === 12 ? 1 : p.m + 1, 1); }
       render();
-    }, { ghost: true, sm: true, title: 'Berikutnya' }));
+    }, { ghost: true, sm: true, title: 'Periode berikutnya', ariaLabel: 'Periode berikutnya' }));
     head.appendChild(ui.btn('Hari ini', function () { anchor = app.today(); render(); }, { ghost: true, sm: true }));
     head.appendChild(ui.el('span.sp'));
 

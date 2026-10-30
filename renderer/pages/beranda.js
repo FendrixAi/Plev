@@ -183,7 +183,7 @@
     els.strip.appendChild(stat('Target harian', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'small',
       st.target.source === 'override' ? 'target khusus tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
     els.strip.appendChild(stat('Tugas selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, 'ok', st.goalDone >= st.tasksGoal ? 'target tugas tercapai' : 'target ' + st.tasksGoal + ' tugas'));
-    els.strip.appendChild(stat('Streak', st.streak + ' hari', '', st.streak > 0 ? 'berturut-turut' : 'mulai hari ini'));
+    els.strip.appendChild(stat('Rentetan hari', st.streak + ' hari', '', st.streak > 0 ? 'berturut-turut' : 'mulai hari ini'));
   }
 
   function taskRowPreview(t, opts) {

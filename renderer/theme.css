@@ -178,11 +178,12 @@ a:hover { text-decoration: underline; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ── App shell ────────────────────────────────────────────────────── */
-.app { display: flex; height: 100vh; overflow: hidden; }
+.app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
 .sidebar {
   width: var(--sb);
   flex: 0 0 auto;
+  min-height: 0;
   background: var(--surface);
   border-right: 1px solid var(--line);
   display: flex;
@@ -242,6 +243,10 @@ a:hover { text-decoration: underline; }
   padding: 12px 10px; 
   flex: 1 1 auto; 
   overflow-y: auto; 
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar {
+  display: none;
 }
 .nav button {
   display: flex; align-items: center; gap: 11px;

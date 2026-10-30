@@ -19,8 +19,9 @@
       sessions: [],
       snapshots: [],
       legacyHist: [],      // preserved verbatim from v1 (never mutated)
-      journals: {},        // 'YYYY-MM-DD' -> daily journal entry
-      goals: [],           // long-term goals with milestones (see shared/goals.js)
+       journals: {},       // 'YYYY-MM-DD' -> daily journal entry
+       goals: [],           // long-term goals with milestones (see shared/goals.js)
+       library: [],         // centralized Library metadata (files/links/notes)
       settings: defaultSettings(),
       events: []           // global audit trail: {at, kind, taskId, data}
     };

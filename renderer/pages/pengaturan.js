@@ -157,9 +157,9 @@
       function (v) { setSetting('longBreakMin', v, 'Istirahat panjang'); }));
     g.appendChild(numField('Istirahat panjang tiap N sesi', s.settings.longBreakEvery, 2, 12,
       function (v) { setSetting('longBreakEvery', v, 'Interval istirahat panjang'); }));
-    g.appendChild(numField('Target tugas per hari (streak)', s.settings.tasksPerDay, 1, 50,
+    g.appendChild(numField('Target tugas per hari (rentetan hari)', s.settings.tasksPerDay, 1, 50,
       function (v) { setSetting('tasksPerDay', v, 'Target tugas harian'); },
-      'Dipakai perhitungan streak di Beranda.'));
+      'Dipakai perhitungan rentetan hari di Beranda.'));
     c.appendChild(g);
     return c;
   }

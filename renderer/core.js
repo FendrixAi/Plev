@@ -73,7 +73,8 @@
       state.snapshots = state.snapshots || [];
       state.legacyHist = state.legacyHist || [];
       state.events = state.events || [];
-      state.tasks = state.tasks || [];
+       state.tasks = state.tasks || [];
+       if (!state.library || !Array.isArray(state.library)) state.library = [];
       if (!state.journals || typeof state.journals !== 'object' || Array.isArray(state.journals)) state.journals = {};
     } else {
       var v1 = parse(lsGet(K_V1));
@@ -87,8 +88,9 @@
       state = r.state;
       migrated = r.migrated;
     }
-    normalizeSettings(state.settings);
-    if (JF.goals) JF.goals.normalize(state);
+     normalizeSettings(state.settings);
+     if (JF.goals) JF.goals.normalize(state);
+     if (JF.library) JF.library.normalize(state);
     app.state = state;
     return { migrated: migrated, backupWritten: backupWritten };
   }
@@ -733,8 +735,9 @@
     state.events = state.events || [];
     state.tasks = state.tasks || [];
     if (!state.journals || typeof state.journals !== 'object' || Array.isArray(state.journals)) state.journals = {};
-    normalizeSettings(state.settings);
-    if (JF.goals) JF.goals.normalize(state);
+     normalizeSettings(state.settings);
+     if (JF.goals) JF.goals.normalize(state);
+     if (JF.library) JF.library.normalize(state);
     app.state = state;
     var now = Date.now();
     sess.recover(state, now);

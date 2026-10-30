@@ -42,7 +42,8 @@
     opts = opts || {};
     return el('button.btn' + (opts.primary ? '.primary' : '') + (opts.ghost ? '.ghost' : '') +
       (opts.danger ? '.danger' : '') + (opts.sm ? '.sm' : '') + (opts.block ? '.block' : ''), {
-        type: 'button', onclick: onClick, disabled: !!opts.disabled, title: opts.title || null
+        type: 'button', onclick: onClick, disabled: !!opts.disabled, title: opts.title || null,
+        'aria-label': opts.ariaLabel || null
       }, label);
   }
 

@@ -27,10 +27,10 @@ test('tidak ada istilah "resmi" yang tersisa di UI', () => {
 
 test('riwayat membedakan sesi yang masuk total dari yang tidak', () => {
   const src = fs.readFileSync(path.join(root, 'renderer', 'pages', 'riwayat.js'), 'utf8');
-  assert.match(src, /'Masuk total'/);
-  assert.match(src, /'Tidak dihitung'/);
+  assert.match(src, /total fokus/);
+  assert.match(src, /'Terhitung'/);
+  assert.match(src, /'Tidak terhitung'/);
   assert.match(src, /sesi tercatat/);
-  assert.match(src, /fokus tercatat/);
 });
 
 test('klasifikasi sesi selesai vs terputus tidak berubah', () => {
