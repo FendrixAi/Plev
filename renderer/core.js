@@ -441,16 +441,40 @@
     return true;
   };
 
-  /** Manual task completion. A session running on it ends as interrupted. */
+  /** Manual task completion. A session running on it ends as interrupted.
+      Tasks that require an output are verified against the managed files on
+      disk first; that check is asynchronous, so those return false right away
+      and finish (or explain why not) through toast + 'change'. */
   app.completeTask = function (id) {
     var t = findTask(id);
     if (!t) return false;
+    if (t.done || t.archived) return false;
+    if (t.requiresOutput && JF.documents) {
+      JF.documents.verifiedFileNames(id).then(function (names) {
+        finishComplete(id, { availableFileNames: names });
+      });
+      return false;
+    }
+    return finishComplete(id, null);
+  };
+
+  var OUTPUT_MSG = {
+    'output-required': 'Tugas ini butuh file output. Buka Goals, pilih tugasnya, lalu lampirkan file lewat tombol Output.',
+    'output-missing': 'File output tugas ini tidak ditemukan di penyimpanan. Lampirkan ulang file outputnya.'
+  };
+  function finishComplete(id, opts) {
+    var t = findTask(id);
+    if (!t) return false;
+    if (t.requiresOutput && JF.library) {
+      var chk = JF.library.deliverableCheck(state, id, opts && opts.availableFileNames);
+      if (!chk.ok) { JF.ui && JF.ui.toast(OUTPUT_MSG[chk.reason], { kind: 'err', timeout: 7000 }); return false; }
+    }
     var s = current();
     if (s && s.taskId === id && (s.state === 'running' || s.state === 'paused')) {
       sess.stopSession(state, s, Date.now());
       syncTaskLeft(s);
     }
-    var r = store.completeTask(state, id, Date.now(), 'user');
+    var r = store.completeTask(state, id, Date.now(), 'user', opts || undefined);
     if (r.ok && r.changed) {
       save(); app.emit('change');
       JF.ui && JF.ui.toast('Tugas ditandai selesai: ' + t.title, {
@@ -458,7 +482,7 @@
       });
     }
     return r.ok && r.changed;
-  };
+  }
 
   app.reopenTask = function (id) {
     var r = store.reopenTask(state, id, Date.now());

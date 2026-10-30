@@ -368,6 +368,13 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
       ui.toast('CSV analitik diunduh.', { kind: 'ok' });
+      /* Automatic Library registration: the export is also kept as a managed document. */
+      if (JF.documents) {
+        JF.documents.registerGenerated({
+          module: 'analitik', name: 'jam-fokus-analitik-' + res.period.from + '_' + res.period.to + '.csv',
+          text: '\uFEFF' + A().toCSV(res), title: 'Analitik ' + res.period.from + ' s/d ' + res.period.to
+        });
+      }
     } catch (e) { ui.toast('Gagal mengekspor: ' + e.message, { kind: 'err' }); }
   }
 

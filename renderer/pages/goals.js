@@ -14,6 +14,7 @@
     unlink: '<path d="M6 6l12 12"/><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66"/>',
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
     flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    clip: '<path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.5 17.2a1.7 1.7 0 0 1-2.4-2.4L14.5 7.5"/>',
     journal: '<rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8 3.5v17M11.5 8.5h4M11.5 12h4"/>'
   };
 
@@ -664,6 +665,117 @@
     return card;
   }
 
+
+  /* ── task output (deliverables) ───────────────────────────────────── */
+  function outputInfo(t) {
+    var docs = JF.library.attachmentsForTask(st(), t.id);
+    var D = JF.documents;
+    var avail = docs.filter(function (d) { return D.availability(d) === 'ok'; }).length;
+    var missing = docs.filter(function (d) { return D.availability(d) === 'missing'; }).length;
+    var hadOutput = !!(t.requiresOutput || (t.deliverables && t.deliverables.length));
+    /* Only warn once availability has actually been checked (never on 'unknown'). */
+    var checked = Object.keys(D.statusMap()).length > 0 || !docs.length;
+    return { docs: docs, avail: avail, missing: missing, lost: !!t.done && hadOutput && avail === 0 && checked };
+  }
+  function outputChips(t, meta) {
+    if (!JF.documents) return;
+    var o = outputInfo(t);
+    if (o.docs.length) meta.appendChild(ui.el('span.chip.outline', o.docs.length + ' file'));
+    if (t.requiresOutput && !t.done && !o.docs.length) meta.appendChild(ui.el('span.chip.warn', 'Butuh output'));
+    if (o.lost) meta.appendChild(ui.el('span.chip.danger', 'Output hilang'));
+    else if (o.missing) meta.appendChild(ui.el('span.chip.warn', o.missing + ' file hilang'));
+  }
+  function contextLine(goal, t) {
+    var loc = G().locationOf ? G().locationOf(goal, t.id) : undefined;
+    var ms = loc ? G().findMilestone(goal, loc) : null;
+    return goal.title + (ms ? ' → ' + ms.title : '') + ' → ' + t.title;
+  }
+  function reportImport(out) {
+    var n = out.added.length + out.linked.length;
+    if (n) ui.toast(n === 1 ? 'File dilampirkan dan masuk ke Library.' : n + ' file dilampirkan dan masuk ke Library.', { kind: 'ok' });
+    if (out.failed.length) ui.toast(out.failed.map(function (f) { return (f.name ? f.name + ': ' : '') + JF.documents.message(f.reason); }).join(' '), { kind: 'err', timeout: 8000 });
+  }
+  function openOutput(goal, t) {
+    var D = JF.documents, locked = goal.archived;
+    var listBox = ui.el('div.gl-out-list');
+    var reqBox = ui.el('div');
+    var body = ui.el('div.gl-out');
+    body.appendChild(ui.el('div.hint', contextLine(goal, t)));
+    if (t.description) body.appendChild(ui.el('div.hint', t.description));
+    body.appendChild(reqBox); body.appendChild(listBox);
+    var busy = false;
+
+    function paint() {
+      ui.clear(reqBox); ui.clear(listBox);
+      var cb = ui.el('input', { type: 'checkbox', checked: !!t.requiresOutput, disabled: locked || t.done,
+        onchange: function (e) {
+          var r = JF.store.setRequiresOutput(st(), t.id, e.target.checked, Date.now());
+          if (r.ok) persist(); paint();
+        } });
+      reqBox.appendChild(ui.el('label.gl-out-req', cb, ui.el('span', ' Wajib ada file output sebelum tugas bisa diselesaikan')));
+      var o = outputInfo(t);
+      if (o.lost) listBox.appendChild(ui.el('div.gl-out-warn', 'Tugas ini sudah selesai, tetapi file outputnya tidak ditemukan lagi. Status selesai tetap tersimpan; lampirkan ulang file jika perlu.'));
+      else if (t.done && t.deliverables && t.deliverables.length && !o.docs.length) listBox.appendChild(ui.el('div.gl-out-warn', 'Output yang dulu dilampirkan sudah dihapus dari Library. Status selesai tidak berubah.'));
+      if (!o.docs.length) listBox.appendChild(ui.el('div.empty', 'Belum ada file output.'));
+      o.docs.forEach(function (d) {
+        var av = D.availability(d);
+        var row = ui.el('div.gl-out-row');
+        var info = ui.el('div.gl-out-info');
+        info.appendChild(ui.el('div.gl-out-name', d.title));
+        var sub = ui.el('div.gl-out-sub', [D.fmtSize(d.size), ui.fmt.dateTime(d.createdAt)].filter(Boolean).join(' · '));
+        info.appendChild(sub);
+        row.appendChild(info);
+        row.appendChild(ui.el('span.chip' + (av === 'ok' ? '.ok' : av === 'missing' ? '.danger' : '.outline'), D.availLabel(d)));
+        var acts = ui.el('div.gl-out-acts');
+        acts.appendChild(ui.btn('Buka', function () {
+          D.open(d).then(function (r) { if (!r.ok) ui.toast('Tidak bisa membuka file: ' + D.message(r.reason), { kind: 'err' }); paint(); });
+        }, { sm: true, ghost: true, disabled: av === 'missing' }));
+        if (!locked) {
+          acts.appendChild(ui.btn('Ganti', function () { replace(d); }, { sm: true, ghost: true, disabled: busy }));
+          acts.appendChild(ui.btn('Hapus', function () { remove(d); }, { sm: true, danger: true, disabled: busy }));
+        }
+        row.appendChild(acts);
+        listBox.appendChild(row);
+      });
+    }
+    function done(out) { busy = false; reportImport(out); D.refreshStatus().then(function () { paint(); render(); }); }
+    function attach() {
+      if (busy) return; busy = true;
+      D.attachToTask(t.id).then(function (out) { if (out.canceled) { busy = false; return; } done(out); }, function () { busy = false; ui.toast('Gagal melampirkan file.', { kind: 'err' }); });
+    }
+    function replace(d) {
+      if (busy) return; busy = true;
+      /* Attach first, remove the old one only after the new one is safely registered. */
+      D.attachToTask(t.id).then(function (out) {
+        if (out.canceled) { busy = false; return; }
+        var ok = out.added.length + out.linked.length;
+        if (!ok) { done(out); return; }
+        var keep = out.added.concat(out.linked).some(function (x) { return x.id === d.id; });
+        (keep ? Promise.resolve() : D.removeFromTask(d, t.id)).then(function () { done(out); });
+      }, function () { busy = false; });
+    }
+    function remove(d) {
+      ui.confirm({
+        title: 'Hapus output?',
+        body: 'File "' + d.title + '" akan dilepas dari tugas ini. Jika tidak dipakai di tempat lain, file juga dihapus dari Library. Status selesai tugas tidak berubah.',
+        okLabel: 'Hapus', danger: true
+      }).then(function (yes) {
+        if (!yes) return;
+        D.removeFromTask(d, t.id).then(function () { D.refreshStatus().then(function () { paint(); render(); }); });
+      });
+    }
+    paint();
+    var m = ui.modal({
+      title: 'Output tugas', body: body, wide: true,
+      actions: [
+        { label: 'Tutup', ghost: true },
+        { label: 'Lampirkan file', primary: true, disabled: locked, onClick: function () { attach(); return false; } }
+      ]
+    });
+    D.refreshStatus().then(paint);
+    return m;
+  }
+
   function taskRow(goal, ref) {
     var t = ref.task, locked = goal.archived;
     var r = ui.el('div.gl-task' + (ref.status === 'done' ? '.done' : '') + (ref.status === 'missing' || ref.status === 'archived' ? '.muted' : ''));
@@ -685,9 +797,13 @@
     else {
       meta.appendChild(ui.el('span.chip' + (JF.model.isOverdue(t, app.today()) ? '.danger' : '.outline'), ui.fmt.dateShort(t.targetDate)));
       if (t.done) meta.appendChild(ui.el('span.chip.ok', 'Selesai'));
+      outputChips(t, meta);
     }
     body.appendChild(meta);
     r.appendChild(body);
+    if (t && ref.status !== 'archived' && ref.status !== 'missing' && JF.documents) {
+      r.appendChild(iconBtn(ICON.clip, 'Output untuk ' + t.title, function () { openOutput(goal, t); }, { fk: 'out-' + t.id }));
+    }
     if (!locked) r.appendChild(iconBtn(ICON.unlink, 'Lepas tautan ' + (t ? t.title : 'tugas'), function () { unlink(goal, ref.taskId); }, { fk: 'unlink-' + ref.taskId }));
     return r;
   }
@@ -874,11 +990,13 @@
     if (view === lastView && document.getElementById('content')) document.getElementById('content').scrollTop = y;
     lastView = view;
     restoreFocus(fk);
+    if (id && JF.documents) JF.documents.ensureFresh(function () { render(); });
   }
 
   function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
     host.classList.add('gl-page');
+    if (JF.documents) JF.documents.refreshStatus().then(function () { if (host) render(); });
   }
 
   JF.pages.register({

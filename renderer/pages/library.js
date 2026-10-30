@@ -1,223 +1,282 @@
+/* Jam Fokus — Library: central document layer. Documents arrive automatically
+   from Goals task attachments, direct imports and other modules (JF.documents);
+   this page only lets people find, inspect and manage them. Relationships are
+   derived from stable ids, never typed in by hand. */
 (function (root) {
   'use strict';
   var JF = root.JF;
   var ui, app, host;
-  var filterType = 'all';
-  var search = '';
-  var fileStatus = {};
+  var F = { search: '', type: 'all', module: 'all', goalId: 'all', sort: 'date', missingOnly: false };
+  var selectedId = null;
+  var listBox, overviewBox, detailBox, filterBox;
 
   function state() { return app.rawState(); }
-  function items() { return (state().library || []).slice(); }
-  function parseIds(v) { return JF.library.uniqIds(String(v || '').split(',')); }
+  function L() { return JF.library; }
+  function D() { return JF.documents; }
+
   async function recoverDeletions() {
-    try {
-      var r = await window.desk.libraryRecoverDeletions();
-    } catch (e) { return; }
+    var r;
+    try { r = await window.desk.libraryRecoverDeletions(); } catch (e) { return; }
     var deleted = (r && r.deleted) || [];
     if (!deleted.length) return;
-    state().library = state().library.filter(function (it) {
-      return !(it.type === 'file' && deleted.indexOf(it.fileName) >= 0);
-    });
-    saveState();
+    state().library = state().library.filter(function (it) { return !(it.type === 'file' && deleted.indexOf(it.fileName) >= 0); });
+    app.save();
   }
-  async function loadFileStatus() {
-    fileStatus = {};
-    var files = items().filter(function (it) { return it.type === 'file'; }).map(function (it) { return it.fileName; }).filter(Boolean);
-    if (!files.length) return;
-    try {
-      var r = await window.desk.libraryCheckFiles({ fileNames: files });
-    } catch (e) { return; }
-    if (r && r.ok && r.files) fileStatus = r.files;
-  }
-  function fileStatusFor(it) { return fileStatus[it.fileName] || { exists: null, reason: 'unchecked' }; }
-  function fileAvailable(it) { var s = fileStatusFor(it); return s.exists === true && s.regular !== false; }
 
   async function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
-    var head = ui.el('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px' } });
-    var addFile = ui.btn('Impor file', importFile, { primary: true });
-    var addLink = ui.btn('Tambah tautan', addLinkModal, { ghost: true });
-    var addNote = ui.btn('Tambah catatan', addNoteModal, { ghost: true });
-    head.appendChild(addFile); head.appendChild(addLink); head.appendChild(addNote);
-    container.appendChild(head);
-
-    var controls = ui.el('div', { style: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px' } });
-    var tabs = ui.el('div.tabs');
-    [['all','Semua'],['file','File'],['link','Tautan'],['note','Catatan']].forEach(function (p) {
-      var b = ui.btn(p[1], function () { filterType = p[0]; render(); });
-      b.dataset.f = p[0]; tabs.appendChild(b);
-    });
-    controls.appendChild(tabs);
-    var inp = ui.el('input', { placeholder: 'Cari...', style: { flex: 1, minWidth: '180px' }, oninput: function (e) { search = e.target.value || ''; render(); } });
-    controls.appendChild(inp);
-    container.appendChild(controls);
-
-    container.appendChild(ui.el('div', { id: 'lib-list' }));
-
+    ui.clear(host);
+    host.classList.add('lib-page');
+    var head = ui.el('div.lib-head');
+    head.appendChild(ui.el('p.hint', 'Semua dokumen dari Goals dan impor langsung terkumpul di sini secara otomatis, lengkap dengan asalnya.'));
+    var acts = ui.el('div.lib-actions');
+    acts.appendChild(ui.btn('Impor dokumen', importDocs, { primary: true }));
+    acts.appendChild(ui.btn('Tambah tautan', addLinkModal, { ghost: true }));
+    acts.appendChild(ui.btn('Tambah catatan', addNoteModal, { ghost: true }));
+    head.appendChild(acts);
+    host.appendChild(head);
+    overviewBox = ui.el('div.lib-overview');
+    filterBox = ui.el('div.lib-filters');
+    host.appendChild(overviewBox);
+    host.appendChild(filterBox);
+    var split = ui.el('div.lib-split');
+    listBox = ui.el('div.lib-list', { id: 'lib-list' });
+    detailBox = ui.el('aside.lib-detail');
+    split.appendChild(listBox); split.appendChild(detailBox);
+    host.appendChild(split);
+    buildFilters();
+    render();
     await recoverDeletions();
-    await loadFileStatus();
+    await D().refreshStatus();
     render();
   }
 
-  function filtered() {
-    var q = search.trim().toLowerCase();
-    return items().filter(function (it) {
-      if (filterType !== 'all' && it.type !== filterType) return false;
-      if (q && (it.title + ' ' + (it.description || '') + ' ' + (it.noteText || '')).toLowerCase().indexOf(q) < 0) return false;
-      return true;
-    });
+  /* ── filters ─────────────────────────────────────────────────────── */
+  function sel(label, key, options) {
+    var s = ui.el('select', { 'aria-label': label, onchange: function (e) { F[key] = e.target.value; render(); } });
+    options.forEach(function (o) { s.appendChild(ui.el('option', { value: o[0], selected: F[key] === o[0] }, o[1])); });
+    return s;
+  }
+  function buildFilters() {
+    ui.clear(filterBox);
+    filterBox.appendChild(ui.el('input', { type: 'search', placeholder: 'Cari nama dokumen…', 'aria-label': 'Cari dokumen', value: F.search, oninput: function (e) { F.search = e.target.value || ''; render(true); } }));
+    var types = [['all', 'Semua jenis']].concat(L().TYPE_GROUPS.map(function (g) { return [g, L().TYPE_GROUP_LABEL[g]]; })).concat([['link', 'Tautan'], ['note', 'Catatan']]);
+    filterBox.appendChild(sel('Jenis dokumen', 'type', types));
+    var mods = {};
+    state().library.forEach(function (it) { mods[it.source.module] = true; });
+    filterBox.appendChild(sel('Sumber', 'module', [['all', 'Semua sumber']].concat(Object.keys(mods).sort().map(function (m) { return [m, L().moduleLabel(m)]; }))));
+    var goals = (state().goals || []).map(function (g) { return [g.id, g.title]; });
+    filterBox.appendChild(sel('Goal', 'goalId', [['all', 'Semua goal']].concat(goals)));
+    filterBox.appendChild(sel('Urutkan', 'sort', [['date', 'Terbaru'], ['name', 'Nama'], ['type', 'Jenis']]));
   }
 
-  function render() {
-    if (!host) return;
-    Array.prototype.forEach.call(document.querySelectorAll('#page-library .tabs button'), function (b) {
-      b.classList.toggle('on', b.dataset.f === filterType);
-    });
-    var list = ui.$('lib-list'); if (!list) return; ui.clear(list);
-    var shown = filtered();
-    if (!shown.length) { list.appendChild(ui.el('div.empty', ui.el('span.big', 'Library kosong'), 'Impor file, tautan, atau catatan untuk mulai.')); return; }
-    shown.forEach(function (it) {
-      var card = ui.el('div.card', { style: { marginBottom: '10px' } });
-      card.appendChild(ui.el('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '8px' } },
-        ui.el('strong', it.title), ui.el('span.chip', it.type)));
-      if (it.description) card.appendChild(ui.el('div.hint', it.description));
-      if (it.type === 'file') {
-        var st = fileStatusFor(it);
-        var statusText = st.exists === true ? 'Tersedia' : st.exists === false ? 'File hilang' : 'Tidak diketahui';
-        card.appendChild(ui.el('div.hint', 'File: ' + it.fileName + ' · ' + statusText));
-      }
-      if (it.type === 'link') card.appendChild(ui.el('div.hint', it.url));
-      if (it.type === 'note') card.appendChild(ui.el('div.hint', (it.noteText || '').slice(0, 120)));
-      var assoc = [];
-      var missingRefs = new Set();
-      JF.library.validateReferences(state()).forEach(function (p) { missingRefs.add(p.itemId + '|' + p.refId); });
-      function refLabel(id, label) {
-        if (missingRefs.has(it.id + '|' + id)) label += ' (ref hilang)';
-        return label;
-      }
-      (it.taskIds || []).forEach(function (id) {
-        var t = app.findTask(id);
-        assoc.push('Tugas: ' + refLabel(id, t ? t.title : id));
-      });
-      (it.goalIds || []).forEach(function (id) {
-        var g = state().goals.find(function (gg) { return gg.id === id; });
-        assoc.push('Goal: ' + refLabel(id, g ? g.title : id));
-      });
-      (it.milestoneRefs || []).forEach(function (r) {
-        var key = (r && r.goalId || '') + '/' + (r && r.milestoneId || '');
-        var g = state().goals.find(function (gg) { return gg.id === r.goalId; });
-        var m = g ? g.milestones.find(function (mm) { return mm.id === r.milestoneId; }) : null;
-        var label = m ? g.title + '/' + m.title : (g ? g.title + '/' + key.split('/')[1] : key);
-        if (missingRefs.has(it.id + '|' + key)) label += ' (ref hilang)';
-        assoc.push('Milestone: ' + label);
-      });
-      if (assoc.length) card.appendChild(ui.el('div.hint', assoc.join(' · ')));
-      var actions = ui.el('div', { style: { display: 'flex', gap: '8px', marginTop: '8px' } });
-      if (it.type === 'file') actions.appendChild(ui.btn('Buka', function () { openFile(it); }, { sm: true, disabled: !fileAvailable(it) }));
-      if (it.type === 'link') actions.appendChild(ui.btn('Buka tautan', function () { window.open(it.url); }, { sm: true }));
-      actions.appendChild(ui.btn('Edit', function () { editItem(it); }, { ghost: true, sm: true }));
-      actions.appendChild(ui.btn('Hapus', function () { removeItem(it); }, { danger: true, sm: true }));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
+  /* ── overview ────────────────────────────────────────────────────── */
+  function renderOverview() {
+    ui.clear(overviewBox);
+    var o = L().overview(state(), D().statusMap(), Date.now());
+    function stat(label, value, cls, onclick) {
+      var c = ui.el((onclick ? 'button.lib-stat.' : 'div.lib-stat.') + (cls || 'plain'), onclick ? { type: 'button', onclick: onclick } : null,
+        ui.el('strong', String(value)), ui.el('span', label));
+      overviewBox.appendChild(c);
+    }
+    stat('Dokumen', o.total);
+    stat('Baru (7 hari)', o.recent);
+    var types = Object.keys(o.byType).filter(function (k) { return k !== 'link' && k !== 'note'; });
+    stat('Jenis file', types.length);
+    if (o.missing) stat('File hilang', o.missing, 'bad', function () { F.missingOnly = !F.missingOnly; render(); });
+    else if (F.missingOnly) { F.missingOnly = false; }
+    if (F.missingOnly) overviewBox.appendChild(ui.el('span.chip.warn', 'Menampilkan file hilang'));
   }
 
-  function saveState() { app.save(); render(); }
+  /* ── list ────────────────────────────────────────────────────────── */
+  var TYPE_ICON = { pdf: 'PDF', document: 'DOC', spreadsheet: 'XLS', presentation: 'PPT', image: 'IMG', other: 'FILE', link: 'URL', note: 'TXT' };
 
-  async function importFile() {
+  function rowFor(it) {
+    var g = L().typeGroup(it);
+    var av = D().availability(it);
+    var paths = L().contextPaths(state(), it);
+    var row = ui.el('button.lib-row' + (it.id === selectedId ? '.on' : ''), { type: 'button', onclick: function () { selectedId = it.id; render(true); } });
+    row.appendChild(ui.el('span.lib-ico.t-' + g, TYPE_ICON[g] || 'FILE'));
+    var main = ui.el('span.lib-main');
+    main.appendChild(ui.el('span.lib-title', it.title));
+    var ctx = paths.length ? paths[0].label + (paths.length > 1 ? ' (+' + (paths.length - 1) + ')' : '') : 'Dokumen mandiri';
+    main.appendChild(ui.el('span.lib-ctx', ctx));
+    row.appendChild(main);
+    var side = ui.el('span.lib-side');
+    side.appendChild(ui.el('span.lib-date', ui.fmt.dateShort(JF.dates.dayKey(it.createdAt))));
+    if (av === 'missing') side.appendChild(ui.el('span.chip.danger', 'File hilang'));
+    else side.appendChild(ui.el('span.chip.outline', L().moduleLabel(it.source.module)));
+    row.appendChild(side);
+    return row;
+  }
+
+  function renderList() {
+    ui.clear(listBox);
+    var rows = L().query(state(), F, D().statusMap());
+    if (!state().library.length) {
+      listBox.appendChild(ui.el('div.empty', ui.el('span.big', 'Library masih kosong'),
+        'Lampirkan file ke tugas di Goals atau impor dokumen langsung. Semuanya akan muncul di sini otomatis.'));
+      return rows;
+    }
+    if (!rows.length) {
+      listBox.appendChild(ui.el('div.empty', ui.el('span.big', 'Tidak ada yang cocok'), 'Ubah kata kunci atau filter.'));
+      return rows;
+    }
+    rows.forEach(function (it) { listBox.appendChild(rowFor(it)); });
+    return rows;
+  }
+
+  /* ── details ─────────────────────────────────────────────────────── */
+  function kv(box, k, v) { if (v) box.appendChild(ui.el('div.lib-kv', ui.el('span', k), ui.el('b', v))); }
+
+  function revealPath(p) {
+    if (p.goal) { location.hash = '#goals?id=' + encodeURIComponent(p.goal.id); }
+  }
+
+  function renderDetail() {
+    ui.clear(detailBox);
+    var it = selectedId ? L().findById(state(), selectedId) : null;
+    if (!it) { selectedId = null; detailBox.appendChild(ui.el('div.hint', 'Pilih dokumen untuk melihat detail dan asalnya.')); return; }
+    detailBox.appendChild(ui.el('h3', it.title));
+    var av = D().availability(it);
+    if (it.type === 'file') {
+      var chip = ui.el('span.chip' + (av === 'ok' ? '.ok' : av === 'missing' ? '.danger' : '.outline'), D().availLabel(it));
+      detailBox.appendChild(ui.el('div', chip));
+      if (av === 'missing') detailBox.appendChild(ui.el('div.gl-out-warn', 'File fisiknya tidak ditemukan. Riwayat dan relasinya tetap tersimpan; hapus entri ini atau impor ulang filenya.'));
+    }
+    var paths = L().contextPaths(state(), it);
+    var ctx = ui.el('div.lib-sec');
+    ctx.appendChild(ui.el('div.lib-sec-h', 'Asal dokumen'));
+    if (!paths.length) ctx.appendChild(ui.el('div.hint', 'Dokumen mandiri — tidak terkait goal atau tugas.'));
+    paths.forEach(function (p) {
+      var line = ui.el('div.lib-path', ui.el('span', p.label));
+      if (p.goal) line.appendChild(ui.btn('Lihat di Goals', function () { revealPath(p); }, { sm: true, ghost: true }));
+      ctx.appendChild(line);
+    });
+    detailBox.appendChild(ctx);
+    var info = ui.el('div.lib-sec');
+    info.appendChild(ui.el('div.lib-sec-h', 'Informasi'));
+    kv(info, 'Sumber', L().moduleLabel(it.source.module));
+    kv(info, 'Jenis', L().TYPE_GROUP_LABEL[L().typeGroup(it)]);
+    if (it.type === 'file') { kv(info, 'Nama asli', it.originalName); kv(info, 'Ukuran', D().fmtSize(it.size)); }
+    if (it.type === 'link') kv(info, 'URL', it.url);
+    kv(info, 'Ditambahkan', ui.fmt.dateTime(it.createdAt));
+    kv(info, 'ID', it.id);
+    detailBox.appendChild(info);
+    if (it.description) detailBox.appendChild(ui.el('div.hint', it.description));
+    if (it.type === 'note' && it.noteText) detailBox.appendChild(ui.el('div.lib-note', it.noteText));
+    var acts = ui.el('div.lib-actions');
+    if (it.type === 'file') acts.appendChild(ui.btn('Buka', function () { openFile(it); }, { sm: true, disabled: av === 'missing' }));
+    if (it.type === 'link') acts.appendChild(ui.btn('Buka tautan', function () { window.open(it.url); }, { sm: true }));
+    acts.appendChild(ui.btn('Edit', function () { editItem(it); }, { ghost: true, sm: true }));
+    acts.appendChild(ui.btn('Hapus', function () { removeItem(it); }, { danger: true, sm: true }));
+    detailBox.appendChild(acts);
+  }
+
+  function render(listOnly) {
+    if (!host || !listBox) return;
+    if (!listOnly) buildFilters();
+    renderOverview();
+    renderList();
+    renderDetail();
+  }
+
+  /* ── actions ─────────────────────────────────────────────────────── */
+  async function importDocs() {
     try {
-      var pick = await window.desk.libraryPick();
-      if (pick.canceled) return;
-      if (pick.error) { ui.toast('Gagal memilih file: ' + pick.error, { kind: 'err' }); return; }
-      var imp = await window.desk.libraryImport({ token: pick.token });
-      if (!imp.ok) { ui.toast('Impor gagal: ' + imp.reason, { kind: 'err' }); return; }
-      var item = JF.library.createItem({ type: 'file', title: imp.originalName, fileName: imp.fileName, originalName: imp.originalName, size: imp.size }, Date.now());
-      state().library.push(item); JF.library.normalize(state(), Date.now());
-      fileStatus[imp.fileName] = { exists: true, regular: true };
-      saveState();
-      ui.toast('File diimpor.', { kind: 'ok' });
+      var out = await D().importStandalone();
+      if (out.canceled) return;
+      var n = out.added.length + out.linked.length;
+      if (n) ui.toast(n === 1 ? 'Dokumen diimpor.' : n + ' dokumen diimpor.', { kind: 'ok' });
+      if (out.failed.length) ui.toast(out.failed.map(function (f) { return (f.name ? f.name + ': ' : '') + D().message(f.reason); }).join(' '), { kind: 'err', timeout: 8000 });
+      if (out.added.length) selectedId = out.added[0].id;
+      await D().refreshStatus();
+      render();
     } catch (e) { ui.toast('Impor gagal.', { kind: 'err' }); }
   }
 
+  function save() { app.save(); render(); }
+
   function addLinkModal() {
-    var title = '', url = '', desc = '', linkTaskIds = '', linkGoalIds = '';
+    var title = '', url = '', desc = '';
     ui.modal({
       title: 'Tambah tautan',
       body: [
-        ui.el('label.field', 'Judul', ui.el('input', { value: title, oninput: function (e) { title = e.target.value; } })),
-        ui.el('label.field', 'URL', ui.el('input', { value: url, oninput: function (e) { url = e.target.value; } })),
-        ui.el('label.field', 'Deskripsi', ui.el('textarea', { oninput: function (e) { desc = e.target.value; } })),
-        ui.el('label.field', 'ID tugas (pisahkan koma)', ui.el('input', { placeholder: 'task_abc,task_def', oninput: function (e) { linkTaskIds = e.target.value; } })),
-        ui.el('label.field', 'ID goal (pisahkan koma)', ui.el('input', { placeholder: 'goal_xyz', oninput: function (e) { linkGoalIds = e.target.value; } }))
+        ui.el('label.field', 'Judul', ui.el('input', { oninput: function (e) { title = e.target.value; } })),
+        ui.el('label.field', 'URL', ui.el('input', { placeholder: 'https://', oninput: function (e) { url = e.target.value; } })),
+        ui.el('label.field', 'Deskripsi', ui.el('textarea', { oninput: function (e) { desc = e.target.value; } }))
       ],
       actions: [
         { label: 'Batal', ghost: true },
         { label: 'Simpan', primary: true, onClick: function () {
           try {
-            var item = JF.library.createItem({ type: 'link', title: title, url: url, description: desc, taskIds: parseIds(linkTaskIds), goalIds: parseIds(linkGoalIds) }, Date.now());
-            state().library.push(item); JF.library.normalize(state(), Date.now()); saveState();
-          } catch (e) { ui.toast('URL atau ID tidak valid.', { kind: 'err' }); }
+            var item = L().createItem({ type: 'link', title: title, url: url, description: desc, source: { module: 'library' } }, Date.now());
+            state().library.push(item); selectedId = item.id; save();
+          } catch (e) { ui.toast('URL tidak valid. Gunakan alamat http:// atau https://.', { kind: 'err' }); return false; }
         } }
       ]
     });
   }
 
   function addNoteModal() {
-    var title = '', text = '', noteTaskIds = '', noteGoalIds = '';
+    var title = '', text = '';
     ui.modal({
       title: 'Tambah catatan',
       body: [
         ui.el('label.field', 'Judul', ui.el('input', { oninput: function (e) { title = e.target.value; } })),
-        ui.el('label.field', 'Isi', ui.el('textarea', { oninput: function (e) { text = e.target.value; } })),
-        ui.el('label.field', 'ID tugas (pisahkan koma)', ui.el('input', { placeholder: 'task_abc,task_def', oninput: function (e) { noteTaskIds = e.target.value; } })),
-        ui.el('label.field', 'ID goal (pisahkan koma)', ui.el('input', { placeholder: 'goal_xyz', oninput: function (e) { noteGoalIds = e.target.value; } }))
+        ui.el('label.field', 'Isi', ui.el('textarea', { oninput: function (e) { text = e.target.value; } }))
       ],
       actions: [
         { label: 'Batal', ghost: true },
         { label: 'Simpan', primary: true, onClick: function () {
-          var item = JF.library.createItem({ type: 'note', title: title, noteText: text, taskIds: parseIds(noteTaskIds), goalIds: parseIds(noteGoalIds) }, Date.now());
-          state().library.push(item); JF.library.normalize(state(), Date.now()); saveState();
+          var item = L().createItem({ type: 'note', title: title, noteText: text, source: { module: 'library' } }, Date.now());
+          state().library.push(item); selectedId = item.id; save();
         } }
       ]
     });
   }
 
+  /* Edit changes only what the user owns (title, description); relations stay automatic. */
   function editItem(it) {
-    var title = it.title, desc = it.description || '', editTaskIds = (it.taskIds || []).join(','), editGoalIds = (it.goalIds || []).join(',');
+    var title = it.title, desc = it.description || '';
     ui.modal({
-      title: 'Edit item',
+      title: 'Edit dokumen',
       body: [
         ui.el('label.field', 'Judul', ui.el('input', { value: title, oninput: function (e) { title = e.target.value; } })),
-        ui.el('label.field', 'Deskripsi', ui.el('textarea', { oninput: function (e) { desc = e.target.value; } }, desc)),
-        ui.el('label.field', 'ID tugas (pisahkan koma)', ui.el('input', { value: editTaskIds, oninput: function (e) { editTaskIds = e.target.value; } })),
-        ui.el('label.field', 'ID goal (pisahkan koma)', ui.el('input', { value: editGoalIds, oninput: function (e) { editGoalIds = e.target.value; } }))
+        ui.el('label.field', 'Deskripsi', ui.el('textarea', { oninput: function (e) { desc = e.target.value; } }, desc))
       ],
       actions: [
         { label: 'Batal', ghost: true },
         { label: 'Simpan', primary: true, onClick: function () {
-          it.title = title; it.description = desc; it.taskIds = parseIds(editTaskIds); it.goalIds = parseIds(editGoalIds); it.updatedAt = Date.now();
-          JF.library.normalize(state(), Date.now()); saveState();
+          it.title = title; it.description = desc; it.updatedAt = Date.now();
+          L().normalize(state(), Date.now()); save();
         } }
       ]
     });
   }
 
   async function openFile(it) {
-    var r = await window.desk.libraryOpen({ fileName: it.fileName });
-    if (!r.ok) { fileStatus[it.fileName] = { exists: false, reason: 'open-failed', message: r.message }; render(); ui.toast('Gagal membuka file: ' + (r.message || r.reason), { kind: 'err' }); }
+    var r = await D().open(it);
+    if (!r.ok) ui.toast('Gagal membuka file: ' + D().message(r.message || r.reason), { kind: 'err' });
+    render();
   }
 
   async function removeItem(it) {
-    if (it.type === 'file') {
-      var r = await window.desk.libraryDeleteFile({ fileName: it.fileName });
-      if (!r.ok) { ui.toast('Gagal menghapus file: ' + r.reason, { kind: 'err' }); return; }
-      if (r.alreadyMissing) ui.toast('File sudah tidak ada; metadata dihapus.', { kind: 'ok' });
-      delete fileStatus[it.fileName];
-    }
-    state().library = state().library.filter(function (x) { return x.id !== it.id; });
-    saveState();
-    ui.toast('Item dihapus.', { kind: 'ok' });
+    var linked = it.taskIds.length;
+    var yes = await ui.confirm({
+      title: 'Hapus dokumen?',
+      body: linked
+        ? '"' + it.title + '" dilampirkan pada ' + linked + ' tugas. Dokumen dihapus dari Library, tetapi status selesai dan riwayat tugas tidak berubah.'
+        : '"' + it.title + '" akan dihapus dari Library.',
+      okLabel: 'Hapus', danger: true
+    });
+    if (!yes) return;
+    var r = await D().removeDocument(it);
+    if (!r.ok) { ui.toast('Gagal menghapus dokumen.', { kind: 'err' }); return; }
+    if (selectedId === it.id) selectedId = null;
+    ui.toast('Dokumen dihapus.', { kind: 'ok' });
+    render();
   }
 
-  JF.pages.register({ id: 'library', title: 'Library', sub: function () { return items().length + ' item'; }, mount: mount, render: render });
+  JF.pages.register({ id: 'library', title: 'Library', sub: function () { return (app ? state().library.length : 0) + ' dokumen'; }, mount: mount, render: function () { render(); if (app) D().ensureFresh(function () { render(); }); } });
 })(typeof self !== 'undefined' ? self : this);

@@ -126,12 +126,45 @@
   /* First completion stamps completedAt + firstCompletedAt. Re-completion
      (after a reopen) records an event but does NOT change firstCompletedAt,
      so the analytics "first completion" metric cannot be inflated. */
-  function completeTask(state, id, now, by) {
+  /* Library is resolved lazily: store.js loads before library.js in the browser. */
+  function libraryDep() {
+    if (typeof module === 'object' && module.exports) return require('./library.js');
+    return (typeof self !== 'undefined' && self.JF && self.JF.library) || null;
+  }
+
+  /** Mark a task as needing an output file before it can be completed (default: not required). */
+  function setRequiresOutput(state, id, required, now) {
+    now = now == null ? Date.now() : now;
+    var t = find(state, id);
+    if (!t) return { ok: false, reason: 'not-found' };
+    required = !!required;
+    if (!!t.requiresOutput === required) return { ok: true, task: t, changed: false };
+    t.requiresOutput = required;
+    model.touch(t, now);
+    ev(state, now, required ? 'task.output.required' : 'task.output.optional', t.id);
+    return { ok: true, task: t, changed: true };
+  }
+
+  /**
+   * opts.availableFileNames: managed files the caller verified on disk. A task
+   * with requiresOutput can only complete when at least one of its attached
+   * documents is in that list. Ordinary tasks are unaffected.
+   */
+  function completeTask(state, id, now, by, opts) {
     now = now == null ? Date.now() : now;
     var t = find(state, id);
     if (!t) return { ok: false, reason: 'not-found' };
     if (t.archived) return { ok: false, reason: 'archived' };
     if (t.done) return { ok: true, task: t, changed: false, reason: 'already-completed' };
+    var lib = libraryDep();
+    if (t.requiresOutput) {
+      var chk = lib ? lib.deliverableCheck(state, id, opts && opts.availableFileNames) : { ok: false, reason: 'output-required' };
+      if (!chk.ok) return { ok: false, reason: chk.reason, attached: chk.attached, available: chk.available };
+    }
+    if (lib) {
+      var snap = lib.deliverableSnapshot(state, id, now);
+      if (snap.length || t.requiresOutput) t.deliverables = snap;
+    }
     t.done = true;
     t.completedAt = now;
     if (t.firstCompletedAt == null) t.firstCompletedAt = now;
@@ -248,7 +281,7 @@
     createState: createState, defaultSettings: defaultSettings,
     find: find, ev: ev,
     addTask: addTask, editTask: editTask, rescheduleTask: rescheduleTask,
-    completeTask: completeTask, reopenTask: reopenTask,
+    completeTask: completeTask, reopenTask: reopenTask, setRequiresOutput: setRequiresOutput,
     archiveTask: archiveTask, restoreTask: restoreTask,
     activeTasks: activeTasks, upcomingTasks: upcomingTasks, overdueTasks: overdueTasks,
     tasksTargeting: tasksTargeting, tasksCompletedOn: tasksCompletedOn,

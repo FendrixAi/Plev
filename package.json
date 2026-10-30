@@ -15,6 +15,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "library-service.js",
       "mini.html",
       "mini-preload.js",
       "index.html",
