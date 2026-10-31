@@ -219,89 +219,170 @@
   function idbDel(key) { idb(function (db) { if (!db) return; try { db.transaction('m', 'readwrite').objectStore('m').delete(key); } catch (e) {} }); }
   function idbGet(key, cb) { idb(function (db) { if (!db) return cb(null); try { var q = db.transaction('m').objectStore('m').get(key); q.onsuccess = function () { cb(q.result || null); }; q.onerror = function () { cb(null); }; } catch (e) { cb(null); } }); }
 
-  var au = new Audio(), auR = new Audio(), musURL = null, musRURL = null;
+  /* ── music ───────────────────────────────────────────────────────────
+     Focus-end slot = PLAYLIST (shared/musicPlayer.js, one Audio element).
+     Break-end slot = single alert track (unchanged). Playback state lives
+     here, never in a dialog or page; the timer only calls
+     start / bindBreak / endBreak. Storage: same IndexedDB ('jamfokus-music'),
+     one record per track ('trk:<id>') + ordered list ('plist'). The legacy
+     'foc' record is migrated into the playlist but never deleted. */
+  var DEFAULT_NAME = 'Bawaan (bunyi pendek)';
+  var auR = new Audio(), musRURL = null;
+  var au = new Audio();
+  var blobs = {};                       // track id -> Blob (file-backed, cheap)
   var music = {
-    focusName: 'Bawaan (bunyi pendek)', breakName: 'Bawaan (bunyi pendek)',
-    loop: lsGet('jamfokus.loop') === '1',
-    playingFocus: false, playingBreak: false
+    focusName: DEFAULT_NAME, breakName: DEFAULT_NAME,
+    loop: lsGet('jamfokus.loop') === '1',   // repeat outside a break; during a break the playlist always repeats
+    playingFocus: false, playingBreak: false, tracks: [], loaded: false
   };
-  au.loop = music.loop;
-  function setMus(blob, name) {
-    if (musURL) URL.revokeObjectURL(musURL);
-    musURL = blob ? URL.createObjectURL(blob) : null;
-    if (musURL) au.src = musURL; else au.removeAttribute('src');
-    music.focusName = blob ? name : 'Bawaan (bunyi pendek)';
+  var player = JF.musicPlayer.createPlayer({
+    audio: au,
+    createURL: function (b) { return URL.createObjectURL(b); },
+    revokeURL: function (u) { URL.revokeObjectURL(u); },
+    getBlob: function (id) { return blobs[id] || null; },
+    isLoop: function () { return music.loop; },
+    onChange: syncMusicState
+  });
+  function syncMusicState() {
+    var st = player.status();
+    music.tracks = player.tracks();
+    music.status = st;
+    music.playingFocus = st.active && !st.paused;
+    var n = music.tracks.length;
+    music.focusName = !n ? DEFAULT_NAME : (n === 1 ? music.tracks[0].name : n + ' lagu di playlist');
     app.emit('music');
   }
+
+  function idbSet(obj, key) {
+    return new Promise(function (resolve) {
+      idb(function (db) {
+        if (!db) return resolve(false);
+        try {
+          var tx = db.transaction('m', 'readwrite');
+          tx.objectStore('m').put(obj, key);
+          tx.oncomplete = function () { resolve(true); };
+          tx.onerror = tx.onabort = function () { resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    });
+  }
+  function idbRemove(key) {
+    return new Promise(function (resolve) {
+      idb(function (db) {
+        if (!db) return resolve(false);
+        try {
+          var tx = db.transaction('m', 'readwrite');
+          tx.objectStore('m').delete(key);
+          tx.oncomplete = function () { resolve(true); };
+          tx.onerror = tx.onabort = function () { resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    });
+  }
+  function idbRead(key) { return new Promise(function (resolve) { idbGet(key, resolve); }); }
+  function savePlaylistMeta() {
+    return idbSet({ v: 1, tracks: player.tracks().map(function (t) { return { id: t.id, name: t.name, size: t.size, sig: t.sig }; }) }, 'plist');
+  }
+
+  /** Add one or more audio files. Resolves { added, rejected, persisted }. */
+  music.addTracks = function (files) {
+    var plan = JF.musicPlayer.planAdd(player.tracks(), files, function () { return JF.model.uid('trk'); });
+    if (!plan.added.length) return Promise.resolve({ added: [], rejected: plan.rejected, persisted: true });
+    plan.added.forEach(function (t) { blobs[t.id] = t.file; });
+    var list = player.tracks().concat(plan.added.map(function (t) { return { id: t.id, name: t.name, size: t.size, sig: t.sig }; }));
+    player.setTracks(list);
+    var writes = plan.added.map(function (t) { return idbSet({ blob: t.file, name: t.name }, 'trk:' + t.id); });
+    return Promise.all(writes).then(function (r) {
+      var ok = r.every(Boolean);
+      return savePlaylistMeta().then(function (m) { return { added: plan.added, rejected: plan.rejected, persisted: ok && m }; });
+    });
+  };
+  /** User-initiated removal of one saved track (the user's original file is never touched). */
+  music.removeTrack = function (id) {
+    var list = player.tracks().filter(function (t) { return t.id !== id; });
+    delete blobs[id];
+    player.setTracks(list);
+    return savePlaylistMeta().then(function () { return idbRemove('trk:' + id); });
+  };
+  music.clearPlaylist = function () {
+    var ids = player.tracks().map(function (t) { return t.id; });
+    player.stop();
+    ids.forEach(function (id) { delete blobs[id]; });
+    player.setTracks([]);
+    return savePlaylistMeta().then(function () { return Promise.all(ids.map(function (id) { return idbRemove('trk:' + id); })); });
+  };
+  /** Play a chosen track (or the first one). During a break the session is automatically break-bound. */
+  music.play = function (id) { return player.start({ id: id || null, breakBound: !!brk }); };
+  music.next = function () { return player.next(); };
+  music.pause = function () { return player.pause(); };
+  music.resume = function () { return player.resume(); };
+  music.togglePause = function () { return player.status().paused ? player.resume() : player.pause(); };
+  music.testFocus = function () { if (player.hasPlayable()) player.start({ ifIdle: true, breakBound: !!brk }); else beep(); };
+  music.hasTracks = function () { return player.hasPlayable(); };
+  music.setLoop = function (on) { music.loop = !!on; try { lsSet('jamfokus.loop', on ? '1' : '0'); } catch (e) {} };
+
+  /* break-end alert slot (single track, as before) */
   function setMusR(blob, name) {
     if (musRURL) URL.revokeObjectURL(musRURL);
     musRURL = blob ? URL.createObjectURL(blob) : null;
     if (musRURL) auR.src = musRURL; else auR.removeAttribute('src');
-    music.breakName = blob ? name : 'Bawaan (bunyi pendek)';
+    music.breakName = blob ? name : DEFAULT_NAME;
     app.emit('music');
   }
-  function playTrack(au2, key) {
-    if (!musURL && key === 'foc') return beep();
-    if (!musRURL && key === 'rst') return beep();
-    if (!au2.src) return beep();
-    au2.currentTime = 0;
-    var p = au2.play();
-    if (key === 'foc') { music.playingFocus = true; app.emit('music'); }
-    else { music.playingBreak = true; app.emit('music'); }
-    if (p && p.catch) p.catch(function () { beep(); if (key === 'foc') music.playingFocus = false; else music.playingBreak = false; app.emit('music'); });
-  }
-  function stopAllMusic() {
-    try { au.pause(); au.currentTime = 0; } catch (e) {}
+  function stopAlert() {
     try { auR.pause(); auR.currentTime = 0; } catch (e) {}
-    music.playingFocus = music.playingBreak = false;
-    app.emit('music');
+    music.playingBreak = false;
   }
+  function playAlert() {
+    if (!musRURL || !auR.src) return beep();
+    auR.currentTime = 0;
+    var p = auR.play();
+    music.playingBreak = true; app.emit('music');
+    if (p && p.catch) p.catch(function () { beep(); music.playingBreak = false; app.emit('music'); });
+  }
+  /** Explicit stop (Hentikan Musik): stops the playlist and any alert at once. */
+  function stopAllMusic() { stopAlert(); player.stop(); syncMusicState(); }
   music.stopAllMusic = stopAllMusic;
-  music.pickFocus = function (file, name) { stopAllMusic(); setMus(file, name); idbPut(file, name, 'foc'); };
-  music.pickBreak = function (file, name) { stopAllMusic(); setMusR(file, name); idbPut(file, name, 'rst'); };
-  music.clearFocus = function () { stopAllMusic(); setMus(null, null); idbDel('foc'); };
-  music.clearBreak = function () { stopAllMusic(); setMusR(null, null); idbDel('rst'); };
-  music.testFocus = function () { if (musURL) playTrack(au, 'foc'); else beep(); };
-  music.testBreak = function () { if (musRURL) playTrack(auR, 'rst'); else beep(); };
-  music.setLoop = function (on) { music.loop = !!on; au.loop = !!on; try { lsSet('jamfokus.loop', on ? '1' : '0'); } catch (e) {} };
-  au.onended = function () { music.playingFocus = false; app.emit('music'); };
+  music.pickBreak = function (file, name) { stopAlert(); setMusR(file, name); idbPut(file, name, 'rst'); };
+  music.clearBreak = function () { stopAlert(); setMusR(null, null); idbDel('rst'); };
+  music.testBreak = function () { if (musRURL) playAlert(); else beep(); };
   auR.onended = function () { music.playingBreak = false; app.emit('music'); };
 
-  // Load stored tracks (with the legacy "cur" -> "foc" migration).
-  idbGet('cur', function (old) {
-    if (old && old.blob) {
-      idbPut(old.blob, old.name, 'foc');
-      setMus(old.blob, old.name);
-      idbDel('cur');
-      return;
-    }
-    idbGet('foc', function (v) { if (v && v.blob) setMus(v.blob, v.name); });
-  });
+  // Load saved playlist (migrating the legacy single "cur"/"foc" track once).
+  (function loadPlaylist() {
+    idbRead('plist').then(function (meta) {
+      if (meta && Array.isArray(meta.tracks)) {
+        var list = meta.tracks.filter(function (t) { return t && typeof t.id === 'string'; });
+        return Promise.all(list.map(function (t) { return idbRead('trk:' + t.id); })).then(function (recs) {
+          list.forEach(function (t, i) {
+            if (recs[i] && recs[i].blob) blobs[t.id] = recs[i].blob; else t.missing = true;   // kept, flagged, never auto-deleted
+          });
+          player.setTracks(list);
+        });
+      }
+      return idbRead('cur').then(function (old) {
+        if (old && old.blob) { idbSet({ blob: old.blob, name: old.name }, 'foc'); idbRemove('cur'); return old; }
+        return idbRead('foc');
+      }).then(function (v) {
+        if (!v || !v.blob) return;
+        var t = { id: JF.model.uid('trk'), name: v.name || 'Lagu', size: v.blob.size || 0, sig: 'legacy|' + (v.name || '') + '|' + (v.blob.size || 0) };
+        blobs[t.id] = v.blob;
+        player.setTracks([t]);
+        return idbSet({ blob: v.blob, name: v.name }, 'trk:' + t.id).then(savePlaylistMeta);   // legacy 'foc' record stays
+      });
+    }).then(function () { music.loaded = true; syncMusicState(); }, function () { music.loaded = true; });
+  })();
   idbGet('rst', function (v) { if (v && v.blob) setMusR(v.blob, v.name); });
 
-  function alarmFocus() { 
-    if (root.desk) root.desk.popup(); 
-    // Completion alarms should not loop - play once then stop
-    var wasLoop = au.loop;
-    au.loop = false;
-    playTrack(au, 'foc');
-    // Restore loop setting after playback ends
-    au.onended = function () { 
-      music.playingFocus = false; 
-      au.loop = wasLoop; 
-      app.emit('music'); 
-    };
+  /** Focus finished: start the playlist unless it is already playing (never a second instance). */
+  function alarmFocus() {
+    if (root.desk) root.desk.popup();
+    if (player.hasPlayable()) { player.start({ ifIdle: true, breakBound: !!brk }); return; }
+    beep();
   }
-  function alarmBreak() { 
-    if (root.desk) root.desk.popup(); 
-    var wasLoop = auR.loop;
-    auR.loop = false;
-    playTrack(auR, 'rst'); 
-    auR.onended = function () { 
-      music.playingBreak = false; 
-      auR.loop = wasLoop; 
-      app.emit('music'); 
-    };
+  function alarmBreak() {
+    if (root.desk) root.desk.popup();
+    playAlert();
   }
   function notify(title, body) {
     try { if (root.Notification && Notification.permission === 'granted') new Notification(title, { body: body }); } catch (e) {}
@@ -371,16 +452,10 @@
     ctx();
     var now = Date.now();
 
-    // Leaving a break: cancel it (v1 start() set brk=null).
+    // Leaving a break cancels it. Starting (or resuming) a focus session always ends music:
+    // music may play during a break or while back on the task list, never during focus.
     if (brk) { brk = null; saveBrk(); }
-    // Stop any playing alarm/music when starting a focus session
-    try {
-      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
-        JF.app.music.stopAllMusic();
-      } else if (music && typeof music.stopAllMusic === 'function') {
-        music.stopAllMusic();
-      }
-    } catch (e) {}
+    stopAllMusic();
 
     var cur = current();
     if (cur) {
@@ -562,33 +637,23 @@
 
   /* ── breaks ──────────────────────────────────────────────────────── */
   function startBreak(mins, nextTaskId, isLong) {
-    // Stop any playing alarm/music when entering break mode
-    try {
-      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
-        JF.app.music.stopAllMusic();
-      } else if (music && typeof music.stopAllMusic === 'function') {
-        music.stopAllMusic();
-      }
-    } catch (e) {}
+    // The playlist keeps playing into the break (or starts if idle) and becomes break-bound.
+    stopAlert();
     brk = {
       endAt: Date.now() + mins * 60000, total: mins * 60,
       nextTaskId: nextTaskId || null, isLong: !!isLong
     };
     saveBrk();
+    if (player.hasPlayable()) player.start({ ifIdle: true, breakBound: true });
+    else player.bindBreak(true);
     app.emit('change'); pushState();
   }
   app.startBreak = function (mins) { startBreak(mins || state.settings.shortBreakMin, null, false); };
 
   function endBreak(autoStart) {
     var nextId = brk && brk.nextTaskId;
-    // Stop alarm/music when break ends/continues
-    try {
-      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
-        JF.app.music.stopAllMusic();
-      } else if (music && typeof music.stopAllMusic === 'function') {
-        music.stopAllMusic();
-      }
-    } catch (e) {}
+    // The break timer owns break music: stop it and clear the temporary session (saved playlist untouched).
+    player.endBreak();
     brk = null; saveBrk();
     state.events.push({ at: Date.now(), kind: 'break.ended', taskId: nextId || null });
     var nt = autoStart && nextId ? findTask(nextId) : null;
@@ -602,15 +667,7 @@
       alarmBreak();
     }
   }
-  app.skipBreak = function () { if (brk) { 
-    // Stop alarm/music when skipping break/continuing to task
-    try {
-      if (JF && JF.app && JF.app.music && typeof JF.app.music.stopAllMusic === 'function') {
-        JF.app.music.stopAllMusic();
-      } else if (music && typeof music.stopAllMusic === 'function') {
-        music.stopAllMusic();
-      }
-    } catch (e) {}
+  app.skipBreak = function () { if (brk) {
     endBreak(false); 
     JF.ui && JF.ui.toast('Istirahat dilewati.'); 
   } };

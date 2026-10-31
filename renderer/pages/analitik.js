@@ -69,9 +69,9 @@
     r3.appendChild(ui.el('label', 'Goal', els.goalSel));
     r3.appendChild(ui.el('label', 'Prioritas', select(PRI, filters.priority, 'Filter prioritas', function (v) { filters.priority = v; render(); })));
     r3.appendChild(ui.el('label', 'Sebaran sesi', select(SES, filters.sessionStatus, 'Status sesi untuk grafik sebaran', function (v) { filters.sessionStatus = v; render(); })));
-    var exp = ui.btn('Ekspor CSV', exportCSV, { ghost: true, sm: true });
-    exp.appendChild(ui.svg(ui.ICON.down, 14));
-    r3.appendChild(exp);
+    var expX = ui.btn('Ekspor Excel', exportXLSX, { primary: true, sm: true });
+    expX.appendChild(ui.svg(ui.ICON.down, 14));
+    r3.appendChild(expX);
     bar.appendChild(r3);
     container.appendChild(bar);
 
@@ -358,24 +358,26 @@
     body.appendChild(d);
   }
 
-  function exportCSV() {
+  /* Laporan Excel: berwarna, banyak lembar, termasuk nama file lampiran. */
+  function exportXLSX() {
     if (!res) return;
-    try {
-      var blob = new Blob(['\uFEFF' + A().toCSV(res)], { type: 'text/csv;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = 'jam-fokus-analitik-' + res.period.from + '_' + res.period.to + '.csv';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      ui.toast('CSV analitik diunduh.', { kind: 'ok' });
-      /* Automatic Library registration: the export is also kept as a managed document. */
-      if (JF.documents) {
-        JF.documents.registerGenerated({
-          module: 'analitik', name: 'jam-fokus-analitik-' + res.period.from + '_' + res.period.to + '.csv',
-          text: '\uFEFF' + A().toCSV(res), title: 'Analitik ' + res.period.from + ' s/d ' + res.period.to
-        });
-      }
-    } catch (e) { ui.toast('Gagal mengekspor: ' + e.message, { kind: 'err' }); }
+    var D = JF.documents;
+    var ready = D ? D.refreshStatus().then(function () { return D.statusMap(); }, function () { return null; }) : Promise.resolve(null);
+    ready.then(function (status) {
+      try {
+        var wb = JF.report.buildReport(JF.app.rawState(), res, { now: Date.now(), fileStatus: status && Object.keys(status).length ? status : null });
+        var bytes = JF.xlsx.build(wb);
+        var name = JF.report.fileName(res);
+        var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        ui.toast('Laporan Excel diunduh.', { kind: 'ok' });
+        if (D) D.registerGenerated({ module: 'analitik', name: name, bytes: bytes, title: 'Laporan Analitik ' + res.period.from + ' s/d ' + res.period.to });
+      } catch (e) { ui.toast('Gagal membuat laporan: ' + e.message, { kind: 'err' }); }
+    });
   }
 
   function render() {

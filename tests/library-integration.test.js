@@ -284,7 +284,7 @@ test('service: open / check / delete respect path validation and report missing 
   assert.equal((await t.s.open({ fileName: imp.fileName })).reason, 'missing');
 });
 
-test('service: generated text (CSV export) is stored, deduped, and restricted to text types', async () => {
+test('service: generated text documents are stored, deduped, and restricted to text types', async () => {
   const t = svc(() => []);
   const a = await t.s.storeGenerated({ name: 'laporan.csv', text: 'a,b\n1,2' });
   assert.equal(a.ok, true);

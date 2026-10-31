@@ -1,5 +1,5 @@
 'use strict';
-/* Analitik: periods, comparisons, inclusion rules, filters, goals, journal, trend, CSV, UI wiring. */
+/* Analitik: periods, comparisons, inclusion rules, filters, goals, journal, trend, UI wiring. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -216,51 +216,6 @@ test('analitik tidak mengubah state', () => {
   assert.equal(JSON.stringify(s), before);
 });
 
-test('CSV escaping, formula injection protection, and encoding', () => {
-  const s = store.createState();
-  // Create a goal with potentially dangerous name? Goal titles go through normal flow
-  const g = goals.createGoal(s, { title: '=HYPERLINK("http://evil.com")', startDate: '2026-10-20' }).goal;
-  const t = task(s, 'Normal task', '2026-10-27', T('2026-10-27', 7));
-  done(s, t, T('2026-10-27', 10));
-  session(s, t, T('2026-10-27', 9), 600, true);
-  const r = run(s, per('week'), { goalId: g.id });
-  const csv = A.toCSV(r);
-  // Should start with UTF-8 BOM
-  assert.ok(csv.charCodeAt(0) === 0xFEFF);
-  // Formula injection protection - fields starting with = should be escaped
-  assert.ok(csv.includes("'=HYPERLINK"));
-  // Goal filter should be shown
-  assert.match(csv, /Filter Goal Aktif/);
-});
-
-test('CSV formula injection protection preserves legitimate negative numbers', () => {
-  const s = store.createState();
-  const r = run(s, per('week'));
-  const csv = A.toCSV(r);
-  // Legitimate numeric values like -5 should not be corrupted with leading apostrophe
-  assert.ok(!csv.includes("'-5"));
-  assert.ok(!csv.includes("'-2"));
-});
-
-test('CSV structure has all required sections and consistent columns', () => {
-  const s = store.createState();
-  const t = task(s, 'x', '2026-10-27', T('2026-10-27', 7));
-  done(s, t, T('2026-10-27', 10));
-  session(s, t, T('2026-10-27', 9), 1500, true);
-  const r = run(s, per('week'), { priority: 'normal' });
-  const csv = A.toCSV(r);
-  const content = csv;
-  assert.match(content, /Informasi Laporan/);
-  assert.match(content, /Nama Aplikasi/);
-  assert.match(content, /Jam Fokus/);
-  assert.match(content, /Waktu Ekspor/);
-  assert.match(content, /Ringkasan KPI/);
-  assert.match(content, /Rincian Harian/);
-  assert.match(content, /Nama Metrik.*Nilai Saat Ini.*Satuan.*Nilai Periode Sebelumnya.*Perubahan/);
-  assert.match(content, /Tanggal.*Status Data.*Tugas Selesai.*Tugas Belum Selesai.*Waktu Fokus Tercatat.*Target Fokus.*Sesi Selesai.*Sesi Terputus.*Waktu Fokus Terputus/);
-  assert.match(content, /Filter Prioritas Aktif/);
-});
-
 test('UI Analitik memakai modul analitik, kontrol periode/filter, ekspor, dan tetap aksesibel', () => {
   const root = path.join(__dirname, '..');
   const page = fs.readFileSync(path.join(root, 'renderer/pages/analitik.js'), 'utf8');
@@ -269,7 +224,7 @@ test('UI Analitik memakai modul analitik, kontrol periode/filter, ekspor, dan te
   const sa = index.indexOf('<script src="shared/analytics.js">');
   assert.ok(sa > index.indexOf('<script src="shared/goals.js">') && sa < index.indexOf('<script src="renderer/core.js">'));
   assert.match(page, /A\(\)\.compute\(app\.rawState\(\)/);
-  ['Harian', 'Mingguan', 'Bulanan', 'Tahunan', 'Kustom', 'Periode berjalan', 'Ekspor CSV', 'Perkiraan (bukan hasil)', 'Definisi metrik'].forEach((t) => assert.ok(page.includes(t), t));
+  ['Harian', 'Mingguan', 'Bulanan', 'Tahunan', 'Kustom', 'Periode berjalan', 'Ekspor Excel', 'Perkiraan (bukan hasil)', 'Definisi metrik'].forEach((t) => assert.ok(page.includes(t), t));
   assert.match(page, /#goals\?id=/); assert.match(page, /#jurnal\?date=/); assert.match(page, /#tugas/);
   assert.match(page, /p\.sr-only/); assert.match(page, /'aria-pressed'/); assert.match(page, /'aria-label': 'Periode sebelumnya'|aria-label', 'Periode sebelumnya'/);
   assert.doesNotMatch(page, /localStorage|JF\.store\.(add|complete|archive|edit)|app\.save\(/, 'analitik hanya membaca');

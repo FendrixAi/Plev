@@ -112,12 +112,12 @@
 
   /**
    * Generic entry point for any module that generates a text file.
-   * opts: { module, name, text, taskId?, entityId?, title?, description? }
+   * opts: { module, name, text | bytes, taskId?, entityId?, title?, description? }
    */
   function registerGenerated(opts) {
     opts = opts || {};
     if (!desk()) return Promise.resolve({ ok: false, reason: 'unavailable' });
-    return desk().libraryStoreGenerated({ name: opts.name, text: opts.text, reuse: reuseHints() }).then(function (imp) {
+    return desk().libraryStoreGenerated({ name: opts.name, text: opts.text, bytes: opts.bytes, reuse: reuseHints() }).then(function (imp) {
       if (!imp || !imp.ok) return { ok: false, reason: imp && imp.reason || 'copy-failed' };
       var r = JF.library.registerFile(st(), {
         fileName: imp.fileName, originalName: imp.originalName, size: imp.size, mimeType: imp.mimeType, contentHash: imp.hash,

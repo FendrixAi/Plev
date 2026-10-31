@@ -170,18 +170,71 @@
     c.appendChild(ui.el('h2', 'Alarm & musik'));
     c.appendChild(ui.el('div.sub', 'Memakai bunyi bawaan jika belum ada lagu yang dipilih.'));
 
-    var fileF = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true, 'aria-label': 'Pilih lagu untuk akhir sesi fokus' });
+    var fileF = ui.el('input', { type: 'file', accept: 'audio/*', multiple: true, hidden: true, 'aria-label': 'Tambah musik ke playlist' });
     var fileR = ui.el('input', { type: 'file', accept: 'audio/*', hidden: true, 'aria-label': 'Pilih lagu untuk akhir istirahat' });
+    var REASON = { duplikat: 'sudah ada', 'bukan-audio': 'bukan file audio', kosong: 'file kosong', 'terlalu-besar': 'terlalu besar (maks. 150 MB)', penuh: 'playlist penuh (maks. 50 lagu)' };
     fileF.addEventListener('change', function () {
-      var f = this.files && this.files[0];
-      if (f) { app.music.pickFocus(f, f.name); ui.toast('Lagu sesi fokus disimpan.', { kind: 'ok' }); render(); }
+      var files = Array.prototype.slice.call(this.files || []);
       this.value = '';
+      if (!files.length) return;
+      app.music.addTracks(files).then(function (r) {
+        if (r.added.length) ui.toast(r.added.length === 1 ? '1 lagu ditambahkan ke playlist.' : r.added.length + ' lagu ditambahkan ke playlist.', { kind: 'ok' });
+        if (r.added.length && !r.persisted) ui.toast('Playlist belum tersimpan permanen; lagu akan hilang setelah aplikasi ditutup.', { kind: 'err', timeout: 8000 });
+        if (r.rejected.length) ui.toast(r.rejected.map(function (x) { return x.name + ': ' + (REASON[x.reason] || x.reason); }).join(' · '), { kind: 'err', timeout: 8000 });
+        render();
+      });
     });
     fileR.addEventListener('change', function () {
       var f = this.files && this.files[0];
       if (f) { app.music.pickBreak(f, f.name); ui.toast('Lagu istirahat disimpan.', { kind: 'ok' }); render(); }
       this.value = '';
     });
+
+    function playlistBlock() {
+      var m = app.music, st = m.status || { active: false }, list = m.tracks || [];
+      var b = ui.el('div.pl', { style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' } });
+      b.appendChild(ui.el('div.k', { style: { fontSize: '12px', color: 'var(--muted)', fontWeight: '600' } }, 'Musik saat sesi fokus selesai dan istirahat'));
+      b.appendChild(ui.el('div.hint', { style: { margin: '3px 0 8px' } }, list.length
+        ? 'Playlist diputar berurutan dan diulang otomatis selama istirahat. Musik hanya berhenti saat Anda menekan Hentikan Musik atau istirahat selesai.'
+        : 'Belum ada lagu. Tanpa lagu, dipakai bunyi bawaan.'));
+      if (list.length) {
+        var ul = ui.el('ol.pl-list', { 'aria-label': 'Daftar putar' });
+        list.forEach(function (t, i) {
+          var now = st.active && st.trackId === t.id;
+          var li = ui.el('li.pl-item' + (now ? '.on' : ''));
+          li.appendChild(ui.el('span.pl-no', String(i + 1)));
+          var info = ui.el('span.pl-info');
+          info.appendChild(ui.el('span.pl-name', t.name));
+          if (t.missing) info.appendChild(ui.el('span.chip.danger', 'File hilang'));
+          else if (now) info.appendChild(ui.el('span.chip.ok', st.paused ? 'Dijeda' : 'Sedang diputar'));
+          li.appendChild(info);
+          var act = ui.el('span.pl-acts');
+          act.appendChild(ui.btn(now && !st.paused ? 'Putar ulang' : 'Putar', function () { m.play(t.id); }, { sm: true, ghost: true, disabled: !!t.missing }));
+          act.appendChild(ui.btn('Hapus', function () {
+            m.removeTrack(t.id).then(function () { ui.toast('Lagu dihapus dari playlist.'); render(); });
+          }, { sm: true, ghost: true }));
+          li.appendChild(act);
+          ul.appendChild(li);
+        });
+        b.appendChild(ul);
+      }
+      var r = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' } });
+      r.appendChild(ui.btn('Tambah Musik', function () { fileF.click(); }, { sm: true }));
+      if (list.length) {
+        r.appendChild(ui.btn(st.active ? (st.paused ? 'Lanjutkan' : 'Jeda') : 'Putar playlist', function () {
+          if (st.active) m.togglePause(); else m.play(null);
+        }, { sm: true, ghost: true }));
+        r.appendChild(ui.btn('Berikutnya', function () { m.next(); }, { sm: true, ghost: true, disabled: !st.active }));
+        r.appendChild(ui.btn('Hentikan Musik', function () { m.stopAllMusic(); }, { sm: true, ghost: true, disabled: !st.active }));
+        r.appendChild(ui.btn('Kosongkan playlist', function () {
+          ui.confirm({ title: 'Kosongkan playlist?', body: 'Semua lagu dihapus dari playlist Jam Fokus. File asli di komputer Anda tidak disentuh.', okLabel: 'Kosongkan', danger: true }).then(function (yes) {
+            if (yes) m.clearPlaylist().then(function () { ui.toast('Playlist dikosongkan.'); render(); });
+          });
+        }, { sm: true, ghost: true }));
+      }
+      b.appendChild(r);
+      return b;
+    }
 
     function trackBlock(title, name, pick, test, del) {
       var b = ui.el('div', { style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' } });
@@ -196,16 +249,13 @@
       return b;
     }
 
-    c.appendChild(trackBlock('Saat sesi fokus selesai', app.music.focusName,
-      function () { fileF.click(); }, function () { app.music.testFocus(); }, function () {
-        app.music.clearFocus(); ui.toast('Kembali ke bunyi bawaan.'); render();
-      }));
+    c.appendChild(playlistBlock());
     c.appendChild(trackBlock('Saat istirahat selesai', app.music.breakName,
       function () { fileR.click(); }, function () { app.music.testBreak(); }, function () {
         app.music.clearBreak(); ui.toast('Kembali ke bunyi bawaan.'); render();
       }));
 
-    c.appendChild(toggle('Ulangi lagu selama alarm berbunyi', app.music.loop, function (v) {
+    c.appendChild(toggle('Ulangi playlist di luar istirahat (saat istirahat selalu diulang)', app.music.loop, function (v) {
       app.music.setLoop(v);
       ui.toast('Pengulangan lagu ' + (v ? 'aktif' : 'nonaktif') + '.', { timeout: 1500 });
     }));

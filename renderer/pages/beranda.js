@@ -63,13 +63,8 @@
       card.appendChild(ui.el('div.session-sub', brk.nextTaskId ? 'Berikutnya: ' + (app.findTask(brk.nextTaskId) || {}).title : 'Kembali ke tugas setelah selesai'));
       card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar', style: { width: progressPct(brk.total, Math.max(0, (brk.total - (brk.endAt - Date.now()) / 1000)) / brk.total) } })));
       var ctl = ui.el('div.session-controls');
-      ctl.appendChild(ui.btn('Lewati istirahat', function () { if (app.music && app.music.stopAllMusic) app.music.stopAllMusic(); try { app.skipBreak(); } catch(e) {} }, { primary: true }));
+      ctl.appendChild(ui.btn('Lewati istirahat', function () { try { app.skipBreak(); } catch(e) {} }, { primary: true }));
       card.appendChild(ctl);
-      if (app.music && (app.music.playingFocus || app.music.playingBreak)) {
-        var mr = ui.el('div.session-controls');
-        mr.appendChild(ui.btn('Matikan Musik', function () { if (app.music.stopAllMusic) app.music.stopAllMusic(); }, { ghost: true, sm: true }));
-        card.appendChild(mr);
-      }
       return;
     }
 
@@ -84,7 +79,6 @@
       c1.appendChild(ui.btn('Jeda', function () { app.pause(); }, { primary: true }));
       c1.appendChild(ui.btn('Hentikan sesi', confirmStop, { danger: true }));
       card.appendChild(c1);
-      if (app.music && (app.music.playingFocus || app.music.playingBreak)) card.appendChild(musicStopRow());
       return;
     }
 
@@ -139,14 +133,8 @@
       app.startTask(selected, { standalone: !selected });
     }, { primary: true }));
     card.appendChild(c3);
-    if (app.music && (app.music.playingFocus || app.music.playingBreak)) card.appendChild(musicStopRow());
   }
 
-  function musicStopRow() {
-    var r = ui.el('div.session-controls');
-    r.appendChild(ui.btn('Matikan Musik', function () { if (app.music && app.music.stopAllMusic) app.music.stopAllMusic(); }, { ghost: true, sm: true }));
-    return r;
-  }
 
   function stateLine(label, cls) {
     return ui.el('div.session-state' + (cls ? '.' + cls : ''), ui.el('span.dot'), label);
