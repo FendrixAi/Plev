@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' file:; font-src 'self' file:; media-src blob:; img-src data:; connect-src 'none'">
 <title>Jam Fokus</title>
-<script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-<link rel="stylesheet" href="renderer/theme.css">
+<script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-experience',localStorage.getItem('jamfokus.homeExperience')==='capybara-world'?'capybara-world':'original');}catch(e){document.documentElement.setAttribute('data-experience','original');}})();</script>
+<link id="original-theme" rel="stylesheet" href="renderer/theme.css">
+<script>if(document.documentElement.getAttribute('data-experience')==='capybara-world'){document.getElementById('original-theme').disabled=true;}</script>
+<link rel="stylesheet" href="renderer/experiences/capybara-world/beranda.css">
+<link rel="stylesheet" href="renderer/experiences/capybara-world/experience.css">
 </head>
 <body>
 <div class="app" id="app">
@@ -128,6 +131,9 @@
 <script src="renderer/musicbar.js"></script>
 <script src="renderer/clock.js"></script>
 <script src="renderer/charts.js"></script>
+<script src="renderer/experiences/capybara-world/beranda.js"></script>
+<script src="renderer/experiences/capybara-world/components.js"></script>
+<script src="renderer/experiences/capybara-world/pages.js"></script>
 <script src="renderer/pages/beranda.js"></script>
 <script src="renderer/pages/tugas.js"></script>
 <script src="renderer/pages/kalender.js"></script>
@@ -138,6 +144,7 @@
 <script src="renderer/pages/jurnal.js"></script>
 <script src="renderer/pages/pengaturan.js"></script>
 <script src="renderer/pages/library.js"></script>
+<script src="renderer/experiences/capybara-world/experience.js"></script>
 <script src="renderer/boot.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@
   function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
 
+    container.appendChild(experienceCard());
     container.appendChild(sessionCard());
     container.appendChild(targetCard());
     container.appendChild(pomoCard());
@@ -24,6 +25,27 @@
       app.on('music', function () {
         if (location.hash === '#pengaturan') render();
       });
+    }
+
+    function experienceCard() {
+      var c = ui.el('div.card');
+      c.appendChild(ui.el('h2', 'Experience'));
+      c.appendChild(ui.el('div.sub', 'Data dan fitur produktivitas tetap sama; yang berubah hanya pengalaman visual aplikasi.'));
+      var select = ui.el('select', { 'aria-label': 'Experience aplikasi' });
+      select.appendChild(ui.el('option', { value: 'original' }, 'Original'));
+      select.appendChild(ui.el('option', { value: 'capybara-world' }, 'Capybara World'));
+      select.value = JF.homeExperience.get();
+      select.addEventListener('change', function () {
+        try {
+          JF.homeExperience.set(select.value);
+          ui.toast('Experience tersimpan.', { kind: 'ok' });
+        } catch (error) {
+          select.value = JF.homeExperience.get();
+          ui.toast('Experience tidak dapat disimpan: ' + error.message, { kind: 'err' });
+        }
+      });
+      c.appendChild(ui.el('label.field', 'Pilih experience', select));
+      return c;
     }
   }
 

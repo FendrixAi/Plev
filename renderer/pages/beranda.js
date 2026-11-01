@@ -7,7 +7,7 @@
 
   var host, clock, els = {}, selected = null;
 
-  function mount(container) {
+  function mountOriginal(container) {
     ui = JF.ui; app = JF.app;
     host = container;
 
@@ -47,6 +47,25 @@
     host._dig = dig;
     els.sesCard = sesCard;
     els.strip = strip;
+  }
+
+  function storedExperience() {
+    try { return localStorage.getItem('jamfokus.homeExperience') === 'capybara-world' ? 'capybara-world' : 'original'; }
+    catch (e) { return 'original'; }
+  }
+
+  function setStoredExperience(experience) {
+    if (experience !== 'original' && experience !== 'capybara-world') {
+      throw new Error('Pilihan tema Beranda tidak dikenal.');
+    }
+    localStorage.setItem('jamfokus.homeExperience', experience);
+    if (JF.app && JF.app.emit) JF.app.emit('change');
+    return experience;
+  }
+
+  function mount(container) {
+    host = container;
+    mountOriginal(container);
   }
 
   /* ── session card ─────────────────────────────────────────────── */
@@ -209,7 +228,7 @@
     }
   }
 
-  function render() {
+  function renderOriginal() {
     if (!host) return;
     renderSession();
     renderStrip();
@@ -217,7 +236,7 @@
   }
 
   /* per-frame: hands, digital time, live countdown/progress */
-  function frame() {
+  function frameOriginal() {
     if (!host || host.hidden) return;
     var now = new Date();
     clock.hands(now);
@@ -247,12 +266,24 @@
     clock.setRunning(false);
   }
 
+  function render() {
+    renderOriginal();
+  }
+
+  function frame() {
+    frameOriginal();
+  }
+
   JF.pages.register({
     id: 'beranda',
     title: 'Beranda',
-    sub: function () { return 'Ringkasan & sesi fokus'; },
+    sub: 'Ringkasan & sesi fokus',
     mount: mount,
     render: render,
     frame: frame
   });
+  JF.homeExperience = {
+    get: storedExperience,
+    set: setStoredExperience
+  };
 })(typeof self !== 'undefined' ? self : this);

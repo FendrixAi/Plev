@@ -4,6 +4,11 @@
   var JF = root.JF, ui = JF.ui, app = JF.app;
   var mounted = {};
   var currentId = null;
+  var activeExperience = null;
+
+  function isCapybaraWorld() {
+    return JF.homeExperience && JF.homeExperience.get() === 'capybara-world';
+  }
 
   function pageIdFromHash() {
     var h = (location.hash || '').replace(/^#/, '').split('?')[0];
@@ -16,6 +21,16 @@
     if (!p) id = 'beranda', p = JF.pages.get('beranda');
     if (!p) return;
     currentId = id;
+
+    var capybaraWorld = isCapybaraWorld();
+    activeExperience = capybaraWorld ? 'capybara-world' : 'original';
+    if (JF.experiences && JF.experiences.capybaraWorld) {
+      JF.experiences.capybaraWorld.setActive(capybaraWorld);
+    }
+    if (capybaraWorld) {
+      JF.experiences.capybaraWorld.render(id);
+      return;
+    }
 
     JF.pages.list.forEach(function (x) {
       var sec = document.getElementById('page-' + x.id);
@@ -109,7 +124,9 @@
   function frame(ts) {
     var p = JF.pages.current && JF.pages.current;
     var cur = JF.pages.get(currentId);
-    if (cur && cur.frame) { try { cur.frame(ts); } catch (e) { /* don't kill the loop */ } }
+    if (activeExperience === 'capybara-world') {
+      if (JF.experiences && JF.experiences.capybaraWorld) JF.experiences.capybaraWorld.frame(ts);
+    } else if (cur && cur.frame) { try { cur.frame(ts); } catch (e) { /* don't kill the loop */ } }
     requestAnimationFrame(frame);
   }
 
@@ -131,6 +148,15 @@
 
     app.on('change', function () {
       refreshBadges();
+      var selectedExperience = isCapybaraWorld() ? 'capybara-world' : 'original';
+      if (selectedExperience !== activeExperience) {
+        showPage(currentId || pageIdFromHash());
+        return;
+      }
+      if (selectedExperience === 'capybara-world') {
+        JF.experiences.capybaraWorld.render(currentId || pageIdFromHash());
+        return;
+      }
       refreshTopbar();
       // Re-render the visible page (pages render on show + on data changes).
       var p = JF.pages.get(currentId);
