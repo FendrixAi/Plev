@@ -1,12 +1,14 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { initUpdater } = require('./updater');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.setAppUserModelId('xyz.levia.jamfokus');
 
 let win, tray, miniWin = null, quitting = false, pinned = false, popTimer = null;
 const alive = (w) => w && !w.isDestroyed();
+let updater = { start() {}, check() {} };
 
 // Hanya jendela milik aplikasi ini (utama dan kartu mini) yang boleh memanggil IPC.
 const trusted = (e) => !!e && !!e.sender &&
@@ -123,6 +125,15 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', showWin);
   app.whenReady().then(() => {
     loadSettings();
+    // Pembaruan otomatis: tidak menawarkan restart selama timer fokus/istirahat masih jalan.
+    updater = initUpdater({
+      app,
+      broadcast: (ch, payload) => { if (alive(win)) win.webContents.send(ch, payload); },
+      isBusy: () => !!_trayState && ['run', 'pause', 'brk'].includes(_trayState.mode),
+      backupDir: path.join(app.getPath('userData'), 'backups'),
+      beforeInstall: () => { quitting = true; }
+    });
+    updater.start();
 
     win = new BrowserWindow({
       width: 1120, height: 760, minWidth: 640, minHeight: 480,
@@ -163,6 +174,7 @@ if (!app.requestSingleInstanceLock()) {
         { label: 'Selalu di atas', type: 'checkbox', checked: pinned, click: (i) => { pinned = i.checked; win.setAlwaysOnTop(pinned, 'floating'); } },
         { label: 'Buka saat Windows menyala', type: 'checkbox', checked: app.getLoginItemSettings().openAtLogin,
           click: (i) => app.setLoginItemSettings({ openAtLogin: i.checked }) },
+        { label: 'Cek pembaruan', click: () => { showWin(); if (alive(win)) win.webContents.send('update:open'); updater.check(true); } },
         { type: 'separator' },
         { label: 'Keluar', click: () => { quitting = true; app.quit(); } }
       ]);
@@ -253,6 +265,13 @@ if (!app.requestSingleInstanceLock()) {
 
     // Renderer minta settings saat ini (invoke = dengan return value)
     handleTrusted('get-mini-settings', () => miniSettings);
+
+    // Pembaruan aplikasi (kartu di Pengaturan + banner)
+    handleTrusted('update:status', () => updater.getStatus());
+    handleTrusted('update:check', () => updater.check(true));
+    handleTrusted('update:cancel', () => updater.cancelAuto());
+    handleTrusted('update:install', () => updater.installNow());
+    handleTrusted('update:backup', (e, json) => updater.receiveBackup(json));
   });
 
   // ── Library storage (managed copies only) — see library-service.js ───

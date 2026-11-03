@@ -17,6 +17,7 @@
     container.appendChild(pomoCard());
     container.appendChild(musicCard());
     container.appendChild(miniCard());
+    container.appendChild(updateCard());
     container.appendChild(dataCard());
 
     // Refresh track names while audio state changes (hook once per app run).
@@ -320,6 +321,15 @@
     solid.addEventListener('change', function () {
       root.desk.saveMiniSettings({ solidOnHover: solid.checked });
     });
+    return c;
+  }
+
+  /* ── Pembaruan aplikasi ───────────────────────────────────────────── */
+  function updateCard() {
+    var c = ui.el('div.card');
+    c.appendChild(ui.el('h2', 'Pembaruan aplikasi'));
+    c.appendChild(ui.el('div.sub', 'Unduh, pasang, dan restart otomatis. Datamu dicadangkan lebih dulu.'));
+    if (JF.updateUI) c.appendChild(JF.updateUI.mount());
     return c;
   }
 

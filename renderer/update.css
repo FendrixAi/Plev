@@ -1,0 +1,56 @@
+/* Jam Fokus — kartu & banner pembaruan. Warna mengikuti tema Original maupun
+   Capybara World (variabel --cw-* / bawaan), tanpa gradient. */
+.jf-upd {
+  --u-accent: var(--cw-accent, var(--coral, #E0714F));
+  --u-ok: var(--cw-green, var(--mint, #2E9E7A));
+  --u-warn: var(--cw-danger, var(--red, #C0462F));
+  --u-muted: var(--cw-muted, var(--muted, #6B7B78));
+  --u-line: var(--cw-line, var(--line, rgba(128, 128, 128, .3)));
+  --u-ink: var(--cw-ink, var(--ink, inherit));
+  display: grid; gap: 12px; color: var(--u-ink); font: inherit;
+}
+.jf-upd-live { display: grid; gap: 12px; }
+.jf-upd-head { display: flex; align-items: center; gap: 12px; }
+.jf-upd-txt { flex: 1; min-width: 0; }
+.jf-upd-title { font-weight: 700; font-size: 1rem; }
+.jf-upd-sub { color: var(--u-muted); font-size: .86rem; line-height: 1.45; margin-top: 2px; }
+.jf-upd-chip { font-size: .78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--u-line); color: var(--u-muted); white-space: nowrap; }
+.jf-upd-ico { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--u-line); display: grid; place-items: center; font-weight: 800; font-size: .95rem; box-sizing: border-box; }
+.jf-upd-ico.is-ok { background: var(--u-ok); border-color: var(--u-ok); color: #fff; }
+.jf-upd-ico.is-warn { background: var(--u-warn); border-color: var(--u-warn); color: #fff; }
+.jf-upd-ico.is-spin { border-color: var(--u-line); border-top-color: var(--u-accent); animation: jf-upd-spin .9s linear infinite; }
+.jf-upd-bar { position: relative; height: 12px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, currentColor 12%, transparent); }
+.jf-upd-fill { display: block; height: 100%; border-radius: 999px; background: var(--u-accent); transition: width .25s ease; }
+.jf-upd-fill.is-drain { transition: width 1s linear; }
+.jf-upd-bar.is-ok .jf-upd-fill { background: var(--u-ok); }
+.jf-upd-bar.is-indet .jf-upd-fill { position: absolute; left: 0; width: 35%; animation: jf-upd-slide 1.3s ease-in-out infinite; }
+.jf-upd-bar.is-indet.is-ok .jf-upd-fill { background: var(--u-ok); }
+.jf-upd-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--u-muted); font-variant-numeric: tabular-nums; }
+.jf-upd-meta span:first-child { color: var(--u-ink); font-weight: 700; }
+.jf-upd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.jf-upd-btn { font: inherit; font-weight: 600; font-size: .86rem; padding: 8px 14px; border-radius: 10px; cursor: pointer; border: 1px solid var(--u-line); background: transparent; color: inherit; }
+.jf-upd-btn:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.jf-upd-btn.is-primary { background: var(--u-accent); border-color: var(--u-accent); color: var(--cw-accent-ink, var(--on-coral, #fff)); }
+.jf-upd-btn.is-primary:hover { filter: brightness(.95); }
+.jf-upd-btn:focus-visible { outline: 2px solid var(--u-accent); outline-offset: 2px; }
+.jf-upd-safe { font-size: .78rem; color: var(--u-muted); border-top: 1px dashed var(--u-line); padding-top: 10px; }
+
+.jf-upd-banner {
+  position: fixed; right: 16px; bottom: 16px; z-index: 9999;
+  width: min(380px, calc(100vw - 32px)); padding: 14px 16px; box-sizing: border-box;
+  border-radius: 16px; border: 1px solid var(--cw-line, var(--line, rgba(128, 128, 128, .35)));
+  background: var(--cw-card, var(--surface, #fff)); color: var(--cw-ink, var(--ink, #17322F));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
+.jf-upd-banner[hidden] { display: none; }
+.jf-upd-banner .jf-upd-ico { width: 28px; height: 28px; font-size: .8rem; }
+.jf-upd-banner .jf-upd-title { font-size: .92rem; }
+.jf-upd-banner .jf-upd-close { margin-top: 8px; }
+
+@keyframes jf-upd-spin { to { transform: rotate(360deg); } }
+@keyframes jf-upd-slide { 0% { left: -35%; } 100% { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .jf-upd-ico.is-spin, .jf-upd-bar.is-indet .jf-upd-fill { animation: none; }
+  .jf-upd-bar.is-indet .jf-upd-fill { width: 100%; opacity: .5; }
+  .jf-upd-fill, .jf-upd-fill.is-drain { transition: none; }
+}

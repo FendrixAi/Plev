@@ -67,7 +67,7 @@ test('Capybara renderers use shared productivity state and services', () => {
 test('Experience switching is persistent and remains reachable from either experience', () => {
   assert.match(originalSettings, /experienceCard\(\)/);
   assert.match(originalSettings, /JF\.homeExperience\.set\(select\.value\)/);
-  assert.match(pages, /JF\.homeExperience\.set\(this\.value\)/);
+  assert.match(pages, /JF\.homeExperience\.set\((this\.value|spec\[0\])\)/);
   assert.match(originalHome, /localStorage\.setItem\('jamfokus\.homeExperience', experience\)/);
   assert.match(experience, /originalStyles\.disabled = active/);
 });

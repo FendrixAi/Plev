@@ -154,7 +154,7 @@
         return;
       }
       if (selectedExperience === 'capybara-world') {
-        JF.experiences.capybaraWorld.render(currentId || pageIdFromHash());
+        JF.experiences.capybaraWorld.refresh(currentId || pageIdFromHash());
         return;
       }
       refreshTopbar();

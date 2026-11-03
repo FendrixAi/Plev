@@ -1,0 +1,72 @@
+/* CapyRafi — animasi karakter, ruang, dan kartu perjalanan. Hanya aktif di dalam Capybara World. */
+.cw-app-shell { --cw-sky: #bdd8d4; }
+:root[data-theme="dark"] .cw-app-shell { --cw-sky: #2c3d4a; }
+
+.capyrafi { display: block; overflow: visible; }
+.capyrafi .cr-body,
+.capyrafi .cr-head,
+.capyrafi .cr-eyes,
+.capyrafi .cr-ear { transform-box: fill-box; }
+.capyrafi .cr-body { transform-origin: 50% 100%; animation: cr-breathe 3.6s ease-in-out infinite; }
+.capyrafi .cr-head { transform-origin: 50% 100%; animation: cr-nod 3.6s ease-in-out infinite; }
+.capyrafi .cr-eyes { transform-origin: 50% 50%; animation: cr-blink 5.2s infinite; }
+.capyrafi .cr-ear { transform-origin: 50% 100%; animation: cr-ear 7s ease-in-out infinite; }
+.capyrafi .cr-ear2 { animation-delay: 2.4s; }
+.capyrafi .cr-z { animation: cr-float 2.6s ease-in-out infinite; }
+.capyrafi .cr-z2 { animation-delay: 1.1s; }
+.capyrafi .cr-sweat { animation: cr-drip 1.6s ease-in infinite; }
+.capyrafi .cr-spark { transform-box: fill-box; transform-origin: center; animation: cr-twinkle 2.2s ease-in-out infinite; }
+.capyrafi .cr-spark2 { animation-delay: 1s; }
+.capyrafi.cr-party .cr-body,
+.capyrafi.cr-party .cr-head { animation: cr-hop .8s ease-in-out infinite; }
+.capyrafi.cr-focus .cr-head { animation-duration: 5s; }
+.capyrafi.is-poked .cr-body,
+.capyrafi.is-poked .cr-head { animation: cr-poke .6s cubic-bezier(.3, 1.8, .5, 1); }
+
+@keyframes cr-breathe { 50% { transform: scale(1.015, 1.03); } }
+@keyframes cr-nod { 50% { transform: translateY(1.5px) rotate(-1deg); } }
+@keyframes cr-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes cr-ear { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(-14deg); } 96% { transform: rotate(8deg); } }
+@keyframes cr-float { 0% { transform: translate(0, 4px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(6px, -12px); opacity: 0; } }
+@keyframes cr-drip { 0% { transform: translateY(-3px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
+@keyframes cr-twinkle { 50% { transform: scale(.4) rotate(45deg); opacity: .4; } }
+@keyframes cr-hop { 50% { transform: translateY(-9px); } }
+@keyframes cr-poke { 0% { transform: scale(1); } 35% { transform: scale(1.1, .9) rotate(-3deg); } 70% { transform: scale(.96, 1.08) rotate(2deg); } 100% { transform: scale(1); } }
+
+/* Adegan ruang */
+.cr-room { display: block; width: 100%; height: auto; max-height: 320px; }
+.cr-room .cr-wall { fill: var(--cw-soft); }
+.cr-room .cr-floor { fill: color-mix(in srgb, var(--cw-line) 65%, var(--cw-soft)); }
+.cr-room .cr-window { fill: var(--cw-card); stroke: var(--cw-accent); stroke-width: 6; }
+.cr-room .cr-rug { fill: var(--cw-soft-green); }
+.cr-room .cr-plant { transform-box: fill-box; transform-origin: 50% 100%; animation: cr-sway 5s ease-in-out infinite; }
+@keyframes cr-sway { 50% { transform: rotate(2.5deg); } }
+.cr-stage { cursor: pointer; border-radius: 26px; }
+.cr-stage:focus-visible { outline: 3px solid var(--cw-accent); outline-offset: 3px; }
+
+/* Perjalanan CapyRafi */
+.capy-home .cw-journey { margin-top: 16px; }
+.cw-journey-track { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 14px 0 12px; }
+.cw-journey-step { display: grid; justify-items: center; gap: 4px; padding: 10px 4px 8px; border: 1px solid var(--cw-line); border-radius: 18px; background: var(--cw-soft); text-align: center; }
+.cw-journey-step.is-current { border-color: var(--cw-accent); background: var(--cw-card); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cw-accent) 25%, transparent); }
+.cw-journey-step.is-locked .capyrafi { filter: grayscale(1) brightness(.75); opacity: .45; }
+.cw-journey-step svg { width: min(64px, 100%); height: auto; }
+.cw-journey-step b { font-size: 11px; line-height: 1.2; }
+.cw-journey-step small { color: var(--cw-muted); font-size: 10px; }
+.cw-journey-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--cw-muted); font-size: 12px; }
+.cw-journey-meta strong { color: var(--cw-ink); }
+.cw-journey-hint { margin: 8px 0 0; color: var(--cw-muted); font-size: 12px; }
+
+@media (max-width: 700px) {
+  .cw-journey-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .capyrafi *, .cr-room *, .cw-confetti i, .cw-timer-pill { animation: none !important; }
+}
+
+/* Jurnal autosave + kontrol kecil */
+.cw-save-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.cw-save-status { color: var(--cw-muted); font-size: 12px; font-weight: 600; }
+.cw-save-status.is-error { color: var(--cw-danger); }
+.cw-inline { display: flex; align-items: center; gap: 10px; }
+.cw-inline input[type="range"] { flex: 1; min-width: 0; }

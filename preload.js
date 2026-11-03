@@ -8,6 +8,18 @@ contextBridge.exposeInMainWorld('desk', {
   warn8: () => ipcRenderer.send('warn8'),
   saveMiniSettings: (s) => ipcRenderer.send('save-mini-settings', s),
   getMiniSettings: () => ipcRenderer.invoke('get-mini-settings'),
+  updateStatus: () => ipcRenderer.invoke('update:status'),
+  updateCheck: () => ipcRenderer.invoke('update:check'),
+  updateCancel: () => ipcRenderer.invoke('update:cancel'),
+  updateInstall: () => ipcRenderer.invoke('update:install'),
+  onUpdate: (cb) => ipcRenderer.on('update:status', (e, s) => cb(s)),
+  onUpdateOpen: (cb) => ipcRenderer.on('update:open', () => cb()),
+  // Proses utama minta isi data sebelum memasang pembaruan; jawabannya dicadangkan ke disk.
+  onUpdatePrepare: (provide) => ipcRenderer.on('update:prepare', () => {
+    let json = null;
+    try { json = provide(); } catch (err) { json = null; }
+    ipcRenderer.invoke('update:backup', json);
+  }),
   libraryPick: (req) => ipcRenderer.invoke('library:pick', req),
   libraryStoreGenerated: (req) => ipcRenderer.invoke('library:store-generated', req),
   libraryImport: (req) => ipcRenderer.invoke('library:import', req),

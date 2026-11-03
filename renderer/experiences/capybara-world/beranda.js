@@ -4,57 +4,7 @@
   var JF = root.JF;
   var ui, app, host, refs = {}, selectedTaskId = null;
 
-  var ROOM_ART = `<svg viewBox="0 0 640 360" role="img" aria-label="Kamar tidur nyaman dengan kapibara menemani sesi fokus" xmlns="http://www.w3.org/2000/svg">
-    <rect width="640" height="360" rx="24" fill="#F2DCC2"/>
-    <path d="M0 279h640v81H0z" fill="#D6B38F"/>
-    <path d="M0 287h640" stroke="#BD9876" stroke-width="4"/>
-    <rect x="44" y="44" width="172" height="134" rx="14" fill="#FFF8EC" stroke="#A96D4E" stroke-width="7"/>
-    <rect x="56" y="56" width="148" height="110" rx="8" fill="#BDD8D4"/>
-    <path d="M130 57v109M57 111h146" stroke="#FFF8EC" stroke-width="7"/>
-    <circle cx="174" cy="82" r="13" fill="#F4C879"/>
-    <path d="M70 154c16-25 34-23 51 0m20-1c15-30 34-29 53 0" fill="none" stroke="#89AE9A" stroke-width="9" stroke-linecap="round"/>
-    <path d="M37 39h188l-17 153H54z" fill="#E8B69A" opacity=".8"/>
-    <path d="M264 244h301v42H264z" rx="12" fill="#9A684E"/>
-    <path d="M286 190h271q18 0 18 18v48H269v-48q0-18 17-18z" fill="#FFF2DC"/>
-    <path d="M294 204h116v44H279v-29q0-15 15-15z" fill="#D8E5D6"/>
-    <path d="M410 204h132q15 0 15 15v29H410z" fill="#E8C3A6"/>
-    <path d="M273 246h287v18H273z" fill="#CB8C68"/>
-    <path d="M279 286v36m266-36v36" stroke="#754C3C" stroke-width="11" stroke-linecap="round"/>
-    <rect x="490" y="131" width="92" height="14" rx="7" fill="#825941"/>
-    <rect x="500" y="145" width="72" height="70" rx="8" fill="#D49A68"/>
-    <path d="M516 161h40m-40 16h40m-40 16h40" stroke="#F3D0A8" stroke-width="5" stroke-linecap="round"/>
-    <path d="M450 286h156v11H450z" fill="#9A684E"/>
-    <path d="M462 296v31m132-31v31" stroke="#754C3C" stroke-width="8" stroke-linecap="round"/>
-    <path d="M493 124c-2-26 13-38 27-44-3 15-2 23 0 31 5-23 22-33 40-35-9 13-12 25-11 38 8-17 22-23 39-23-8 12-10 23-8 34" fill="#719879" stroke="#54785F" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M95 282c3-29 27-47 60-47 34 0 55 18 59 47" fill="#D99552"/>
-    <ellipse cx="153" cy="255" rx="49" ry="38" fill="#DB9858"/>
-    <ellipse cx="127" cy="230" rx="12" ry="16" fill="#B97949"/>
-    <ellipse cx="179" cy="230" rx="12" ry="16" fill="#B97949"/>
-    <ellipse cx="127" cy="231" rx="6" ry="9" fill="#E9B67F"/>
-    <ellipse cx="179" cy="231" rx="6" ry="9" fill="#E9B67F"/>
-    <ellipse cx="153" cy="264" rx="30" ry="23" fill="#E8B67E"/>
-    <circle cx="140" cy="250" r="3.5" fill="#49352D"/>
-    <circle cx="166" cy="250" r="3.5" fill="#49352D"/>
-    <ellipse cx="153" cy="261" rx="6" ry="4" fill="#49352D"/>
-    <path d="M146 269q7 6 14 0" fill="none" stroke="#70483A" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="128" cy="263" r="6" fill="#E58D78" opacity=".75"/>
-    <circle cx="178" cy="263" r="6" fill="#E58D78" opacity=".75"/>
-    <path d="M107 285q-23 5-28-10-2-8 7-10 13-2 23 9m89 11q21 5 27-10 2-8-7-10-13-2-23 9" fill="#DB9858"/>
-    <path d="M119 290h68" stroke="#A96D4E" stroke-width="5" stroke-linecap="round"/>
-    <path d="M74 244q-14-12-11-28 3-17 17-21" fill="none" stroke="#6D9272" stroke-width="6" stroke-linecap="round"/>
-    <path d="M60 220q-17-15-28-7 4 17 23 19m29-25q15-18 29-11-2 17-20 24" fill="#8BAE83"/>
-    <path d="M43 280h58v7H43z" fill="#A87958"/>
-    <path d="M70 280v-32" stroke="#A87958" stroke-width="5"/>
-    <path d="M63 249q7-15 14 0" fill="#E6AD62"/>
-    <path d="M352 152c0-15 12-27 27-27s27 12 27 27" fill="none" stroke="#9A684E" stroke-width="7"/>
-    <path d="M379 152v33" stroke="#9A684E" stroke-width="6"/>
-    <path d="M355 184q24-18 48 0l-7 12h-34z" fill="#E9B96F"/>
-    <circle cx="378" cy="191" r="5" fill="#FFF1C7"/>
-    <path d="M353 282v-17m20 17v-17m20 17v-17" stroke="#A96D4E" stroke-width="4" stroke-linecap="round"/>
-    <path d="M596 82l5 11 12 2-9 8 2 12-10-6-10 6 2-12-9-8 12-2z" fill="#FFF3D1"/>
-    <circle cx="259" cy="85" r="4" fill="#FFF3D1"/>
-    <circle cx="238" cy="120" r="3" fill="#FFF3D1"/>
-  </svg>`;
+  var pokeCount = 0;
 
   function greeting() {
     var h = new Date().getHours();
@@ -68,14 +18,28 @@
     refs = {};
 
     var rootEl = ui.el('div.capy-home');
+    var cr = JF.capyrafi;
+    var info = cr.compute(app.rawState());
+    var ctx = heroContext(info);
+    var mood = cr.moodOf(ctx);
+    var hour = new Date().getHours();
     var hero = ui.el('section.cw-hero');
+    refs.companion = ui.el('p.cw-companion', { 'aria-live': 'polite' }, cr.say(mood, ctx, pokeCount));
     var intro = ui.el('div.cw-hero-copy',
-      ui.el('span.cw-eyebrow', 'RUANG FOKUSMU'),
+      ui.el('span.cw-eyebrow', 'RUMAH CAPYRAFI · LV.' + info.level + ' ' + info.name.toUpperCase()),
       ui.el('h2.cw-greeting', greeting() + ', semangat hari ini!'),
       ui.el('p.cw-date', ui.fmt.dateLong(JF.dates.startOfDay(app.today()))),
-      ui.el('p.cw-companion', 'Mochi siap menemani satu sesi fokusmu.'));
+      refs.companion);
     hero.appendChild(intro);
-    hero.appendChild(ui.el('div.cw-room-art', { html: ROOM_ART }));
+    var art = ui.el('div.cw-room-art.cr-stage', {
+      role: 'button', tabindex: '0', title: 'Colek CapyRafi',
+      'aria-label': 'Colek CapyRafi untuk mendengar celotehnya',
+      html: cr.room({ stage: info.stage, mood: mood, night: hour >= 18 || hour < 5 })
+    });
+    refs.art = art;
+    art.addEventListener('click', poke);
+    art.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); poke(); } });
+    hero.appendChild(art);
     rootEl.appendChild(hero);
 
     var overview = ui.el('section.cw-overview', { 'aria-label': 'Timer fokus dan progres harian' });
@@ -96,6 +60,8 @@
     tasks.appendChild(refs.taskList);
     rootEl.appendChild(tasks);
 
+    rootEl.appendChild(journeyCard(info));
+
     var shortcuts = ui.el('nav.cw-shortcuts', { 'aria-label': 'Akses cepat' });
     shortcuts.appendChild(ui.el('span.cw-shortcuts-label', 'Lanjutkan ke'));
     shortcuts.appendChild(quickLink('Kalender', '#kalender'));
@@ -106,6 +72,61 @@
     ui.clear(container);
     container.appendChild(rootEl);
     render();
+  }
+
+
+  function heroContext(info) {
+    var state = app.rawState(), day = app.today();
+    var session = app.currentSession();
+    var today = state.tasks.filter(function (t) { return !t.archived && t.targetDate === day; });
+    return {
+      dayKey: day, info: info,
+      running: !!(session && session.state === 'running'),
+      paused: !!(session && session.state === 'paused'),
+      onBreak: !!app.breakInfo(),
+      overdue: app.todayStats().overdue || 0,
+      todayTotal: today.length,
+      todayDone: today.filter(function (t) { return t.done; }).length
+    };
+  }
+
+  function poke() {
+    if (!refs.art || !refs.companion) return;
+    pokeCount += 1;
+    var cr = JF.capyrafi;
+    var info = cr.compute(app.rawState());
+    var ctx = heroContext(info);
+    refs.companion.textContent = cr.say(cr.moodOf(ctx), ctx, pokeCount);
+    var svg = refs.art.querySelector('svg.cr-main');
+    if (svg) {
+      svg.classList.remove('is-poked');
+      void svg.getBoundingClientRect();
+      svg.classList.add('is-poked');
+    }
+  }
+
+  function journeyCard(info) {
+    var cr = JF.capyrafi;
+    var card = ui.el('section.cw-card.cw-journey');
+    card.appendChild(ui.el('div.cw-section-head',
+      ui.el('div', ui.el('span.cw-eyebrow', 'CAPYRAFI TUMBUH DARI KERJA KERASMU'), ui.el('h2', 'Perjalanan CapyRafi'))));
+    var track = ui.el('div.cw-journey-track', { role: 'list' });
+    cr.STAGES.forEach(function (stage, i) {
+      var step = ui.el('div.cw-journey-step' + (i === info.stage ? '.is-current' : '') + (i > info.stage ? '.is-locked' : ''),
+        { role: 'listitem', title: stage.hint, html: cr.svg({ stage: i, mood: 'happy', cls: 'cr-mini' }) });
+      step.appendChild(ui.el('b', stage.name));
+      step.appendChild(ui.el('small', i === 0 ? 'mulai' : stage.at + ' XP'));
+      track.appendChild(step);
+    });
+    card.appendChild(track);
+    card.appendChild(progressBar(info.pct, 'Progres XP menuju tahap berikutnya'));
+    card.appendChild(ui.el('div.cw-journey-meta',
+      ui.el('span', ui.el('strong', info.xp + ' XP'), info.max ? ' · tahap tertinggi, hormat!' : ' · ' + info.toNext + ' XP lagi menuju ' + info.next.name),
+      ui.el('span', info.doneTasks + ' tugas × ' + cr.XP.task),
+      ui.el('span', info.milestones + ' milestone × ' + cr.XP.milestone),
+      ui.el('span', info.goalsDone + ' goal × ' + cr.XP.goal)));
+    card.appendChild(ui.el('p.cw-journey-hint', 'XP dihitung ulang dari data tugas dan goals. Membuka kembali tugas akan mengurangi XP, jadi Original dan Capybara selalu sama.'));
+    return card;
   }
 
   function quickLink(label, route) {
@@ -313,7 +334,7 @@
     if (!todayTasks.length && !overdueTasks.length) {
       refs.taskList.appendChild(ui.el('div.cw-empty',
         ui.el('span.cw-empty-icon', '☁'),
-        ui.el('div', ui.el('strong', 'Belum ada tugas untuk hari ini'), ui.el('p', 'Tambahkan satu langkah kecil, lalu Mochi akan menemanimu fokus.')),
+        ui.el('div', ui.el('strong', 'Belum ada tugas untuk hari ini'), ui.el('p', 'Tambahkan satu langkah kecil, lalu CapyRafi akan menemanimu fokus.')),
         ui.btn('Tambah tugas', function () { location.hash = '#tugas'; }, { primary: true, sm: true })));
     }
   }
@@ -338,6 +359,8 @@
   JF.capybaraHome = {
     mount: mount,
     render: render,
-    frame: frame
+    frame: frame,
+    poke: poke,
+    context: heroContext
   };
 })(typeof self !== 'undefined' ? self : this);

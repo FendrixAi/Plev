@@ -1,13 +1,14 @@
 {
   "name": "jam-fokus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Jam analog dengan pengatur waktu fokus dan daftar tugas",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "node --test \"tests/*.test.js\"",
     "build": "electron-builder --win portable",
-    "build:installer": "electron-builder --win nsis"
+    "build:installer": "electron-builder --win nsis",
+    "release": "electron-builder --win nsis --publish always"
   },
   "build": {
     "appId": "xyz.levia.jamfokus",
@@ -15,6 +16,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "updater.js",
       "library-service.js",
       "mini.html",
       "mini-preload.js",
@@ -41,7 +43,14 @@
     },
     "portable": {
       "artifactName": "Jam Fokus Portable ${version}.${ext}"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "FendrixAi",
+        "repo": "Plev"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "33.2.1",
@@ -49,5 +58,8 @@
   },
   "author": "Iqbal Rafi",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  }
 }

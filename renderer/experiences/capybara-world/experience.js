@@ -1,4 +1,5 @@
-/* Capybara World owns its shell and route rendering; Original pages are never mounted here. */
+/* Capybara World owns its shell and route rendering; Original pages are never mounted here.
+   Layout: HUD di atas (CapyRafi, judul, timer, musik) + dock melayang di bawah. */
 (function (root) {
   'use strict';
   var JF = root.JF;
@@ -6,6 +7,9 @@
   var shell;
   var content;
   var currentId = 'beranda';
+  var hudSig = '';
+  var timerSig = '';
+  var renderedOnce = false;
 
   var routes = [
     ['beranda', 'Beranda', 'M4 10.5 12 4l8 6.5V20H4z', 'M9 20v-6h6v6'],
@@ -20,47 +24,76 @@
     ['library', 'Library', 'M4 4h7v16H4zM13 4h7v16h-7z', 'M6 8h3m6 0h3']
   ];
 
-  function capyArt() {
-    return '<svg viewBox="0 0 120 100" role="img" aria-label="Kapibara menemani sesi produktif" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M7 86q24-13 48 0 25-13 58 0v9H7z" fill="#ead1ad"/>' +
-      '<path d="M32 77q0-30 28-31 28 1 29 31v9H32z" fill="#c77d48"/>' +
-      '<ellipse cx="43" cy="48" rx="8" ry="12" fill="#b56b3e"/><ellipse cx="77" cy="48" rx="8" ry="12" fill="#b56b3e"/>' +
-      '<ellipse cx="43" cy="49" rx="4" ry="7" fill="#f0be89"/><ellipse cx="77" cy="49" rx="4" ry="7" fill="#f0be89"/>' +
-      '<ellipse cx="60" cy="70" rx="27" ry="21" fill="#e8b67e"/><circle cx="50" cy="64" r="2" fill="#49352d"/>' +
-      '<circle cx="70" cy="64" r="2" fill="#49352d"/><ellipse cx="60" cy="70" rx="5" ry="3.5" fill="#49352d"/>' +
-      '<path d="M55 77q5 4 10 0" fill="none" stroke="#75543e" stroke-width="2" stroke-linecap="round"/>' +
-      '<circle cx="42" cy="74" r="4" fill="#e58d78"/><circle cx="78" cy="74" r="4" fill="#e58d78"/>' +
-      '<path d="m18 26 4 9 10 2-8 6 2 10-8-6-9 5 3-10-8-6 10-2z" fill="#f2c56e"/></svg>';
+  function ctxNow() {
+    var app = JF.app, st = app.rawState(), day = app.today();
+    var session = app.currentSession();
+    var today = st.tasks.filter(function (t) { return !t.archived && t.targetDate === day; });
+    var ts = app.todayStats();
+    return {
+      dayKey: day,
+      running: !!(session && session.state === 'running'),
+      paused: !!(session && session.state === 'paused'),
+      onBreak: !!app.breakInfo(),
+      overdue: ts.overdue || 0,
+      todayTotal: today.length,
+      todayDone: today.filter(function (t) { return t.done; }).length
+    };
   }
 
   function makeShell() {
     if (shell) return;
     shell = document.createElement('div');
     shell.className = 'cw-app-shell';
-    shell.innerHTML = '<aside class="cw-rail"><div class="cw-brand"><span class="cw-brand-art">' + capyArt() +
-      '</span><span><b>Capybara<br>World</b><small>ruang kecil, fokus besar</small></span></div>' +
-      '<nav class="cw-route-list" aria-label="Navigasi produktivitas"></nav>' +
-      '<div class="cw-rail-foot"><button class="cw-mini" type="button">Buka kartu mini</button><span>Pelan-pelan, tetap maju.</span></div></aside>' +
-      '<section class="cw-main"><header class="cw-top"><div><span class="cw-date-line"></span><h1 class="cw-page-title"></h1></div>' +
-      '<div class="cw-top-actions"><button class="cw-theme" type="button" aria-label="Ganti tema warna"></button></div></header>' +
-      '<main class="cw-content"></main></section>';
-    var nav = shell.querySelector('.cw-route-list');
+    shell.innerHTML =
+      '<header class="cw-hud">' +
+        '<button class="cw-pet" type="button" aria-label="Buka Beranda, rumah CapyRafi"><span class="cw-pet-art"></span></button>' +
+        '<div class="cw-pet-info"><b>CapyRafi</b><small class="cw-pet-level"></small>' +
+          '<span class="cw-xp" role="progressbar" aria-label="XP menuju tahap berikutnya" aria-valuemin="0" aria-valuemax="100"><i></i></span></div>' +
+        '<div class="cw-hud-title"><span class="cw-date-line"></span><h1 class="cw-page-title"></h1></div>' +
+        '<div class="cw-hud-tools">' +
+          '<button class="cw-timer-pill" type="button" hidden aria-live="off"></button>' +
+          '<div class="cw-music" hidden></div>' +
+          '<button class="cw-mini" type="button" title="Buka kartu mini" aria-label="Buka kartu mini">▭</button>' +
+          '<button class="cw-theme" type="button" aria-label="Ganti tema warna"></button>' +
+        '</div>' +
+      '</header>' +
+      '<main class="cw-content"></main>' +
+      '<nav class="cw-dock" aria-label="Navigasi produktivitas"></nav>' +
+      '<div class="cw-confetti" aria-hidden="true"></div>';
+
+    var nav = shell.querySelector('.cw-dock');
     routes.forEach(function (item) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'cw-route';
       button.dataset.page = item[0];
+      button.title = item[1];
+      button.setAttribute('aria-label', item[1]);
       button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + item[2] +
-        '"/><path d="' + item[3] + '"/></svg><span>' + item[1] + '</span>';
+        '"/><path d="' + item[3] + '"/></svg><span class="cw-route-label">' + item[1] + '</span>' +
+        (item[0] === 'tugas' ? '<span class="cw-badge-dot" hidden></span>' : '');
       button.addEventListener('click', function () { root.location.hash = '#' + item[0]; });
       nav.appendChild(button);
+    });
+
+    shell.querySelector('.cw-pet').addEventListener('click', function () {
+      if (currentId !== 'beranda') root.location.hash = '#beranda';
+      else if (JF.capybaraHome && JF.capybaraHome.poke) JF.capybaraHome.poke();
     });
     shell.querySelector('.cw-mini').addEventListener('click', function () {
       if (root.desk && root.desk.mini) root.desk.mini(true);
     });
     shell.querySelector('.cw-theme').addEventListener('click', function () { JF.theme.toggle(); });
+    shell.querySelector('.cw-timer-pill').addEventListener('click', function () { root.location.hash = '#beranda'; });
     content = shell.querySelector('.cw-content');
+    content.addEventListener('focusout', function () {
+      setTimeout(function () {
+        if (pendingRefresh && !editingInside()) { pendingRefresh = false; render(currentId); }
+      }, 0);
+    });
     document.getElementById('app').appendChild(shell);
+    if (JF.app && JF.app.on) JF.app.on('music', renderMusic);
+    renderMusic();
   }
 
   function setActive(value) {
@@ -84,25 +117,150 @@
       button.classList.toggle('is-current', selected);
       button.setAttribute('aria-current', selected ? 'page' : 'false');
     });
+    var dot = shell.querySelector('.cw-badge-dot');
+    if (dot) {
+      var n = JF.app.todayStats().overdue || 0;
+      dot.hidden = !n;
+      dot.textContent = n > 99 ? '99+' : String(n);
+    }
+  }
+
+  /* ── CapyRafi di HUD + naik tahap ──────────────────────────────── */
+  var STAGE_KEY = 'jamfokus.capyrafi.stage';
+  function updatePet() {
+    var cr = JF.capyrafi;
+    if (!cr || !shell) return;
+    var info = cr.compute(JF.app.rawState());
+    var mood = cr.moodOf(ctxNow());
+    var sig = info.stage + '|' + mood;
+    if (sig !== hudSig) {
+      hudSig = sig;
+      shell.querySelector('.cw-pet-art').innerHTML = cr.svg({ stage: info.stage, mood: mood, crop: 'head' });
+    }
+    shell.querySelector('.cw-pet-level').textContent = 'Lv.' + info.level + ' · ' + info.name;
+    var bar = shell.querySelector('.cw-xp');
+    bar.setAttribute('aria-valuenow', String(info.pct));
+    bar.title = info.max ? info.xp + ' XP · tahap tertinggi' : info.xp + ' XP · ' + info.toNext + ' XP lagi menuju ' + info.next.name;
+    bar.firstChild.style.width = info.pct + '%';
+
+    var seen = null;
+    try { seen = localStorage.getItem(STAGE_KEY); } catch (e) { /* preferensi tampilan saja */ }
+    if (seen == null) { try { localStorage.setItem(STAGE_KEY, String(info.stage)); } catch (e) {} return; }
+    if (Number(seen) !== info.stage) {
+      var up = info.stage > Number(seen);
+      try { localStorage.setItem(STAGE_KEY, String(info.stage)); } catch (e) {}
+      if (up) {
+        celebrate();
+        JF.ui.toast('CapyRafi naik jadi ' + info.name + '! Kerja bagus.', { kind: 'ok', timeout: 6000 });
+      }
+    }
+  }
+
+  function celebrate() {
+    var box = shell && shell.querySelector('.cw-confetti');
+    if (!box) return;
+    var colors = ['#f2c24b', '#e8744a', '#6fa56a', '#f08fb0', '#5aa6d6'];
+    box.innerHTML = '';
+    for (var i = 0; i < 28; i++) {
+      var piece = document.createElement('i');
+      piece.style.left = (Math.random() * 100) + '%';
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = (Math.random() * 0.4) + 's';
+      piece.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+      box.appendChild(piece);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 2600);
+  }
+
+  /* ── musik global ──────────────────────────────────────────────── */
+  function renderMusic() {
+    if (!shell) return;
+    var box = shell.querySelector('.cw-music');
+    var m = JF.app && JF.app.music;
+    var st = m && m.status;
+    box.textContent = '';
+    if (!st || !st.active) { box.hidden = true; return; }
+    box.hidden = false;
+    var title = document.createElement('span');
+    title.className = 'cw-music-title';
+    title.textContent = '♪ ' + (st.track ? st.track.name : '—');
+    title.title = (st.paused ? 'Musik dijeda' : 'Sedang diputar') + (st.count > 1 ? ' · lagu ' + (st.index + 1) + ' dari ' + st.count : '');
+    box.appendChild(title);
+    [[st.paused ? '▶' : '❚❚', st.paused ? 'Lanjutkan musik' : 'Jeda musik', function () { m.togglePause(); }],
+     ['⏭', 'Lagu berikutnya', function () { m.next(); }],
+     ['■', 'Hentikan musik', function () { m.stopAllMusic(); }]].forEach(function (item) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = item[0]; b.title = item[1]; b.setAttribute('aria-label', item[1]);
+      b.addEventListener('click', item[2]);
+      box.appendChild(b);
+    });
+  }
+
+  /* ── pil timer global (dipanggil tiap frame, hanya menyentuh DOM saat teks berubah) ── */
+  function updateTimer() {
+    if (!shell) return;
+    var app = JF.app, pill = shell.querySelector('.cw-timer-pill');
+    var brk = app.breakInfo(), s = app.currentSession(), text = '', cls = '';
+    if (brk) {
+      text = JF.ui.fmt.mmss(Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000))) + ' · Istirahat'; cls = 'is-break';
+    } else if (s && s.state === 'running') {
+      text = JF.ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now())) + ' · ' + (s.taskName || 'Fokus'); cls = 'is-run';
+    } else if (s && s.state === 'paused') {
+      text = JF.ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now())) + ' · dijeda'; cls = 'is-paused';
+    }
+    var sig = cls + '|' + text;
+    if (sig === timerSig) return;
+    timerSig = sig;
+    pill.hidden = !text;
+    pill.className = 'cw-timer-pill ' + cls;
+    pill.textContent = text;
+    pill.title = 'Kembali ke timer fokus';
   }
 
   function render(id) {
     if (!active) return;
+    var pageChanged = currentId !== id || !renderedOnce;
+    renderedOnce = true;
     currentId = id;
     makeShell();
     updateHeader(id);
+    updatePet();
     JF.capybaraPages.render(id, content);
+    if (pageChanged) content.scrollTop = 0;
     shell.hidden = false;
+    timerSig = '';
+    updateTimer();
+  }
+
+  /* Refresh dari perubahan data: jangan hancurkan kolom yang sedang diketik. */
+  var pendingRefresh = false;
+  function editingInside() {
+    var a = document.activeElement;
+    if (!a || !content || !content.contains(a)) return false;
+    if (a.tagName === 'TEXTAREA') return true;
+    return a.tagName === 'INPUT' && !/^(button|checkbox|radio|submit|range|file|color)$/.test(a.type);
+  }
+  function refresh(id) {
+    if (!active) return;
+    if (editingInside()) {
+      pendingRefresh = true;
+      if (shell) { updateHeader(currentId); updatePet(); }
+      return;
+    }
+    render(id);
   }
 
   function frame(ts) {
-    if (active && JF.capybaraPages && JF.capybaraPages.frame) JF.capybaraPages.frame(currentId, ts);
+    if (!active) return;
+    updateTimer();
+    if (JF.capybaraPages && JF.capybaraPages.frame) JF.capybaraPages.frame(currentId, ts);
   }
 
   JF.experiences = JF.experiences || {};
   JF.experiences.capybaraWorld = {
     setActive: setActive,
     render: render,
+    refresh: refresh,
     frame: frame
   };
 })(window);

@@ -38,3 +38,24 @@ PINTASAN DAN TIPS
   - Tombol bulan/matahari di pojok kanan atas mengganti mode terang/gelap.
   - Tombol X hanya menyembunyikan jendela ke tray; timer tetap jalan.
     Keluar sepenuhnya: klik kanan ikon tray, Keluar.
+
+MERILIS PEMBARUAN OTOMATIS
+  Sekali saja: di package.json ganti GANTI_USERNAME_GITHUB dan GANTI_NAMA_REPO
+  (repo harus publik, atau hosting sendiri lewat provider "generic").
+  Tiap rilis:
+  1. Naikkan "version" di package.json (misal 1.0.1 -> 1.0.2).
+  2. Di terminal: set GH_TOKEN=token_github_kamu   lalu   npm run release
+  3. Buka GitHub > Releases, pastikan draft rilis berisi Setup .exe dan latest.yml, lalu Publish.
+  Aplikasi di laptop pengguna mengecek tiap 6 jam (dan 15 detik setelah dibuka),
+  mengunduh sendiri, lalu menawarkan Restart. Tidak ditawarkan selama timer masih jalan.
+  Cek manual: klik kanan ikon tray > Cek pembaruan.
+  Hanya berlaku untuk versi Setup, bukan portable.
+
+PEMBARUAN DI DALAM APLIKASI
+  Pengaturan > Pembaruan aplikasi (di Capybara World: tab Pembaruan) menampilkan
+  progres unduh. Setelah selesai: menunggu timer fokus/istirahat selesai, hitung
+  mundur 10 detik (bisa Batalkan), data dicadangkan ke
+  %APPDATA%\<nama app>\backups (3 terakhir), lalu pasang dan buka ulang otomatis.
+  Cadangan itu berformat sama dengan Ekspor cadangan, jadi bisa dipulihkan lewat
+  Pulihkan cadangan. Jangan ubah "name", "productName", dan "appId" di package.json
+  karena folder data pengguna ikut namanya.
