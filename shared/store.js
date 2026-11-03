@@ -225,6 +225,40 @@
     return { ok: true, task: t, changed: true };
   }
 
+
+  /* Hard delete — ONLY for tasks that are already archived (the Arsip tab).
+     Active/done tasks can never be deleted this way, and a task that still
+     owns a running/paused session is skipped. References to the task are
+     stripped from goals/milestones and Library items so no dangling ids are
+     left behind. Past focus sessions and the audit trail are kept (their
+     history/analytics must not change); sessions already store the task name. */
+  function deleteArchivedTasks(state, ids, now) {
+    now = now == null ? Date.now() : now;
+    var want = {};
+    (ids || []).forEach(function (id) { if (id) want[id] = true; });
+    var removed = [], skipped = [];
+    Object.keys(want).forEach(function (id) {
+      var t = find(state, id);
+      if (!t) return;
+      if (!t.archived || hasLiveSession(state, id)) { skipped.push(id); return; }
+      removed.push(id);
+    });
+    if (!removed.length) return { ok: true, removed: [], skipped: skipped, changed: false };
+    var gone = {};
+    removed.forEach(function (id) { gone[id] = true; });
+    function keep(id) { return !gone[id]; }
+    state.tasks = state.tasks.filter(function (t) { return keep(t.id); });
+    (Array.isArray(state.goals) ? state.goals : []).forEach(function (g) {
+      if (Array.isArray(g.taskIds)) g.taskIds = g.taskIds.filter(keep);
+      (g.milestones || []).forEach(function (m) { if (Array.isArray(m.taskIds)) m.taskIds = m.taskIds.filter(keep); });
+    });
+    (Array.isArray(state.library) ? state.library : []).forEach(function (it) {
+      if (Array.isArray(it.taskIds)) it.taskIds = it.taskIds.filter(keep);
+    });
+    ev(state, now, 'tasks.deleted', null, { count: removed.length });
+    return { ok: true, removed: removed, skipped: skipped, changed: true };
+  }
+
   /* ── queries ────────────────────────────────────────────────────────── */
   /* diffDays(targetDate, today) > 0 means the target is in the PAST. */
   function activeTasks(state, today) {
@@ -282,7 +316,7 @@
     find: find, ev: ev,
     addTask: addTask, editTask: editTask, rescheduleTask: rescheduleTask,
     completeTask: completeTask, reopenTask: reopenTask, setRequiresOutput: setRequiresOutput,
-    archiveTask: archiveTask, restoreTask: restoreTask,
+    archiveTask: archiveTask, restoreTask: restoreTask, deleteArchivedTasks: deleteArchivedTasks,
     activeTasks: activeTasks, upcomingTasks: upcomingTasks, overdueTasks: overdueTasks,
     tasksTargeting: tasksTargeting, tasksCompletedOn: tasksCompletedOn,
     completedCountOn: completedCountOn, archivedTasks: archivedTasks,

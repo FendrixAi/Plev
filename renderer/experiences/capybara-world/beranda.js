@@ -3,6 +3,7 @@
   'use strict';
   var JF = root.JF;
   var ui, app, host, refs = {}, selectedTaskId = null;
+  var pickFilter = null, pickDate = '', pickNone = false;   // filter tanggal daftar tugas sesi
 
   var pokeCount = 0;
 
@@ -193,27 +194,75 @@
 
     var state = app.rawState();
     var available = JF.store.activeTasks(state, app.today()).concat(JF.store.upcomingTasks(state, app.today()));
-    available.sort(function (a, b) {
-      var priority = { high: 0, normal: 1, low: 2 };
-      return priority[a.priority] - priority[b.priority] ||
-        (a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 : a.title.localeCompare(b.title, 'id'));
+    var todayKey = app.today(), tomorrowKey = JF.dates.addDays(todayKey, 1);
+    var PF = {
+      all: function () { return true; },
+      late: function (t) { return t.targetDate < todayKey; },
+      today: function (t) { return t.targetDate === todayKey; },
+      tomorrow: function (t) { return t.targetDate === tomorrowKey; },
+      date: function (t) { return !pickDate || t.targetDate === pickDate; }
+    };
+    function countOf(f) { return available.filter(PF[f]).length; }
+    var eff = pickFilter || (countOf('today') ? 'today' : 'all');
+    var priority = { high: 0, normal: 1, low: 2 };
+    var list = available.filter(PF[eff]).sort(function (a, b) {
+      return a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 :
+        (priority[a.priority] - priority[b.priority]) || a.title.localeCompare(b.title, 'id');
     });
-    if (selectedTaskId == null && available.some(function (t) { return t.id === app.selectedTaskId; })) selectedTaskId = app.selectedTaskId;
-    if (!available.some(function (t) { return t.id === selectedTaskId; })) selectedTaskId = available.length ? available[0].id : null;
+    if (selectedTaskId != null && !list.some(function (t) { return t.id === selectedTaskId; })) selectedTaskId = null;
+    if (!pickNone) {
+      if (selectedTaskId == null && list.some(function (t) { return t.id === app.selectedTaskId; })) selectedTaskId = app.selectedTaskId;
+      if (selectedTaskId == null && list.length) selectedTaskId = list[0].id;
+    }
 
     var picker = ui.el('label.cw-picker', 'Pilih tugas untuk sesi ini');
+    var prow = ui.el('div.cw-pick-row');
+    var fsel = ui.el('select.cw-fsel', { 'aria-label': 'Filter tanggal tugas' });
+    [['today', 'Hari ini'], ['tomorrow', 'Besok'], ['late', 'Terlambat'], ['all', 'Semua']].forEach(function (o) {
+      var op = ui.el('option', { value: o[0] }, o[1] + ' (' + countOf(o[0]) + ')');
+      if (eff === o[0]) op.selected = true;
+      fsel.appendChild(op);
+    });
+    var odt = ui.el('option', { value: 'date' }, 'Pilih tanggal…');
+    if (eff === 'date') odt.selected = true;
+    fsel.appendChild(odt);
+    fsel.addEventListener('change', function () {
+      pickFilter = fsel.value; if (pickFilter !== 'date') pickDate = '';
+      pickNone = false; renderFocus();
+    });
+    prow.appendChild(fsel);
+    if (eff === 'date') {
+      var pdate = ui.el('input.cw-fdate', { type: 'date', 'aria-label': 'Pilih tanggal tertentu', value: pickDate });
+      pdate.addEventListener('change', function () { pickDate = JF.dates.isDayKey(pdate.value) ? pdate.value : ''; pickNone = false; renderFocus(); });
+      prow.appendChild(pdate);
+    }
     var select = ui.el('select', {
       'aria-label': 'Pilih tugas untuk sesi fokus',
-      onchange: function () { selectedTaskId = this.value || null; app.selectedTaskId = selectedTaskId; renderFocus(); }
+      onchange: function () { selectedTaskId = this.value || null; pickNone = !this.value; app.selectedTaskId = selectedTaskId; renderFocus(); }
     });
-    select.appendChild(ui.el('option', { value: '' }, 'Fokus umum tanpa tugas'));
-    available.forEach(function (task) {
+    select.appendChild(ui.el('option', { value: '' }, list.length ? 'Fokus umum tanpa tugas' : 'Tidak ada tugas di filter ini · fokus umum'));
+    function addOpt(parent, task) {
       var option = ui.el('option', { value: task.id },
-        task.title + (task.targetDate !== app.today() ? ' · ' + ui.fmt.dateShort(task.targetDate) : ''));
+        task.title + (task.targetDate !== todayKey ? ' · ' + ui.fmt.dateShort(task.targetDate) : ''));
       if (task.id === selectedTaskId) option.selected = true;
-      select.appendChild(option);
-    });
-    picker.appendChild(select);
+      parent.appendChild(option);
+    }
+    if (eff === 'all') {
+      [['Terlambat', PF.late],
+       ['Hari ini', PF.today],
+       ['Besok', PF.tomorrow],
+       ['Mendatang', function (t) { return t.targetDate > tomorrowKey; }]].forEach(function (g) {
+        var items = list.filter(g[1]);
+        if (!items.length) return;
+        var og = ui.el('optgroup', { label: g[0] + ' (' + items.length + ')' });
+        items.forEach(function (t) { addOpt(og, t); });
+        select.appendChild(og);
+      });
+    } else {
+      list.forEach(function (t) { addOpt(select, t); });
+    }
+    prow.appendChild(select);
+    picker.appendChild(prow);
     card.appendChild(picker);
 
     var selectedTask = selectedTaskId ? app.findTask(selectedTaskId) : null;
@@ -225,7 +274,8 @@
       ? 'Target tugas ' + ui.fmt.dur(selectedTask.durationSec) + (selectedTask.left < selectedTask.durationSec ? ' · sisa ' + ui.fmt.mmss(selectedTask.left) : '')
       : 'Sesi fokus mandiri · ' + ui.fmt.dur(state.settings.defaultFocusSec)));
     card.appendChild(ui.btn(selectedTask ? 'Mulai fokus' : 'Mulai fokus mandiri', function () {
-      app.startTask(selectedTaskId, { standalone: !selectedTaskId });
+      var sid = selectedTaskId; pickNone = false;
+      app.startTask(sid, { standalone: !sid });
     }, { primary: true, block: true }));
   }
 

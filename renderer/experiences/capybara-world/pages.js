@@ -44,6 +44,7 @@
   }
   function taskCard(task, options) {
     var box = C.el('article.cw-task-card' + (task.done ? '.is-done' : '') + (task.archived ? '.is-archived' : ''));
+    if (options && options.select) box.appendChild(options.select.box(task));
     var check = C.el('button.cw-check' + (task.done ? '.is-checked' : ''), {
       type: 'button',
       'aria-label': task.done ? 'Buka kembali ' + task.title : 'Tandai selesai ' + task.title,
@@ -115,6 +116,9 @@
   }
 
   var taskSeg = 'board';
+  var cwFilter = 'all';     // 'all' | 'late' | 'today' | 'tomorrow' | 'date'
+  var cwPicked = '';
+  var cwSel = {};
   function hashOf(text) { var h = 0; for (var i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0; return Math.abs(h); }
   var PRIO_ORDER = { high: 0, normal: 1, low: 2 };
   function byPriority(a, b) { return (PRIO_ORDER[a.priority] - PRIO_ORDER[b.priority]) || a.title.localeCompare(b.title, 'id'); }
@@ -183,6 +187,169 @@
     return col;
   }
 
+
+  /* ── pilih banyak, aksi massal, filter tanggal (Kebun Tugas) ────── */
+  function cwGroup(items) {
+    var g = { items: items, boxes: [], onSync: null };
+    g.box = function (t) {
+      var cb = C.el('input.cw-sel-box', { type: 'checkbox', 'aria-label': 'Pilih ' + t.title });
+      cb.checked = !!cwSel[t.id];
+      cb.addEventListener('change', function () { if (cb.checked) cwSel[t.id] = true; else delete cwSel[t.id]; g.sync(); });
+      g.boxes.push({ t: t, cb: cb });
+      return cb;
+    };
+    g.selected = function () { return items.filter(function (t) { return cwSel[t.id]; }); };
+    g.setAll = function (v) {
+      items.forEach(function (t) { if (v) cwSel[t.id] = true; else delete cwSel[t.id]; });
+      g.boxes.forEach(function (b) { b.cb.checked = !!cwSel[b.t.id]; });
+      g.sync();
+    };
+    g.sync = function () { if (g.onSync) g.onSync(g.selected().length, items.length); };
+    return g;
+  }
+  function cwBar(g, specs) {
+    var all = C.el('input.cw-sel-box', { type: 'checkbox', 'aria-label': 'Pilih semua tugas di daftar ini' });
+    var info = C.el('span.cw-sel-info');
+    var act = C.el('select.cw-sel-act', { 'aria-label': 'Aksi untuk tugas terpilih' });
+    act.appendChild(C.el('option', { value: '' }, 'Aksi…'));
+    var opts = specs.map(function (sp, i) { var o = C.el('option', { value: String(i) }, ''); act.appendChild(o); return { node: o, spec: sp }; });
+    act.addEventListener('change', function () {
+      var i = act.value; act.value = '';
+      if (i === '') return;
+      var c = g.selected(); if (c.length) specs[+i].onClick(c);
+    });
+    all.addEventListener('change', function () { g.setAll(all.checked); });
+    g.onSync = function (n, total) {
+      all.checked = total > 0 && n === total;
+      all.indeterminate = n > 0 && n < total;
+      info.textContent = n + ' dipilih';
+      info.hidden = act.hidden = n === 0;
+      opts.forEach(function (o) { var lb = o.spec.label; o.node.textContent = typeof lb === 'function' ? lb(n) : lb; });
+    };
+    g.sync();
+    return C.el('div.cw-sel-bar', C.el('label.cw-sel-all', all, 'Pilih semua'), info, act);
+  }
+  function cwPickDate(title, hint, okLabel, onPick) {
+    var date = C.input('date', '');
+    ui.modal({
+      title: title,
+      body: [C.el('p', hint), fieldInput('Tanggal target baru (wajib)', date)],
+      actions: [
+        { label: 'Batal', ghost: true },
+        { label: okLabel, primary: true, onClick: function () {
+          if (!JF.dates.isDayKey(date.value)) { ui.toast('Pilih tanggal target yang valid.', { kind: 'err' }); return false; }
+          return onPick(date.value) !== false;
+        } }
+      ]
+    });
+  }
+  function cwReschedule(tasks, date, label) {
+    var prev = [];
+    tasks.forEach(function (t) {
+      var from = t.targetDate;
+      var r = JF.store.rescheduleTask(state(), t.id, date, Date.now());
+      if (r.ok && r.changed) prev.push({ id: t.id, from: from });
+    });
+    cwSel = {};
+    save();
+    ui.toast(prev.length + ' tugas dipindah ke ' + label + '.', { kind: 'ok', timeout: 7000, action: { label: 'Batal', onClick: function () {
+      prev.forEach(function (p) { JF.store.rescheduleTask(state(), p.id, p.from, Date.now()); });
+      save();
+    } } });
+  }
+  function cwArchive(tasks) {
+    var prev = tasks.map(function (t) { return { id: t.id, date: t.targetDate }; });
+    tasks.forEach(function (t) { JF.store.archiveTask(state(), t.id, Date.now()); });
+    cwSel = {};
+    save();
+    ui.toast(prev.length + ' tugas diarsipkan.', { kind: 'ok', timeout: 7000, action: { label: 'Batal', onClick: function () {
+      prev.forEach(function (p) { JF.store.restoreTask(state(), p.id, p.date, Date.now()); });
+      save();
+    } } });
+  }
+  function cwRestore(tasks) {
+    cwPickDate('Pulihkan ' + tasks.length + ' tugas', 'Semua tugas yang dipilih diaktifkan lagi dengan tanggal target yang sama.', 'Pulihkan', function (date) {
+      var n = 0;
+      tasks.forEach(function (t) { if (JF.store.restoreTask(state(), t.id, date, Date.now()).ok) n++; });
+      cwSel = {}; taskSeg = 'board';
+      save();
+      ui.toast(n + ' tugas dipulihkan ke ' + ui.fmt.dateShort(date) + '.', { kind: 'ok' });
+    });
+  }
+  function cwDelete(tasks) {
+    var ids = tasks.map(function (t) { return t.id; });
+    ui.confirm({
+      title: 'Hapus permanen ' + ids.length + ' tugas?',
+      body: 'Tugas yang dihapus TIDAK bisa dipulihkan. Riwayat sesi fokus dan laporan harian tetap tersimpan; hanya tautan tugas ke Goal/Library yang dilepas.',
+      okLabel: 'Hapus permanen', danger: true
+    }).then(function (yes) {
+      if (!yes) return;
+      var r = JF.store.deleteArchivedTasks(state(), ids, Date.now());
+      cwSel = {};
+      var saved = JF.app.save();
+      if (!saved) ui.toast('Tugas terhapus di layar, tapi gagal disimpan ke penyimpanan lokal. Periksa Pengaturan › Data & cadangan.', { kind: 'err', timeout: 9000 });
+      else ui.toast(r.removed.length + ' tugas dihapus permanen.' + (r.skipped.length ? ' ' + r.skipped.length + ' dilewati (sedang dipakai timer).' : ''), { kind: 'ok' });
+    });
+  }
+  function cwMatch(t, today) {
+    if (cwFilter === 'late') return !t.done && t.targetDate < today;
+    if (cwFilter === 'today') return t.targetDate === today;
+    if (cwFilter === 'tomorrow') return t.targetDate === JF.dates.addDays(today, 1);
+    if (cwFilter === 'date') return !cwPicked || t.targetDate === cwPicked;
+    return true;
+  }
+  function cwFilterBar(box, host, today) {
+    var open = state().tasks.filter(function (t) { return !t.archived && !t.done; });
+    function count(f) {
+      var keep = cwFilter; cwFilter = f;
+      var n = open.filter(function (t) { return cwMatch(t, today); }).length;
+      cwFilter = keep; return n;
+    }
+    var fs = C.el('select.cw-fsel', { 'aria-label': 'Filter tanggal tugas' });
+    [['all', 'Semua'], ['late', 'Terlambat'], ['today', 'Hari ini'], ['tomorrow', 'Besok']].forEach(function (o) {
+      var op = C.el('option', { value: o[0] }, o[1] + ' (' + count(o[0]) + ')');
+      if (cwFilter === o[0]) op.selected = true;
+      fs.appendChild(op);
+    });
+    var od = C.el('option', { value: 'date' }, 'Pilih tanggal…');
+    if (cwFilter === 'date') od.selected = true;
+    fs.appendChild(od);
+    fs.addEventListener('change', function () {
+      cwFilter = fs.value; if (cwFilter !== 'date') cwPicked = '';
+      cwSel = {}; renderTasks(ui.clear(host));
+    });
+    box.appendChild(fs);
+    if (cwFilter === 'date') {
+      var pick = C.input('date', cwPicked, { 'aria-label': 'Pilih tanggal tertentu' });
+      pick.className += ' cw-fdate';
+      pick.addEventListener('change', function () { cwPicked = JF.dates.isDayKey(pick.value) ? pick.value : ''; cwSel = {}; renderTasks(ui.clear(host)); });
+      box.appendChild(pick);
+    }
+    var late = open.filter(function (t) { return t.targetDate < today; });
+    if (late.length > 1) box.appendChild(C.button('Rapikan terlambat (' + late.length + ')', function () { openLateTidy(late, today); }, 'quiet'));
+  }
+  function openLateTidy(late, today) {
+    cwSel = {};
+    var g = cwGroup(late), m = null;
+    var body = C.el('div.cw-late-tidy');
+    body.appendChild(cwBar(g, [
+      { label: 'Pindah ke hari ini', onClick: function (c) { cwReschedule(c, today, 'hari ini'); m.close(); } },
+      { label: 'Pindah ke besok', onClick: function (c) { cwReschedule(c, JF.dates.addDays(today, 1), 'besok'); m.close(); } },
+      { label: 'Pilih tanggal…', onClick: function (c) {
+        cwPickDate('Jadwalkan ulang ' + c.length + ' tugas', 'Tanggal baru berlaku untuk semua tugas yang dipilih.', 'Jadwalkan', function (date) {
+          cwReschedule(c, date, ui.fmt.dateShort(date)); m.close();
+        });
+      } },
+      { label: function (n) { return 'Arsipkan' + (n ? ' (' + n + ')' : ''); }, onClick: function (c) { cwArchive(c); m.close(); } }
+    ]));
+    var list = C.el('div.cw-late-list');
+    late.slice().sort(function (a, b) { return a.targetDate.localeCompare(b.targetDate) || byPriority(a, b); }).forEach(function (t) {
+      list.appendChild(C.el('label.cw-late-item', g.box(t), C.el('span.cw-late-title', t.title), C.badge('Tenggat ' + ui.fmt.dateShort(t.targetDate), 'warn')));
+    });
+    body.appendChild(list);
+    m = ui.modal({ title: 'Rapikan tugas terlambat', body: body, wide: true, actions: [{ label: 'Tutup', ghost: true }] });
+  }
+
   function renderTasks(host) {
     heading(host, 'KEBUN TUGAS', 'Tempel, geser, selesaikan', 'Seret catatan antar kolom untuk menjadwalkan ulang atau menyelesaikannya. Setiap tugas selesai memberi CapyRafi 10 XP.');
 
@@ -206,22 +373,28 @@
 
     var seg = C.el('div.cw-filter-tabs', { role: 'tablist', 'aria-label': 'Tampilan tugas' });
     [['board', 'Papan'], ['archive', 'Arsip']].forEach(function (item) {
-      var b = C.button(item[1], function () { taskSeg = item[0]; renderTasks(ui.clear(host)); }, taskSeg === item[0] ? 'primary' : 'quiet');
+      var b = C.button(item[1], function () { taskSeg = item[0]; cwSel = {}; renderTasks(ui.clear(host)); }, taskSeg === item[0] ? 'primary' : 'quiet');
       b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(taskSeg === item[0])); seg.appendChild(b);
     });
+    if (taskSeg === 'board') cwFilterBar(seg, host, JF.app.today());
     host.appendChild(seg);
 
     if (taskSeg === 'archive') {
       var archived = state().tasks.filter(function (t) { return t.archived; }).sort(byPriority);
       var list = C.el('div.cw-task-board');
       if (!archived.length) list.appendChild(C.empty('Arsip masih kosong', 'Tugas yang kamu arsipkan akan disimpan di sini.'));
-      archived.forEach(function (task) { list.appendChild(taskCard(task, { edit: true, restore: true })); });
+      var ag = cwGroup(archived);
+      if (archived.length) host.appendChild(cwBar(ag, [
+        { label: function (n) { return 'Pulihkan' + (n ? ' (' + n + ')' : ''); }, onClick: cwRestore },
+        { label: function (n) { return 'Hapus permanen' + (n ? ' (' + n + ')' : ''); }, onClick: cwDelete, danger: true }
+      ]));
+      archived.forEach(function (task) { list.appendChild(taskCard(task, { edit: true, restore: true, select: ag })); });
       host.appendChild(list);
       return;
     }
 
     var today = JF.app.today();
-    var live = state().tasks.filter(function (t) { return !t.archived; });
+    var live = state().tasks.filter(function (t) { return !t.archived && cwMatch(t, today); });
     var overdue = live.filter(function (t) { return !t.done && t.targetDate < today; }).sort(byPriority);
     var now = live.filter(function (t) { return !t.done && t.targetDate === today; }).sort(byPriority);
     var later = live.filter(function (t) { return !t.done && t.targetDate > today; }).sort(function (a, b) { return a.targetDate.localeCompare(b.targetDate) || byPriority(a, b); });

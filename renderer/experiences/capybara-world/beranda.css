@@ -605,3 +605,8 @@
     transition: none;
   }
 }
+
+/* Filter tanggal untuk daftar tugas sesi (Beranda): satu dropdown ringkas */
+.cw-pick-row { display: flex; gap: 6px; align-items: stretch; }
+.cw-pick-row .cw-fsel, .cw-pick-row .cw-fdate { flex: 0 0 auto; }
+.cw-pick-row select:not(.cw-fsel) { flex: 1 1 auto; min-width: 0; width: auto; }

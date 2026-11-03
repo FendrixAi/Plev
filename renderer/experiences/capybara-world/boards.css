@@ -353,3 +353,16 @@
 :where(.capy-home) .btn:hover { border-color: var(--cw-accent); color: var(--cw-accent); }
 :where(.capy-home) .cw-task-row > .btn { border-color: var(--cw-accent); background: var(--cw-accent); color: var(--cw-accent-ink); }
 :where(.capy-home) .cw-task-row > .btn:hover { color: var(--cw-accent-ink); filter: brightness(1.06); }
+
+/* ── Pilih banyak + filter tanggal (ringkas) ───────────────────────── */
+.cw-fsel, .cw-fdate, .cw-sel-act { padding: 5px 8px; width: auto; max-width: 100%; border: 1px solid var(--cw-line); border-radius: 10px; background: var(--cw-paper); color: var(--cw-ink); font: 700 12.5px/1.2 "Segoe UI", "Aptos", sans-serif; }
+.cw-sel-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 0 2px; min-height: 28px; }
+.cw-sel-all { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--cw-muted); cursor: pointer; }
+.cw-sel-info { font-size: 12.5px; font-weight: 800; }
+.cw-sel-act { margin-left: auto; }
+.cw-button.cw-danger { border-color: var(--cw-danger); color: var(--cw-danger); }
+.cw-sel-box { width: 16px; height: 16px; flex: 0 0 auto; margin: 0; cursor: pointer; accent-color: var(--cw-accent); }
+.cw-filter-tabs .cw-fsel { margin-left: auto; }
+.cw-late-list { display: grid; gap: 6px; max-height: 46vh; overflow: auto; margin-top: 10px; }
+.cw-late-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-card); cursor: pointer; }
+.cw-late-title { flex: 1; min-width: 0; font-weight: 700; }

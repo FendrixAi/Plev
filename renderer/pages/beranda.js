@@ -6,6 +6,9 @@
   var ui, app;
 
   var host, clock, els = {}, selected = null;
+  var pickFilter = null;   // null = otomatis (Hari ini jika ada, kalau tidak Semua)
+  var pickDate = '';
+  var pickNone = false;    // true = pengguna sengaja memilih "Tanpa tugas"
 
   function mountOriginal(container) {
     ui = JF.ui; app = JF.app;
@@ -120,22 +123,79 @@
     var active = JF.store.activeTasks(app.rawState(), app.today());
     var upcoming = JF.store.upcomingTasks(app.rawState(), app.today());
     var all = active.concat(upcoming);
-    if (selected == null && app.selectedTaskId && app.findTask(app.selectedTaskId)) selected = app.selectedTaskId;
-    if (selected != null && !app.findTask(selected)) selected = null;
-    if (selected == null && all.length) selected = all[0].id;
+    var todayKey = app.today(), tomorrowKey = JF.dates.addDays(todayKey, 1);
+    var PF = {
+      all: function () { return true; },
+      late: function (x) { return x.targetDate < todayKey; },
+      today: function (x) { return x.targetDate === todayKey; },
+      tomorrow: function (x) { return x.targetDate === tomorrowKey; },
+      date: function (x) { return !pickDate || x.targetDate === pickDate; }
+    };
+    function countOf(f) { return all.filter(PF[f]).length; }
+    var eff = pickFilter || (countOf('today') ? 'today' : 'all');
+    var W = { high: 0, normal: 1, low: 2 };
+    var list = all.filter(PF[eff]).sort(function (a, b) {
+      return a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 :
+        (W[a.priority] - W[b.priority]) || a.title.localeCompare(b.title, 'id');
+    });
 
+    if (selected != null && !app.findTask(selected)) selected = null;
+    if (selected != null && !list.some(function (x) { return x.id === selected; })) selected = null;
+    if (!pickNone) {
+      if (selected == null && app.selectedTaskId && list.some(function (x) { return x.id === app.selectedTaskId; })) selected = app.selectedTaskId;
+      if (selected == null && list.length) selected = list[0].id;
+    }
+
+    // Filter tanggal ringkas: satu dropdown di sebelah pilihan tugas
     var pickWrap = ui.el('label.field', { style: { marginTop: '4px' } }, 'Tugas untuk sesi ini');
+    var prow = ui.el('div.pick-row');
+    var fsel = ui.el('select#ses-fsel', { 'aria-label': 'Filter tanggal tugas' });
+    fsel.className = 'fsel';
+    [['today', 'Hari ini'], ['tomorrow', 'Besok'], ['late', 'Terlambat'], ['all', 'Semua']].forEach(function (o) {
+      var op = ui.el('option', { value: o[0] }, o[1] + ' (' + countOf(o[0]) + ')');
+      if (eff === o[0]) op.selected = true;
+      fsel.appendChild(op);
+    });
+    var odt = ui.el('option', { value: 'date' }, 'Pilih tanggal…');
+    if (eff === 'date') odt.selected = true;
+    fsel.appendChild(odt);
+    fsel.addEventListener('change', function () {
+      pickFilter = fsel.value; if (pickFilter !== 'date') pickDate = '';
+      pickNone = false; render();
+    });
+    prow.appendChild(fsel);
+    if (eff === 'date') {
+      var pdate = ui.el('input#ses-fdate', { type: 'date', 'aria-label': 'Pilih tanggal tertentu', value: pickDate });
+      pdate.className = 'fdate';
+      pdate.addEventListener('change', function () { pickDate = JF.dates.isDayKey(pdate.value) ? pdate.value : ''; pickNone = false; render(); });
+      prow.appendChild(pdate);
+    }
     var sel = ui.el('select', {
       id: 'ses-pick',
-      onchange: function () { selected = this.value || null; app.selectedTaskId = selected; render(); }
+      onchange: function () { selected = this.value || null; pickNone = !this.value; app.selectedTaskId = selected; render(); }
     });
-    sel.appendChild(ui.el('option', { value: '' }, 'Tanpa tugas (fokus umum)'));
-    all.forEach(function (t) {
-      var o = ui.el('option', { value: t.id }, t.title + (t.targetDate !== app.today() ? ' · ' + ui.fmt.dateShort(t.targetDate) : ''));
-      if (t.id === selected) o.selected = true;
-      sel.appendChild(o);
-    });
-    pickWrap.appendChild(sel);
+    sel.appendChild(ui.el('option', { value: '' }, list.length ? 'Tanpa tugas (fokus umum)' : 'Tidak ada tugas di filter ini · fokus umum'));
+    function addOpt(parent, x) {
+      var o = ui.el('option', { value: x.id }, x.title + (x.targetDate !== todayKey ? ' · ' + ui.fmt.dateShort(x.targetDate) : ''));
+      if (x.id === selected) o.selected = true;
+      parent.appendChild(o);
+    }
+    if (eff === 'all') {
+      [['Terlambat', function (x) { return x.targetDate < todayKey; }],
+       ['Hari ini', function (x) { return x.targetDate === todayKey; }],
+       ['Besok', function (x) { return x.targetDate === tomorrowKey; }],
+       ['Mendatang', function (x) { return x.targetDate > tomorrowKey; }]].forEach(function (g) {
+        var items = list.filter(g[1]);
+        if (!items.length) return;
+        var og = ui.el('optgroup', { label: g[0] + ' (' + items.length + ')' });
+        items.forEach(function (x) { addOpt(og, x); });
+        sel.appendChild(og);
+      });
+    } else {
+      list.forEach(function (x) { addOpt(sel, x); });
+    }
+    prow.appendChild(sel);
+    pickWrap.appendChild(prow);
     card.appendChild(pickWrap);
 
     var t = selected ? app.findTask(selected) : null;
@@ -149,7 +209,8 @@
 
     var c3 = ui.el('div.session-controls');
     c3.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa tugas', function () {
-      app.startTask(selected, { standalone: !selected });
+      var sid = selected; pickNone = false;
+      app.startTask(sid, { standalone: !sid });
     }, { primary: true }));
     card.appendChild(c3);
   }

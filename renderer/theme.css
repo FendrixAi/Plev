@@ -2068,3 +2068,20 @@ button.lib-stat { cursor: pointer; }
 .pl-info { flex: 1 1 160px; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pl-name { font-weight: 600; overflow-wrap: anywhere; }
 .pl-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Filter tanggal + pilih banyak (ringkas) ───────────────────────── */
+.ta-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0 14px; }
+.ta-filter { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.fsel, .fdate, .sel-act {
+  font: inherit; font-size: 13px; padding: 6px 8px; width: auto; max-width: 100%;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink);
+}
+.pick-row { display: flex; gap: 6px; align-items: stretch; margin-top: 4px; }
+.pick-row .fsel, .pick-row .fdate { flex: 0 0 auto; }
+.pick-row select#ses-pick { flex: 1 1 auto; min-width: 0; width: auto; margin: 0; }
+.sel-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 0 2px; min-height: 28px; }
+.sel-all { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+.sel-info { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.sel-act { margin-left: auto; font-weight: 600; }
+.sel-box { width: 16px; height: 16px; flex: 0 0 auto; cursor: pointer; accent-color: var(--mint); margin: 0; }
