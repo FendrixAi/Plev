@@ -1,6 +1,6 @@
 {
   "name": "jam-fokus",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Jam analog dengan pengatur waktu fokus dan daftar tugas",
   "main": "main.js",
   "scripts": {

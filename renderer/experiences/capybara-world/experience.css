@@ -431,21 +431,25 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
 .cw-library-row.is-selected { background: color-mix(in srgb, var(--cw-soft) 42%, transparent); }
 .cw-library-context { grid-column: 2; margin: 0; color: var(--cw-muted); font-size: 11px; overflow-wrap: anywhere; }
 
-#modalRoot { position: relative; z-index: 100; }
-#modalRoot .modal-veil { position: fixed; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(37 29 24 / 48%); }
-#modalRoot .modal { width: min(520px, 100%); max-height: min(88vh, 780px); overflow: auto; border: 1px solid var(--cw-line); border-radius: 22px 22px 22px 9px; background: var(--cw-card); color: var(--cw-ink); box-shadow: 0 24px 70px rgb(20 15 10 / 25%); }
-#modalRoot .modal.wide { width: min(760px, 100%); }
-#modalRoot .m-head, #modalRoot .m-body, #modalRoot .m-foot { padding: 16px 19px; }
-#modalRoot .m-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cw-line); }
-#modalRoot .m-head h2 { margin: 0; font-size: 17px; }
-#modalRoot .m-body { display: grid; gap: 12px; }
-#modalRoot .m-foot { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--cw-line); }
-#modalRoot .btn { min-height: 37px; padding: 8px 12px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-paper); color: var(--cw-ink); font: 700 12px "Segoe UI", "Aptos", sans-serif; cursor: pointer; }
-#modalRoot .btn.primary { border-color: var(--cw-accent); background: var(--cw-accent); color: var(--cw-accent-ink); }
-#modalRoot .btn.danger { color: var(--cw-danger); }
-#toastRoot { position: fixed; z-index: 120; right: 16px; bottom: 16px; display: grid; gap: 7px; max-width: min(420px, calc(100vw - 32px)); }
-#toastRoot .toast { padding: 11px 14px; border: 1px solid var(--cw-line); border-radius: 13px; background: var(--cw-card); color: var(--cw-ink); box-shadow: 0 8px 24px rgb(20 15 10 / 14%); }
-#toastRoot .toast.err { border-color: var(--cw-danger); }
+/* Shared singletons (#modalRoot, #toastRoot) exist in BOTH experiences, so these
+   overrides must stay scoped to Capybara World. Without the scope they leak into
+   the Original theme, where --cw-* tokens are undefined: `background: var(--cw-card)`
+   becomes invalid and the modal/toast renders transparent. */
+:root[data-experience="capybara-world"] #modalRoot { position: relative; z-index: 100; }
+:root[data-experience="capybara-world"] #modalRoot .modal-veil { position: fixed; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(37 29 24 / 48%); }
+:root[data-experience="capybara-world"] #modalRoot .modal { width: min(520px, 100%); max-height: min(88vh, 780px); overflow: auto; border: 1px solid var(--cw-line); border-radius: 22px 22px 22px 9px; background: var(--cw-card); color: var(--cw-ink); box-shadow: 0 24px 70px rgb(20 15 10 / 25%); }
+:root[data-experience="capybara-world"] #modalRoot .modal.wide { width: min(760px, 100%); }
+:root[data-experience="capybara-world"] #modalRoot .m-head, :root[data-experience="capybara-world"] #modalRoot .m-body, :root[data-experience="capybara-world"] #modalRoot .m-foot { padding: 16px 19px; }
+:root[data-experience="capybara-world"] #modalRoot .m-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cw-line); }
+:root[data-experience="capybara-world"] #modalRoot .m-head h2 { margin: 0; font-size: 17px; }
+:root[data-experience="capybara-world"] #modalRoot .m-body { display: grid; gap: 12px; }
+:root[data-experience="capybara-world"] #modalRoot .m-foot { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--cw-line); }
+:root[data-experience="capybara-world"] #modalRoot .btn { min-height: 37px; padding: 8px 12px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-paper); color: var(--cw-ink); font: 700 12px "Segoe UI", "Aptos", sans-serif; cursor: pointer; }
+:root[data-experience="capybara-world"] #modalRoot .btn.primary { border-color: var(--cw-accent); background: var(--cw-accent); color: var(--cw-accent-ink); }
+:root[data-experience="capybara-world"] #modalRoot .btn.danger { color: var(--cw-danger); }
+:root[data-experience="capybara-world"] #toastRoot { position: fixed; z-index: 120; right: 16px; bottom: 16px; display: grid; gap: 7px; max-width: min(420px, calc(100vw - 32px)); }
+:root[data-experience="capybara-world"] #toastRoot .toast { padding: 11px 14px; border: 1px solid var(--cw-line); border-radius: 13px; background: var(--cw-card); color: var(--cw-ink); box-shadow: 0 8px 24px rgb(20 15 10 / 14%); }
+:root[data-experience="capybara-world"] #toastRoot .toast.err { border-color: var(--cw-danger); }
 
 @media (max-width: 1000px) {
   .cw-hud { grid-template-columns: auto minmax(120px, 190px) minmax(0, 1fr); }
