@@ -232,6 +232,7 @@
   var blobs = {};                       // track id -> Blob (file-backed, cheap)
   var music = {
     focusName: DEFAULT_NAME, breakName: DEFAULT_NAME,
+    focusMode: 'beep', breakMode: 'beep',   // per channel: 'beep' | 'custom' (songs) | 'none' (silent)
     loop: lsGet('jamfokus.loop') === '1',   // repeat outside a break; during a break the playlist always repeats
     playingFocus: false, playingBreak: false, tracks: [], loaded: false
   };
@@ -250,6 +251,25 @@
     music.playingFocus = st.active && !st.paused;
     var n = music.tracks.length;
     music.focusName = !n ? DEFAULT_NAME : (n === 1 ? music.tracks[0].name : n + ' lagu di playlist');
+    app.emit('music');
+  }
+
+  /* Completion-sound mode per channel ('foc' = focus end, 'rst' = break end).
+     Stored under jamfokus.audio.foc / jamfokus.audio.rst. Older installs have no
+     stored value: they keep their behaviour (songs if any exist, otherwise beep). */
+  var audioReady = { foc: false, rst: false };
+  function initAudioMode(slot, hasBlob) {
+    var stored = lsGet('jamfokus.audio.' + slot);
+    var mode = stored === 'none' ? 'none' : stored === 'beep' ? 'beep' : (hasBlob ? 'custom' : 'beep');
+    if (slot === 'foc') music.focusMode = mode; else music.breakMode = mode;
+    audioReady[slot] = true;
+    app.emit('music');
+  }
+  function setAudioMode(slot, mode) {
+    if (mode !== 'none' && mode !== 'beep' && mode !== 'custom') return;
+    if (slot === 'foc') music.focusMode = mode; else music.breakMode = mode;
+    audioReady[slot] = true;
+    try { lsSet('jamfokus.audio.' + slot, mode); } catch (e) {}
     app.emit('music');
   }
 
@@ -291,6 +311,7 @@
     plan.added.forEach(function (t) { blobs[t.id] = t.file; });
     var list = player.tracks().concat(plan.added.map(function (t) { return { id: t.id, name: t.name, size: t.size, sig: t.sig }; }));
     player.setTracks(list);
+    if (music.focusMode === 'beep' && lsGet('jamfokus.audio.foc') === null) setAudioMode('foc', 'custom');
     var writes = plan.added.map(function (t) { return idbSet({ blob: t.file, name: t.name }, 'trk:' + t.id); });
     return Promise.all(writes).then(function (r) {
       var ok = r.every(Boolean);
@@ -317,7 +338,18 @@
   music.pause = function () { return player.pause(); };
   music.resume = function () { return player.resume(); };
   music.togglePause = function () { return player.status().paused ? player.resume() : player.pause(); };
-  music.testFocus = function () { if (player.hasPlayable()) player.start({ ifIdle: true, breakBound: !!brk }); else beep(); };
+  /** Silent focus-end: stop whatever the focus-end slot is playing. Never makes a sound itself. */
+  music.silenceFocus = function () { player.stop(); syncMusicState(); };
+  music.setFocusMode = function (mode) {
+    setAudioMode('foc', mode);
+    if (mode === 'none') music.silenceFocus();
+  };
+  music.testFocus = function () {
+    if (music.focusMode === 'none') return false;
+    if (music.focusMode === 'custom' && player.hasPlayable()) { player.start({ ifIdle: true, breakBound: !!brk }); return true; }
+    beep();
+    return true;
+  };
   music.hasTracks = function () { return player.hasPlayable(); };
   music.setLoop = function (on) { music.loop = !!on; try { lsSet('jamfokus.loop', on ? '1' : '0'); } catch (e) {} };
 
@@ -334,7 +366,8 @@
     music.playingBreak = false;
   }
   function playAlert() {
-    if (!musRURL || !auR.src) return beep();
+    if (music.breakMode === 'none') return;
+    if (music.breakMode === 'beep' || !musRURL || !auR.src) return beep();
     auR.currentTime = 0;
     var p = auR.play();
     music.playingBreak = true; app.emit('music');
@@ -343,13 +376,31 @@
   /** Explicit stop (Hentikan Musik): stops the playlist and any alert at once. */
   function stopAllMusic() { stopAlert(); player.stop(); syncMusicState(); }
   music.stopAllMusic = stopAllMusic;
-  music.pickBreak = function (file, name) { stopAlert(); setMusR(file, name); idbPut(file, name, 'rst'); };
-  music.clearBreak = function () { stopAlert(); setMusR(null, null); idbDel('rst'); };
-  music.testBreak = function () { if (musRURL) playAlert(); else beep(); };
+  music.pickBreak = function (file, name) {
+    stopAlert(); setMusR(file, name); idbPut(file, name, 'rst');
+    if (music.breakMode !== 'none') setAudioMode('rst', 'custom');   // choosing a song means using it; silent stays silent
+  };
+  music.clearBreak = function () {
+    stopAlert(); setMusR(null, null); idbDel('rst');
+    if (music.breakMode === 'custom') setAudioMode('rst', 'beep');
+  };
+  music.hasBreakTrack = function () { return !!musRURL; };
+  music.setBreakMode = function (mode) {
+    setAudioMode('rst', mode);
+    if (mode === 'none') stopAlert();
+  };
+  music.testBreak = function () {
+    if (music.breakMode === 'none') return false;
+    playAlert();
+    return true;
+  };
   auR.onended = function () { music.playingBreak = false; app.emit('music'); };
 
   // Load saved playlist (migrating the legacy single "cur"/"foc" track once).
+  // The completion-sound mode is initialised from what was found: saved choice wins,
+  // otherwise songs present -> songs, nothing -> beep (same as before this setting existed).
   (function loadPlaylist() {
+    function legacyCur() { return new Promise(function (resolve) { idbGet('cur', resolve); }); }
     idbRead('plist').then(function (meta) {
       if (meta && Array.isArray(meta.tracks)) {
         var list = meta.tracks.filter(function (t) { return t && typeof t.id === 'string'; });
@@ -358,30 +409,40 @@
             if (recs[i] && recs[i].blob) blobs[t.id] = recs[i].blob; else t.missing = true;   // kept, flagged, never auto-deleted
           });
           player.setTracks(list);
+          initAudioMode('foc', player.hasPlayable());
         });
       }
-      return idbRead('cur').then(function (old) {
+      return legacyCur().then(function (old) {
         if (old && old.blob) { idbSet({ blob: old.blob, name: old.name }, 'foc'); idbRemove('cur'); return old; }
         return idbRead('foc');
       }).then(function (v) {
-        if (!v || !v.blob) return;
+        if (!v || !v.blob) { initAudioMode('foc', false); return; }
+        initAudioMode('foc', true);
         var t = { id: JF.model.uid('trk'), name: v.name || 'Lagu', size: v.blob.size || 0, sig: 'legacy|' + (v.name || '') + '|' + (v.blob.size || 0) };
         blobs[t.id] = v.blob;
         player.setTracks([t]);
         return idbSet({ blob: v.blob, name: v.name }, 'trk:' + t.id).then(savePlaylistMeta);   // legacy 'foc' record stays
       });
-    }).then(function () { music.loaded = true; syncMusicState(); }, function () { music.loaded = true; });
+    }).then(function () { music.loaded = true; syncMusicState(); }, function () {
+      if (!audioReady.foc) initAudioMode('foc', false);
+      music.loaded = true;
+    });
   })();
-  idbGet('rst', function (v) { if (v && v.blob) setMusR(v.blob, v.name); });
+  idbGet('rst', function (v) {
+    if (v && v.blob) setMusR(v.blob, v.name);
+    initAudioMode('rst', !!(v && v.blob));
+  });
 
   /** Focus finished: start the playlist unless it is already playing (never a second instance). */
   function alarmFocus() {
     if (root.desk) root.desk.popup();
-    if (player.hasPlayable()) { player.start({ ifIdle: true, breakBound: !!brk }); return; }
+    if (music.focusMode === 'none') return;   // silent: the window still comes forward, but no sound at all
+    if (music.focusMode === 'custom' && player.hasPlayable()) { player.start({ ifIdle: true, breakBound: !!brk }); return; }
     beep();
   }
   function alarmBreak() {
     if (root.desk) root.desk.popup();
+    if (music.breakMode === 'none') return;
     playAlert();
   }
   function notify(title, body) {
@@ -617,6 +678,7 @@
   }
 
   function showCompletionChoices(s, t) {
+    var canMarkDone = !!(t && !t.done && !t.archived && JF.completion);
     JF.ui.modal({
       title: 'Sesi fokus selesai',
       body: [
@@ -626,11 +688,13 @@
         JF.ui.el('p.hint', { style: { marginTop: '10px' } },
           'Tugas tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
       ],
-      actions: [
-        { label: 'Kembali ke tugas', ghost: true, onClick: function () { if (t) app.selectedTaskId = t.id; app.emit('change'); } },
+      actions: (canMarkDone ? [{ label: 'Tandai selesai', ghost: true, onClick: function () {
+        // Form ringkasan + lampiran. Batal -> kembali ke pilihan langkah ini.
+        JF.completion.open(t, s, { onCancel: function () { showCompletionChoices(s, t); } });
+      } }] : []).concat([
         { label: 'Istirahat', ghost: true, onClick: function () { startBreak(state.settings.shortBreakMin, null, false); } },
         { label: 'Lanjut fokus', primary: true, onClick: function () { app.startTask(t ? t.id : null, { standalone: !t }); } }
-      ],
+      ]),
       onClose: function () { app.emit('change'); }
     });
   }

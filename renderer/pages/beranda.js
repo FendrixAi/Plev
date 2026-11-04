@@ -243,7 +243,7 @@
       title: 'Hentikan sesi ini?',
       body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan ' +
         'sebagai sesi terputus, tetapi tidak dihitung ke total fokus.',
-      okLabel: 'Ya, hentikan', danger: true
+      okLabel: 'Hentikan permanen', danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
     return false; // keep modal open until confirm resolves
   }
@@ -257,7 +257,7 @@
   function renderStrip() {
     var st = app.todayStats();
     ui.clear(els.strip);
-    els.strip.appendChild(stat('Fokus hari ini', ui.fmt.dur(st.officialSec), 'accent', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
+    els.strip.appendChild(stat('Fokus hari ini', st.officialSec ? ui.fmt.dur(st.officialSec) : '—', 'accent', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
     els.strip.appendChild(stat('Target harian', st.target.min ? ui.fmt.min(st.target.min) : '—', st.target.min ? '' : 'small',
       st.target.source === 'override' ? 'target khusus tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
     els.strip.appendChild(stat('Tugas selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, 'ok', st.goalDone >= st.tasksGoal ? 'target tugas tercapai' : 'target ' + st.tasksGoal + ' tugas'));

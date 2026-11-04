@@ -1,5 +1,13 @@
 # Catatan perubahan
 
+## Perbaikan terbaru
+- **Suara penyelesaian**: pilihan eksplisit per kanal (sesi fokus selesai, istirahat selesai): *Pakai beep*, *Pakai lagu*, atau *Tanpa suara*, lengkap dengan tombol Tes. Mode Tanpa suara tidak pernah jatuh ke beep. Pengguna lama tetap seperti sebelumnya (ada lagu = lagu, tidak ada = beep). Peringatan 8 detik terpisah dan tetap berbunyi. Tersedia di Pengaturan (Original) dan tab Musik (Capybara World).
+- **Dialog setelah timer selesai**: "Kembali ke tugas" diganti **Tandai selesai**. Tombol ini membuka form berisi ringkasan pekerjaan dan lampiran (file apa pun atau tautan). Simpan menandai tugas selesai; Batal kembali ke pilihan langkah. Ringkasan, tautan, dan file disimpan di Library dan terhubung ke tugas (sumber: "Ringkasan tugas"), jadi tidak ada penyimpanan baru. Berlaku untuk Original dan Capybara World.
+- **Keamanan**: pengalihan (redirect) jendela juga diblokir; IPC `popup`, `mini-ready`, dan `theme` aman saat jendela utama sudah hancur.
+- **Teks**: "Target tugas per hari (rentetan)", "Sesi & pengatur waktu", tombol konfirmasi "Hentikan permanen", nilai kosong tampil "—" (Beranda) dan "belum ada fokus tercatat" (Riwayat).
+- **Dibersihkan**: `cek.bat`, `REDESIGN_SUMMARY.md`, `TIMER_FIX_SUMMARY.md` benar-benar dihapus dari folder.
+- **Tes**: urutan menu di tes Goals ditambah Library; tes keamanan disesuaikan dengan `lockNavigation` dan `onTrusted`.
+
 ## Perbaikan
 - **Sidebar**: logo jam dihapus; teks kredit diganti menjadi "MM - Built by Iqbal Rafi"; teks brand dan kredit
   sejajar ikon menu, tombol lipat sejajar tepi menu, dan saat terlipat berada tepat di tengah kolom ikon.

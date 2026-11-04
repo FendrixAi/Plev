@@ -11,10 +11,10 @@ const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
 
 test('navigasi dan jendela baru dibatasi', () => {
   assert.match(main, /setWindowOpenHandler\(\(\) => \(\{ action: 'deny' \}\)\)/);
-  assert.match(main, /will-navigate', \(e, url\) => \{\s*if \(url !== wc\.getURL\(\)\) e\.preventDefault\(\);/);
-  assert.match(main, /will-redirect', \(e\) => e\.preventDefault\(\)/);
-  assert.match(main, /hardenWebContents\(win\.webContents\)/);
-  assert.match(main, /hardenWebContents\(miniWin\.webContents\)/);
+  assert.match(main, /will-navigate', \(ev\) => ev\.preventDefault\(\)/);
+  assert.match(main, /will-redirect', \(ev\) => ev\.preventDefault\(\)/);
+  assert.match(main, /lockNavigation\(win\)/);
+  assert.match(main, /lockNavigation\(miniWin\)/);
 });
 
 test('kedua jendela memakai sandbox dan tanpa Node di renderer', () => {
@@ -28,11 +28,11 @@ test('kedua jendela memakai sandbox dan tanpa Node di renderer', () => {
 });
 
 test('IPC aman saat jendela sudah hancur atau payload kosong', () => {
-  const popup = main.slice(main.indexOf("ipcMain.on('popup'"), main.indexOf("ipcMain.on('warn8'"));
+  const popup = main.slice(main.indexOf("onTrusted('popup'"), main.indexOf("onTrusted('warn8'"));
   assert.match(popup, /if \(!alive\(win\)\) return;/);
-  const ready = main.slice(main.indexOf("ipcMain.on('mini-ready'"), main.indexOf("ipcMain.on('mini-cmd'"));
+  const ready = main.slice(main.indexOf("onTrusted('mini-ready'"), main.indexOf("onTrusted('mini-cmd'"));
   assert.match(ready, /if \(alive\(win\)\) win\.webContents\.send\('cmd', 'push'\)/);
-  const save = main.slice(main.indexOf("ipcMain.on('save-mini-settings'"), main.indexOf("ipcMain.handle('get-mini-settings'"));
+  const save = main.slice(main.indexOf("onTrusted('save-mini-settings'"), main.indexOf("handleTrusted('get-mini-settings'"));
   assert.match(save, /if \(!s \|\| typeof s !== 'object'\) return;/);
 });
 

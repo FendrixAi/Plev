@@ -1312,7 +1312,7 @@
     var pomo = C.input('checkbox', '', { checked: !!settings.pomoOn });
     var warn = C.input('checkbox', '', { checked: !!settings.warn8 });
     formPanel.appendChild(switchField('Aktifkan istirahat Pomodoro otomatis', pomo, 'Istirahat mulai otomatis setelah sesi fokus selesai.'));
-    formPanel.appendChild(switchField('Peringatan sebelum timer selesai', warn, 'Bunyi singkat beberapa detik sebelum waktu habis.'));
+    formPanel.appendChild(switchField('Peringatan sebelum timer selesai', warn, 'Bunyi singkat beberapa detik sebelum waktu habis; tetap berbunyi meskipun suara penyelesaian dimatikan.'));
     formPanel.appendChild(C.button('Simpan pengaturan timer', function () {
       for (var i = 0; i < fields.length; i++) {
         var f = fields[i], value = Number(controls[f[0]].value);
@@ -1376,6 +1376,22 @@
     var playlistFiles = C.input('file', '', { accept: 'audio/*', multiple: '', hidden: '' });
     var breakFile = C.input('file', '', { accept: 'audio/*', hidden: '' });
     music.appendChild(C.el('p.cw-hint', musicState.loaded ? musicState.tracks.length + ' lagu di playlist · ' + musicState.breakName : 'Memuat playlist tersimpan…'));
+    music.appendChild(C.el('p.cw-hint', 'Suara penyelesaian hanya berbunyi saat sesi atau istirahat selesai. Tidak ada musik latar selama sesi fokus.'));
+    [['Saat sesi fokus selesai', 'focusMode', 'setFocusMode', 'testFocus', musicState.hasTracks()],
+     ['Saat istirahat selesai', 'breakMode', 'setBreakMode', 'testBreak', musicState.hasBreakTrack()]].forEach(function (row) {
+      var line = C.el('div.cw-linked-task', C.el('span', row[0]));
+      [['beep', 'Pakai beep'], ['custom', 'Pakai lagu'], ['none', 'Tanpa suara']].forEach(function (o) {
+        var chosen = musicState[row[1]] === o[0];
+        var btn = C.button((chosen ? '✓ ' : '') + o[1], function () { musicState[row[2]](o[0]); renderSettings(ui.clear(host)); }, 'quiet');
+        if (o[0] === 'custom' && !row[4]) btn.disabled = true;
+        btn.setAttribute('aria-pressed', chosen ? 'true' : 'false');
+        line.appendChild(btn);
+      });
+      line.appendChild(C.button('Tes', function () {
+        if (musicState[row[3]]() === false) ui.toast('Mode Tanpa suara aktif, jadi tidak ada bunyi.');
+      }, 'quiet'));
+      music.appendChild(line);
+    });
     music.appendChild(C.button('Tambah lagu', function () { playlistFiles.click(); }, 'quiet'));
     music.appendChild(C.button('Pilih alarm akhir istirahat', function () { breakFile.click(); }, 'quiet'));
     music.appendChild(C.button('Tes alarm', function () { musicState.testBreak(); }, 'quiet'));

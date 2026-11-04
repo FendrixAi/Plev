@@ -19,6 +19,7 @@ const handleTrusted = (channel, fn) => ipcMain.handle(channel, (e, ...args) => (
 const lockNavigation = (w) => {
   w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   w.webContents.on('will-navigate', (ev) => ev.preventDefault());
+  w.webContents.on('will-redirect', (ev) => ev.preventDefault());
 };
 
 // ── Simpan/baca posisi & pengaturan kartu mini dari userData ─────────────────
@@ -205,7 +206,7 @@ if (!app.requestSingleInstanceLock()) {
     onTrusted('theme', (e, mode) => {
       const dark = mode === 'dark';
       nativeTheme.themeSource = dark ? 'dark' : 'light';
-      if (win) win.setBackgroundColor(dark ? '#141414' : '#FBF8F1');
+      if (alive(win)) win.setBackgroundColor(dark ? '#141414' : '#FBF8F1');
     });
 
     onTrusted('popup', () => {
@@ -213,6 +214,7 @@ if (!app.requestSingleInstanceLock()) {
         miniWin.webContents.send('alarm');
         return;
       }
+      if (!alive(win)) return;
       showWin();
       win.setAlwaysOnTop(true, 'floating');
       win.flashFrame(true);
@@ -234,7 +236,7 @@ if (!app.requestSingleInstanceLock()) {
       if (alive(miniWin)) miniWin.webContents.send('state', s);
     });
     onTrusted('mini-ready', () => {
-      win.webContents.send('cmd', 'push');
+      if (alive(win)) win.webContents.send('cmd', 'push');
       // Kirim settings ke mini setelah ready
       if (alive(miniWin)) miniWin.webContents.send('mini-settings', miniSettings);
     });

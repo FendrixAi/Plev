@@ -115,7 +115,7 @@
         var dayOfficial = windowCache[d];
         var head = ui.el('div.day-head');
         head.appendChild(ui.el('h3', ui.fmt.date(d)));
-        head.appendChild(ui.el('span.ds', ui.dayRel(d) + ' · fokus ' + ui.fmt.dur(dayOfficial)));
+        head.appendChild(ui.el('span.ds', ui.dayRel(d) + ' · ' + (dayOfficial > 0 ? 'fokus ' + ui.fmt.dur(dayOfficial) : 'belum ada fokus tercatat')));
         list.appendChild(head);
         dayBox = ui.el('div');
         list.appendChild(dayBox);

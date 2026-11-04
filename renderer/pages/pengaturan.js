@@ -87,11 +87,11 @@
     return w;
   }
 
-  /* ── Sesi & timer ─────────────────────────────────────────────────── */
+  /* ── Sesi & pengatur waktu ─────────────────────────────────────────────────── */
   function sessionCard() {
     var s = st();
     var c = ui.el('div.card');
-    c.appendChild(ui.el('h2', 'Sesi & timer'));
+    c.appendChild(ui.el('h2', 'Sesi & pengatur waktu'));
     c.appendChild(ui.el('div.sub', 'Durasi bawaan untuk sesi fokus tanpa tugas dan tugas baru.'));
     var g = ui.el('div.grid.cols-2');
     g.appendChild(numField('Durasi sesi fokus bawaan (menit)', Math.round((s.settings.defaultFocusSec || 1500) / 60),
@@ -101,7 +101,7 @@
     c.appendChild(g);
     c.appendChild(toggle('Peringatan 8 detik sebelum sesi selesai', s.settings.warn8, function (v) {
       setSetting('warn8', v, 'Peringatan 8 detik');
-    }, 'Bunyi pendek + notifikasi ke kartu mini.'));
+    }, 'Bunyi pendek + notifikasi ke kartu mini; tetap berbunyi meskipun suara penyelesaian dimatikan.'));
     return c;
   }
 
@@ -180,7 +180,7 @@
       function (v) { setSetting('longBreakMin', v, 'Istirahat panjang'); }));
     g.appendChild(numField('Istirahat panjang tiap N sesi', s.settings.longBreakEvery, 2, 12,
       function (v) { setSetting('longBreakEvery', v, 'Interval istirahat panjang'); }));
-    g.appendChild(numField('Target tugas per hari (rentetan hari)', s.settings.tasksPerDay, 1, 50,
+    g.appendChild(numField('Target tugas per hari (rentetan)', s.settings.tasksPerDay, 1, 50,
       function (v) { setSetting('tasksPerDay', v, 'Target tugas harian'); },
       'Dipakai perhitungan rentetan hari di Beranda.'));
     c.appendChild(g);
@@ -272,6 +272,40 @@
       return b;
     }
 
+    /* Suara penyelesaian: pilihan eksplisit per kanal (beep / lagu / tanpa suara). */
+    function modeBlock(title, mode, setMode, hasSong, test) {
+      var b = ui.el('div', { style: { marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' } });
+      b.appendChild(ui.el('div.k', { style: { fontSize: '12px', color: 'var(--muted)', fontWeight: '600' } }, title));
+      var r = ui.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', margin: '6px 0 0' } });
+      var seg = ui.el('div.seg', { role: 'group', 'aria-label': title });
+      [['beep', 'Pakai beep'], ['custom', 'Pakai lagu'], ['none', 'Tanpa suara']].forEach(function (o) {
+        var btn = ui.el('button', { type: 'button', 'aria-pressed': mode === o[0] ? 'true' : 'false',
+          disabled: o[0] === 'custom' && !hasSong,
+          onclick: function () { setMode(o[0]); render(); } }, o[1]);
+        if (mode === o[0]) btn.classList.add('on');
+        seg.appendChild(btn);
+      });
+      r.appendChild(seg);
+      r.appendChild(ui.btn('Tes', function () {
+        if (test() === false) ui.toast('Mode Tanpa suara aktif, jadi tidak ada bunyi.', { timeout: 2500 });
+      }, { sm: true, ghost: true }));
+      b.appendChild(r);
+      return b;
+    }
+    function completionBlock() {
+      var m = app.music;
+      var b = ui.el('div');
+      b.appendChild(ui.el('h3', { style: { fontSize: '14px', margin: '0 0 2px' } }, 'Suara penyelesaian'));
+      b.appendChild(ui.el('div.hint', { style: { margin: '0 0 8px' } },
+        'Hanya berbunyi saat sesi atau istirahat selesai. Tidak ada musik latar selama sesi fokus.'));
+      b.appendChild(modeBlock('Saat sesi fokus selesai', m.focusMode, function (v) { m.setFocusMode(v); },
+        m.hasTracks(), function () { return app.music.testFocus(); }));
+      b.appendChild(modeBlock('Saat istirahat selesai', m.breakMode, function (v) { m.setBreakMode(v); },
+        m.hasBreakTrack(), function () { return app.music.testBreak(); }));
+      return b;
+    }
+
+    c.appendChild(completionBlock());
     c.appendChild(playlistBlock());
     c.appendChild(trackBlock('Saat istirahat selesai', app.music.breakName,
       function () { fileR.click(); }, function () { app.music.testBreak(); }, function () {

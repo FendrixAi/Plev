@@ -103,9 +103,9 @@
   }
 
   /** Task attachment: context (task -> milestone -> goal) is inherited automatically. */
-  function attachToTask(taskId) {
+  function attachToTask(taskId, moduleId) {
     if (!JF.app.findTask(taskId)) return Promise.resolve({ canceled: false, added: [], linked: [], failed: [{ name: '', reason: 'task-not-found' }] });
-    return pickAndImport({ module: 'goals', entityId: taskId }, taskId);
+    return pickAndImport({ module: moduleId || 'goals', entityId: taskId }, taskId);
   }
   /** Direct import: no goal or task needed. */
   function importStandalone() { return pickAndImport({ module: 'library', entityId: null }, null); }

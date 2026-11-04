@@ -17,7 +17,7 @@ const settings = read('renderer/pages/pengaturan.js');
 test('menu Goals berada tepat di atas Journaling dengan ikon target yang konsisten', () => {
   const nav = index.slice(index.indexOf('<nav class="nav"'), index.indexOf('</nav>'));
   const order = [...nav.matchAll(/data-page="([a-z]+)"/g)].map((m) => m[1]);
-  assert.deepStrictEqual(order, ['beranda', 'tugas', 'kalender', 'analitik', 'riwayat', 'laporan', 'goals', 'jurnal', 'pengaturan']);
+  assert.deepStrictEqual(order, ['beranda', 'tugas', 'kalender', 'analitik', 'riwayat', 'laporan', 'goals', 'jurnal', 'pengaturan', 'library']);
   const block = nav.slice(nav.indexOf('data-page="goals"'), nav.indexOf('data-page="jurnal"'));
   assert.match(block, /<span>Goals<\/span>/);
   assert.match(block, /<svg[^>]*width="18" height="18"[^>]*stroke-width="1\.8"/);
