@@ -2077,11 +2077,16 @@ button.lib-stat { cursor: pointer; }
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--ink);
 }
-.pick-row { display: flex; gap: 6px; align-items: stretch; margin-top: 4px; }
-.pick-row .fsel, .pick-row .fdate { flex: 0 0 auto; }
-.pick-row select#ses-pick { flex: 1 1 auto; min-width: 0; width: auto; margin: 0; }
 .sel-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 0 2px; min-height: 28px; }
 .sel-all { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
 .sel-info { font-size: 12.5px; font-weight: 600; color: var(--ink); }
 .sel-act { margin-left: auto; font-weight: 600; }
 .sel-box { width: 16px; height: 16px; flex: 0 0 auto; cursor: pointer; accent-color: var(--mint); margin: 0; }
+
+/* Beranda: filter sebaris dengan label; dropdown tugas selebar kartu, tidak melebar */
+.pick-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.pick-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
+.pick-label { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); text-align: left; }
+.pick-filters { display: flex; gap: 6px; flex: 0 1 auto; }
+.pick-filters .fsel, .pick-filters .fdate { font-size: 12px; padding: 4px 6px; }
+.pick-wrap > select#ses-pick { width: 100%; max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

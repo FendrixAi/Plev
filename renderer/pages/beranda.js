@@ -146,9 +146,11 @@
       if (selected == null && list.length) selected = list[0].id;
     }
 
-    // Filter tanggal ringkas: satu dropdown di sebelah pilihan tugas
-    var pickWrap = ui.el('label.field', { style: { marginTop: '4px' } }, 'Tugas untuk sesi ini');
-    var prow = ui.el('div.pick-row');
+    // Filter tanggal: sebaris dengan label "Tugas untuk sesi ini" (kanan), bukan di dalam kolom pilihan tugas
+    var pickWrap = ui.el('div.pick-wrap');
+    var phead = ui.el('div.pick-head');
+    phead.appendChild(ui.el('label.pick-label', { for: 'ses-pick' }, 'Tugas untuk sesi ini'));
+    var pfil = ui.el('div.pick-filters');
     var fsel = ui.el('select#ses-fsel', { 'aria-label': 'Filter tanggal tugas' });
     fsel.className = 'fsel';
     [['today', 'Hari ini'], ['tomorrow', 'Besok'], ['late', 'Terlambat'], ['all', 'Semua']].forEach(function (o) {
@@ -163,12 +165,21 @@
       pickFilter = fsel.value; if (pickFilter !== 'date') pickDate = '';
       pickNone = false; render();
     });
-    prow.appendChild(fsel);
+    pfil.appendChild(fsel);
     if (eff === 'date') {
       var pdate = ui.el('input#ses-fdate', { type: 'date', 'aria-label': 'Pilih tanggal tertentu', value: pickDate });
       pdate.className = 'fdate';
       pdate.addEventListener('change', function () { pickDate = JF.dates.isDayKey(pdate.value) ? pdate.value : ''; pickNone = false; render(); });
-      prow.appendChild(pdate);
+      pfil.appendChild(pdate);
+    }
+    phead.appendChild(pfil);
+    pickWrap.appendChild(phead);
+    // Label opsi dipotong di tengah agar kartu tidak melebar: judul dipendekkan, tanggal tetap terlihat.
+    function fitLabel(title, dateText, max) {
+      var tail = dateText ? ' · ' + dateText : '';
+      var room = max - tail.length;
+      if (title.length <= room) return title + tail;
+      return title.slice(0, Math.max(8, room - 1)).replace(/\s+$/, '') + '…' + tail;
     }
     var sel = ui.el('select', {
       id: 'ses-pick',
@@ -176,7 +187,7 @@
     });
     sel.appendChild(ui.el('option', { value: '' }, list.length ? 'Tanpa tugas (fokus umum)' : 'Tidak ada tugas di filter ini · fokus umum'));
     function addOpt(parent, x) {
-      var o = ui.el('option', { value: x.id }, x.title + (x.targetDate !== todayKey ? ' · ' + ui.fmt.dateShort(x.targetDate) : ''));
+      var o = ui.el('option', { value: x.id, title: x.title }, fitLabel(x.title, x.targetDate !== todayKey ? ui.fmt.dateShort(x.targetDate) : '', 36));
       if (x.id === selected) o.selected = true;
       parent.appendChild(o);
     }
@@ -194,8 +205,7 @@
     } else {
       list.forEach(function (x) { addOpt(sel, x); });
     }
-    prow.appendChild(sel);
-    pickWrap.appendChild(prow);
+    pickWrap.appendChild(sel);
     card.appendChild(pickWrap);
 
     var t = selected ? app.findTask(selected) : null;

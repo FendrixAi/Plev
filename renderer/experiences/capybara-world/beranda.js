@@ -215,8 +215,10 @@
       if (selectedTaskId == null && list.length) selectedTaskId = list[0].id;
     }
 
-    var picker = ui.el('label.cw-picker', 'Pilih tugas untuk sesi ini');
-    var prow = ui.el('div.cw-pick-row');
+    // Filter tanggal: sebaris dengan judul "Pilih tugas untuk sesi ini" (kanan)
+    var picker = ui.el('div.cw-picker');
+    var phead = ui.el('div.cw-pick-head', ui.el('span.cw-pick-label', 'Pilih tugas untuk sesi ini'));
+    var pfil = ui.el('div.cw-pick-filters');
     var fsel = ui.el('select.cw-fsel', { 'aria-label': 'Filter tanggal tugas' });
     [['today', 'Hari ini'], ['tomorrow', 'Besok'], ['late', 'Terlambat'], ['all', 'Semua']].forEach(function (o) {
       var op = ui.el('option', { value: o[0] }, o[1] + ' (' + countOf(o[0]) + ')');
@@ -230,11 +232,20 @@
       pickFilter = fsel.value; if (pickFilter !== 'date') pickDate = '';
       pickNone = false; renderFocus();
     });
-    prow.appendChild(fsel);
+    pfil.appendChild(fsel);
     if (eff === 'date') {
       var pdate = ui.el('input.cw-fdate', { type: 'date', 'aria-label': 'Pilih tanggal tertentu', value: pickDate });
       pdate.addEventListener('change', function () { pickDate = JF.dates.isDayKey(pdate.value) ? pdate.value : ''; pickNone = false; renderFocus(); });
-      prow.appendChild(pdate);
+      pfil.appendChild(pdate);
+    }
+    phead.appendChild(pfil);
+    picker.appendChild(phead);
+    // Label opsi dipotong di tengah agar kartu tidak melebar: judul dipendekkan, tanggal tetap terlihat.
+    function fitLabel(title, dateText, max) {
+      var tail = dateText ? ' · ' + dateText : '';
+      var room = max - tail.length;
+      if (title.length <= room) return title + tail;
+      return title.slice(0, Math.max(8, room - 1)).replace(/\s+$/, '') + '…' + tail;
     }
     var select = ui.el('select', {
       'aria-label': 'Pilih tugas untuk sesi fokus',
@@ -242,8 +253,8 @@
     });
     select.appendChild(ui.el('option', { value: '' }, list.length ? 'Fokus umum tanpa tugas' : 'Tidak ada tugas di filter ini · fokus umum'));
     function addOpt(parent, task) {
-      var option = ui.el('option', { value: task.id },
-        task.title + (task.targetDate !== todayKey ? ' · ' + ui.fmt.dateShort(task.targetDate) : ''));
+      var option = ui.el('option', { value: task.id, title: task.title },
+        fitLabel(task.title, task.targetDate !== todayKey ? ui.fmt.dateShort(task.targetDate) : '', 36));
       if (task.id === selectedTaskId) option.selected = true;
       parent.appendChild(option);
     }
@@ -261,8 +272,7 @@
     } else {
       list.forEach(function (t) { addOpt(select, t); });
     }
-    prow.appendChild(select);
-    picker.appendChild(prow);
+    picker.appendChild(select);
     card.appendChild(picker);
 
     var selectedTask = selectedTaskId ? app.findTask(selectedTaskId) : null;
