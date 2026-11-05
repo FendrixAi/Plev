@@ -17,7 +17,11 @@ const onTrusted = (channel, fn) => ipcMain.on(channel, (e, ...args) => { if (tru
 const handleTrusted = (channel, fn) => ipcMain.handle(channel, (e, ...args) => (trusted(e) ? fn(e, ...args) : null));
 // Aplikasi ini tidak pernah membuka halaman luar: tolak jendela baru dan perpindahan alamat.
 const lockNavigation = (w) => {
-  w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  w.webContents.setWindowOpenHandler(({ url }) => {
+    // Tautan lampiran (http/https) dibuka di browser bawaan; jendela baru di dalam aplikasi tetap ditolak.
+    if (/^https?:\/\//i.test(String(url))) shell.openExternal(String(url)).catch(() => {});
+    return { action: 'deny' };
+  });
   w.webContents.on('will-navigate', (ev) => ev.preventDefault());
   w.webContents.on('will-redirect', (ev) => ev.preventDefault());
 };
@@ -108,6 +112,10 @@ function createMini() {
 let _trayState = null;
 function fmtTip(s) {
   if (!s) return 'Jam Fokus';
+  if (s.mode === 'run' && s.open) {
+    const el = Math.max(0, Math.floor((Date.now() - s.since) / 1000));
+    return '+' + String(Math.floor(el / 60)).padStart(2, '0') + ':' + String(el % 60).padStart(2, '0') + ' · ' + (s.name || 'Tugas');
+  }
   if (s.mode === 'run') {
     const rem = Math.max(0, Math.ceil((s.endAt - Date.now()) / 1000));
     return String(Math.floor(rem / 60)).padStart(2, '0') + ':' + String(rem % 60).padStart(2, '0') + ' · ' + (s.name || 'Tugas');
@@ -242,7 +250,7 @@ if (!app.requestSingleInstanceLock()) {
     });
     onTrusted('mini-cmd', (e, c) => {
       if (c === 'expand') showWin();
-      else if (c === 'toggle' && alive(win)) win.webContents.send('cmd', c);   // perintah lain diabaikan
+      else if ((c === 'toggle' || c === 'continue') && alive(win)) win.webContents.send('cmd', c);   // perintah lain diabaikan
     });
 
     // Opacity & hover dari mini.html

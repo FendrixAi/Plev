@@ -6,7 +6,8 @@
   'use strict';
   var JF = root.JF;
   var ui, app, host;
-  var F = { search: '', type: 'all', module: 'all', goalId: 'all', sort: 'date', missingOnly: false };
+  var F = { search: '', type: 'all', module: 'all', goalId: 'all', sort: 'date', missingOnly: false, date: '' };
+  var lastHashDate = '';   // tanggal dari tautan #library?date=... yang terakhir dibaca
   var selectedId = null;
   var listBox, overviewBox, detailBox, filterBox;
 
@@ -52,6 +53,25 @@
   }
 
   /* ── filters ─────────────────────────────────────────────────────── */
+  /* Tautan dari Kalender: #library?date=YYYY-MM-DD menyaring dokumen yang ditambahkan pada hari itu. */
+  function hashDate() {
+    var h = location.hash || '';
+    if (h.replace(/^#/, '').split('?')[0] !== 'library') return '';
+    var m = /[?&]date=(\d{4}-\d{2}-\d{2})/.exec(h);
+    return m && JF.dates.isDayKey(m[1]) ? m[1] : '';
+  }
+  function syncDateFromHash() {
+    var hd = hashDate();
+    if (hd !== lastHashDate) { lastHashDate = hd; if (hd) F.date = hd; }
+  }
+  function setDate(day) {
+    F.date = day || '';
+    lastHashDate = F.date;
+    var next = '#library' + (F.date ? '?date=' + F.date : '');
+    if (location.hash !== next) { try { history.replaceState(null, '', next); } catch (e) { location.hash = next; } }
+    render();
+  }
+
   function sel(label, key, options) {
     var s = ui.el('select', { 'aria-label': label, onchange: function (e) { F[key] = e.target.value; render(); } });
     options.forEach(function (o) { s.appendChild(ui.el('option', { value: o[0], selected: F[key] === o[0] }, o[1])); });
@@ -68,6 +88,9 @@
     var goals = (state().goals || []).map(function (g) { return [g.id, g.title]; });
     filterBox.appendChild(sel('Goal', 'goalId', [['all', 'Semua goal']].concat(goals)));
     filterBox.appendChild(sel('Urutkan', 'sort', [['date', 'Terbaru'], ['name', 'Nama'], ['type', 'Jenis']]));
+    filterBox.appendChild(ui.el('input', { type: 'date', 'aria-label': 'Tanggal ditambahkan', title: 'Tanggal ditambahkan', value: F.date,
+      onchange: function (e) { setDate(JF.dates.isDayKey(e.target.value) ? e.target.value : ''); } }));
+    if (F.date) filterBox.appendChild(ui.btn('Semua tanggal', function () { setDate(''); }, { sm: true, ghost: true }));
   }
 
   /* ── overview ────────────────────────────────────────────────────── */
@@ -119,7 +142,9 @@
       return rows;
     }
     if (!rows.length) {
-      listBox.appendChild(ui.el('div.empty', ui.el('span.big', 'Tidak ada yang cocok'), 'Ubah kata kunci atau filter.'));
+      listBox.appendChild(F.date
+        ? ui.el('div.empty', ui.el('span.big', 'Tidak ada dokumen pada tanggal ini'), 'Belum ada yang ditambahkan pada ' + ui.fmt.date(F.date) + ' (dengan filter yang aktif).')
+        : ui.el('div.empty', ui.el('span.big', 'Tidak ada yang cocok'), 'Ubah kata kunci atau filter.'));
       return rows;
     }
     rows.forEach(function (it) { listBox.appendChild(rowFor(it)); });
@@ -175,6 +200,7 @@
 
   function render(listOnly) {
     if (!host || !listBox) return;
+    syncDateFromHash();
     if (!listOnly) buildFilters();
     renderOverview();
     renderList();

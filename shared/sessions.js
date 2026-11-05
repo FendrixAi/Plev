@@ -30,10 +30,14 @@
       legacy: false,
       contributesToOfficial: false
     };
+    // Waktu bebas: tanpa batas durasi (hitung maju). Hanya ditulis bila true agar sesi biasa tidak berubah.
+    if (input.openEnded) s.openEnded = true;
     state.sessions.push(s);
     storeEv(state, now, 'session.started', s);
     return s;
   }
+
+  function isOpen(s) { return !!(s && s.openEnded); }
 
   function storeEv(state, now, kind, s) {
     state.events.push({ at: now, kind: kind, taskId: s.taskId, data: { sessionId: s.id, state: s.state } });
@@ -64,6 +68,11 @@
   function remainingSeconds(s, now) {
     now = now == null ? Date.now() : now;
     return Math.max(0, s.plannedSec - activeSeconds(s, now));
+  }
+
+  /** Detik yang ditampilkan di jam: waktu berjalan untuk sesi bebas, sisa waktu untuk sesi biasa. */
+  function clockSeconds(s, now) {
+    return isOpen(s) ? activeSeconds(s, now) : remainingSeconds(s, now);
   }
 
   function pauseSession(state, s, now) {
@@ -118,6 +127,53 @@
   }
 
   /* ── official totals ────────────────────────────────────────────────── */
+  /** Mengakhiri sesi biasa lebih awal dengan kredit waktu aktual:
+      dipakai saat tugas ditandai selesai sebelum timer habis (mis. "Selesai + ringkasan").
+      Waktu fokus nyata (activeSec saat ini) menjadi plannedSec dan masuk total resmi.
+      Sesi waktu bebas tidak boleh menggunakan fungsi ini — gunakan finishOpenSession. */
+  function finishEarlySession(state, s, now) {
+    now = now == null ? Date.now() : now;
+    if (isOpen(s)) return { ok: false, reason: 'use-finishOpenSession' };
+    if (s.state === 'completed') return { ok: true, session: s, changed: false, reason: 'already-completed' };
+    if (s.state === 'interrupted') return { ok: false, reason: 'already-ended' };
+    checkpoint(s, now);
+    if (s.pauseStartedAt != null) { s.pausedSec += Math.max(0, (now - s.pauseStartedAt) / 1000); s.pauseStartedAt = null; }
+    // Waktu aktual (tanpa jeda) menjadi durasi resmi sesi ini.
+    s.plannedSec = Math.max(1, Math.round(s.activeSec));
+    return completeSession(state, s, now);
+  }
+
+  /** Mengakhiri sesi waktu bebas: durasi sebenarnya (tanpa jeda) menjadi durasi sesi dan masuk total resmi.
+      Sesi biasa tidak bisa diakhiri lewat sini; gunakan finishEarlySession untuk selesai lebih awal. */
+  function finishOpenSession(state, s, now) {
+    now = now == null ? Date.now() : now;
+    if (!isOpen(s)) return { ok: false, reason: 'not-open' };
+    if (s.state === 'completed') return { ok: true, session: s, changed: false, reason: 'already-completed' };
+    if (s.state === 'interrupted') return { ok: false, reason: 'already-ended' };
+    checkpoint(s, now);
+    if (s.pauseStartedAt != null) { s.pausedSec += Math.max(0, (now - s.pauseStartedAt) / 1000); s.pauseStartedAt = null; }
+    s.plannedSec = Math.max(1, Math.round(s.activeSec));
+    return completeSession(state, s, now);
+  }
+
+  /** Membuka kembali sesi waktu bebas yang baru diakhiri ("Selesai sesi" lalu "Lanjut fokus"): hitungan berlanjut dari
+      waktu terakhir, bukan dari nol. Selama berjalan sesi ini belum masuk total; masuk lagi saat diakhiri. */
+  function reopenOpenSession(state, s, now) {
+    now = now == null ? Date.now() : now;
+    if (!isOpen(s)) return { ok: false, reason: 'not-open' };
+    if (s.state !== 'completed') return { ok: false, reason: 'not-completed' };
+    s.state = 'running';
+    s.plannedSec = 1;                 // kembali ke penanda waktu bebas; waktu berjalan tetap di activeSec
+    s.completedAt = null;
+    s.endedAt = null;
+    s.contributesToOfficial = false;
+    s.pauseStartedAt = null;
+    s.runStartedAt = now;
+    s.checkpointAt = now;
+    storeEv(state, now, 'session.reopened', s);
+    return { ok: true, session: s };
+  }
+
   /** Official focus seconds: completed sessions only, optionally filtered by
       a [from,to) timestamp window (used for daily attribution by completedAt). */
   function officialSeconds(sessions, from, to) {
@@ -186,6 +242,7 @@
     STATES: STATES,
     createSession: createSession, checkpoint: checkpoint,
     activeSeconds: activeSeconds, remainingSeconds: remainingSeconds,
+    isOpen: isOpen, clockSeconds: clockSeconds, finishOpenSession: finishOpenSession, finishEarlySession: finishEarlySession, reopenOpenSession: reopenOpenSession,
     pauseSession: pauseSession, resumeSession: resumeSession,
     stopSession: stopSession, completeSession: completeSession,
     officialSeconds: officialSeconds, interruptedSeconds: interruptedSeconds,

@@ -470,6 +470,18 @@ input::placeholder, textarea::placeholder {
   opacity: 0.6;
 }
 input[type="date"] { color-scheme: light; }
+:root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
+/* Ikon kalender pada input tanggal mengikuti warna teks input (terang maupun gelap). */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  background-color: currentColor;
+  background-image: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+  cursor: pointer;
+  opacity: 0.9;
+}
 input[type="number"] { width: 96px; text-align: center; }
 input[type="range"] { 
   padding: 0; 
@@ -708,28 +720,15 @@ label.row input[type="checkbox"] {
   text-decoration: line-through; 
   color: var(--muted); 
 }
-.task-row .tick {
-  width: 20px; 
-  height: 20px; 
-  flex: 0 0 auto; 
-  cursor: pointer;
-  border: 1.5px solid var(--line-2); 
+.task-row .done-mark {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
   border-radius: var(--radius-sm);
-  background: transparent; 
-  display: grid; 
-  place-items: center; 
-  color: transparent;
-  padding: 0;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-.task-row .tick:hover { 
-  border-color: var(--mint); 
-  background: var(--mint-soft);
-}
-.task-row.done .tick { 
-  background: var(--mint); 
-  border-color: var(--mint); 
-  color: var(--on-coral); 
+  background: var(--mint);
+  color: var(--on-coral);
+  display: grid;
+  place-items: center;
 }
 .task-row .body { flex: 1; min-width: 0; }
 .task-row .tt { 
@@ -1336,6 +1335,20 @@ label.row input[type="checkbox"] {
   color: var(--muted); 
   padding: 3px 0; 
 }
+/* Lihat selengkapnya / Tutup */
+.report .rep-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px; padding: 4px 0;
+  background: none; border: 0; cursor: pointer;
+  font: inherit; font-size: var(--fs-xs); font-weight: 600; color: var(--muted);
+}
+.report .rep-toggle:hover { color: var(--ink); }
+.report .rep-arrow { display: inline-grid; place-items: center; }
+.report .rep-detail { margin-top: 6px; }
+.report .rep-sub { margin: 8px 0 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+.report .rep-item { padding: 6px 0; border-top: 1px solid var(--line); }
+.report .rep-item.muted .rep-title { color: var(--muted); font-weight: 500; }
+.report .rep-title { font-size: var(--fs-sm); font-weight: 600; overflow-wrap: anywhere; }
 .report .orig { 
   font-size: 12px; 
   color: var(--muted); 
@@ -1737,6 +1750,24 @@ label.field { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
 .cal-journal-link::after { content: '\2197'; font-size: 10px; text-decoration: none; }
 .cal-journal-link:hover { color: var(--coral-ink); }
 .cal-journal-link:focus-visible { outline-offset: 3px; }
+
+/* Kotak pintasan di panel tanggal Kalender */
+.dp-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.cal-link-box {
+  flex: 1 1 160px; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border: 1px solid transparent; border-radius: var(--radius-sm);
+  font: inherit; font-size: var(--fs-sm); font-weight: 600; text-align: left;
+  text-decoration: none; cursor: pointer;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.cal-link-box::after { content: '\2197'; margin-left: auto; font-size: 12px; text-decoration: none; opacity: 0.8; }
+.cal-link-box:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.cal-link-box .clb-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cal-link-box .clb-sub { font-size: var(--fs-2xs); font-weight: 500; opacity: 0.85; }
+.cal-link-box.journal { color: var(--yellow); background: var(--yellow-soft); border-color: color-mix(in srgb, var(--yellow) 35%, transparent); }
+.cal-link-box.library { color: var(--mint); background: var(--mint-soft); border-color: color-mix(in srgb, var(--mint) 35%, transparent); }
+:root:not([data-theme="dark"]) .cal-link-box.library { color: #185F44; }
+:root:not([data-theme="dark"]) .cal-link-box.journal { color: #7A4A08; }
 
 @media (max-width: 760px) {
   .jr-grid { grid-template-columns: 1fr; }

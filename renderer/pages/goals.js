@@ -782,9 +782,9 @@
     if (t && ref.status !== 'archived') {
       r.appendChild(ui.el('button.tick', {
         type: 'button', dataset: { fk: 'tick-' + t.id },
-        title: t.done ? 'Urungkan penyelesaian' : 'Tandai selesai',
-        'aria-label': (t.done ? 'Urungkan penyelesaian ' : 'Tandai selesai ') + t.title,
-        onclick: function () { t.done ? app.reopenTask(t.id) : app.completeTask(t.id); }
+        title: t.done ? 'Urungkan penyelesaian' : 'Selesai + ringkasan',
+        'aria-label': (t.done ? 'Urungkan penyelesaian ' : 'Selesai dengan ringkasan ') + t.title,
+        onclick: function () { t.done ? app.reopenTask(t.id) : JF.completion.start(t.id); }
       }, ui.svg(ui.ICON.check, 12, 3)));
     } else {
       r.appendChild(ui.el('span.gl-task-dot', { 'aria-hidden': 'true' }));

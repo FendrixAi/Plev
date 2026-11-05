@@ -50,8 +50,8 @@ test('halaman memakai lapisan data bersama dan app.save, tanpa penyimpanan terpi
     'completeMilestone', 'reopenMilestone', 'moveMilestone', 'removeMilestone', 'linkTask', 'unlinkTask', 'progress', 'overview'].forEach((fn) => {
     assert.ok(page.includes('G().' + fn + '('), fn);
   });
-  // Task completion reuses the existing task functions.
-  assert.match(page, /app\.completeTask\(t\.id\)/);
+  // Penyelesaian tugas memakai alur yang sama dengan halaman lain: form "Selesai + ringkasan" (yang memanggil app.completeTask).
+  assert.match(page, /JF\.completion\.start\(t\.id\)/);
   assert.match(page, /app\.reopenTask\(t\.id\)/);
   assert.doesNotMatch(page, /store\.addTask|JF\.store\.completeTask/);
 });

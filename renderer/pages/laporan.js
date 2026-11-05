@@ -16,6 +16,53 @@
     container.appendChild(ui.el('div', { id: 'lp-more', style: { marginTop: '6px', textAlign: 'center' } }));
   }
 
+  /* Kartu tetap ringkas; rincian tugas (selesai + ringkasan, belum selesai) dibuka dengan "Lihat selengkapnya". */
+  var openCards = {};   // kunci kartu -> terbuka; bertahan antar render
+
+  function chevron(open) {
+    return ui.svg(open ? '<path d="M6 15l6-6 6 6"/>' : '<path d="M6 9l6 6 6-6"/>', 14, 2.2);
+  }
+
+  function detailBlock(completedIds, unfinishedIds, state) {
+    var done = (completedIds || []).map(function (id) { return JF.store.find(state, id); })
+      .filter(function (t) { return t && t.done; });
+    var open = (unfinishedIds || []).map(function (id) { return JF.store.find(state, id); }).filter(Boolean);
+    if (!done.length && !open.length) return null;
+    var box = ui.el('div.rep-detail');
+    if (done.length) {
+      box.appendChild(ui.el('div.rep-sub', 'Tugas selesai (' + done.length + ')'));
+      done.forEach(function (t) {
+        var r = ui.el('div.rep-item', ui.el('div.rep-title', t.title));
+        var sb = JF.completion ? JF.completion.summaryBlock(t) : null;
+        if (sb) r.appendChild(sb);
+        box.appendChild(r);
+      });
+    }
+    if (open.length) {
+      box.appendChild(ui.el('div.rep-sub', 'Belum selesai (' + open.length + ')'));
+      open.forEach(function (t) { box.appendChild(ui.el('div.rep-item.muted', ui.el('div.rep-title', t.title))); });
+    }
+    box.appendChild(ui.el('div.hint', { style: { marginTop: '4px' } }, 'Ringkasan ditampilkan dari catatan terbaru; angka laporan tetap final.'));
+    return box;
+  }
+
+  function attachDetail(card, key, detail) {
+    if (!detail) return;
+    var label = ui.el('span', ''), arrow = ui.el('span.rep-arrow');
+    var btn = ui.el('button.rep-toggle', { type: 'button' }, label, arrow);
+    function paint() {
+      var isOpen = !!openCards[key];
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      label.textContent = isOpen ? 'Tutup' : 'Lihat selengkapnya';
+      ui.clear(arrow); arrow.appendChild(chevron(isOpen));
+      detail.style.display = isOpen ? '' : 'none';
+    }
+    btn.onclick = function () { openCards[key] = !openCards[key]; paint(); };
+    paint();
+    card.appendChild(btn);
+    card.appendChild(detail);
+  }
+
   function kv(k, v, cls) {
     var n = ui.el('div.kv', ui.el('div.k', k), ui.el('div.v' + (cls ? '.' + cls : ''), v));
     return n;
@@ -36,6 +83,10 @@
     g.appendChild(kv('Tugas selesai', String(st.doneToday)));
     g.appendChild(kv('Tugas terlambat', String(st.overdue), st.overdue ? '' : 'muted'));
     c.appendChild(g);
+    var todayState = app.rawState();
+    var todayDone = todayState.tasks.filter(function (t) { return t.done && t.completedAt && JF.dates.dayKey(t.completedAt) === st.day; })
+      .map(function (t) { return t.id; });
+    attachDetail(c, 'today', detailBlock(todayDone, [], todayState));
     return c;
   }
 
@@ -63,6 +114,8 @@
     g.appendChild(kv('Tugas belum selesai', String(snap.unfinishedTaskIds.length),
       snap.unfinishedTaskIds.length ? '' : 'muted'));
     c.appendChild(g);
+
+    attachDetail(c, snap.date, detailBlock(snap.completedTaskIds, snap.unfinishedTaskIds, state));
 
     // Corrections are derived and shown separately — the original is untouched.
     var notes = [];

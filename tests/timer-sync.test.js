@@ -181,3 +181,120 @@ test('beranda.js contains only valid middle dot separators without mojibake arti
   assert.match(berandaSrc, /'Target tugas ' \+ ui\.fmt\.dur\(t\.durationSec\) \+ \(t\.left < t\.durationSec \? ' · sisa ' \+ ui\.fmt\.mmss\(t\.left\) : ''\)/);
   assert.match(berandaSrc, /'Sesi tanpa tugas · ' \+ ui\.fmt\.dur\(app\.rawState\(\)\.settings\.defaultFocusSec\)/);
 });
+
+// ── Skenario "Selesai lebih awal" — Bug #1 & #2 ───────────────────────────────
+
+test('finishEarlySession: sesi biasa yang selesai di menit ke-23 dari 40 terhitung 23 menit', () => {
+  const s = store.createState();
+  const t0 = Date.now();
+
+  // Buat tugas 40 menit
+  const task = store.addTask(s, {
+    title: 'Tugas 40 menit',
+    targetDate: '2026-11-05',
+    durationSec: 40 * 60
+  }, t0);
+
+  // Mulai sesi biasa
+  const ses = sessions.createSession(s, {
+    taskId: task.id,
+    taskName: task.title,
+    plannedSec: task.left
+  }, t0);
+
+  assert.equal(ses.plannedSec, 2400, 'plannedSec harus 40 menit = 2400 detik');
+  assert.equal(ses.contributesToOfficial, false, 'belum selesai, belum resmi');
+
+  // Simulasi 23 menit berjalan
+  const t23 = t0 + 23 * 60 * 1000;
+  const result = sessions.finishEarlySession(s, ses, t23);
+
+  assert.ok(result.ok, 'finishEarlySession harus berhasil');
+  assert.equal(ses.state, 'completed', 'sesi harus berstatus completed');
+  assert.ok(ses.contributesToOfficial, 'sesi harus masuk total resmi');
+  assert.ok(ses.plannedSec >= 23 * 60 - 1 && ses.plannedSec <= 23 * 60 + 1,
+    'plannedSec harus ~23 menit aktual, bukan 40 menit semula; actual=' + ses.plannedSec);
+
+  // officialSeconds harus memperhitungkan waktu aktual, bukan plannedSec semula
+  const official = sessions.officialSeconds(s.sessions, t0 - 1000, t23 + 1000);
+  assert.ok(official >= 23 * 60 - 1 && official <= 23 * 60 + 1,
+    'total fokus resmi harus ~23 menit, actual=' + official);
+});
+
+test('finishEarlySession: sesi biasa yang selesai di menit ke-5 dari 60 terhitung 5 menit (bukan 0 atau 60)', () => {
+  const s = store.createState();
+  const t0 = Date.now();
+
+  const task = store.addTask(s, {
+    title: 'Tugas 60 menit',
+    targetDate: '2026-11-05',
+    durationSec: 60 * 60
+  }, t0);
+
+  const ses = sessions.createSession(s, {
+    taskId: task.id,
+    taskName: task.title,
+    plannedSec: task.left
+  }, t0);
+
+  const t5 = t0 + 5 * 60 * 1000;
+  sessions.finishEarlySession(s, ses, t5);
+
+  assert.equal(ses.state, 'completed');
+  assert.ok(ses.contributesToOfficial);
+  assert.ok(ses.plannedSec >= 5 * 60 - 1 && ses.plannedSec <= 5 * 60 + 1,
+    'plannedSec harus ~5 menit, actual=' + ses.plannedSec);
+});
+
+test('finishEarlySession: tidak menerima sesi waktu bebas (harus gunakan finishOpenSession)', () => {
+  const s = store.createState();
+  const t0 = Date.now();
+
+  const ses = sessions.createSession(s, {
+    taskId: null, taskName: 'Bebas', plannedSec: 1, openEnded: true
+  }, t0);
+
+  const result = sessions.finishEarlySession(s, ses, t0 + 10000);
+  assert.ok(!result.ok, 'finishEarlySession harus menolak sesi waktu bebas');
+  assert.equal(result.reason, 'use-finishOpenSession');
+});
+
+test('waktu bebas: setelah sesi biasa 40 menit habis + lanjut 20 menit waktu bebas → total 60 menit', () => {
+  const s = store.createState();
+  const t0 = Date.now();
+
+  const task = store.addTask(s, {
+    title: 'Tugas 40 menit',
+    targetDate: '2026-11-05',
+    durationSec: 40 * 60
+  }, t0);
+
+  // Sesi biasa selesai natural (timer habis) → completeSession
+  const ses1 = sessions.createSession(s, {
+    taskId: task.id, taskName: task.title, plannedSec: task.left
+  }, t0);
+  const t40 = t0 + 40 * 60 * 1000;
+  sessions.checkpoint(ses1, t40);
+  ses1.activeSec = ses1.plannedSec; // simulate natural completion
+  sessions.completeSession(s, ses1, t40);
+
+  assert.equal(ses1.state, 'completed');
+  assert.ok(ses1.contributesToOfficial);
+
+  // Lanjut dengan sesi waktu bebas selama 20 menit
+  const ses2 = sessions.createSession(s, {
+    taskId: task.id, taskName: task.title, plannedSec: 1, openEnded: true
+  }, t40);
+  const t60 = t40 + 20 * 60 * 1000;
+  sessions.finishOpenSession(s, ses2, t60);
+
+  assert.equal(ses2.state, 'completed');
+  assert.ok(ses2.contributesToOfficial);
+  assert.ok(ses2.plannedSec >= 20 * 60 - 1 && ses2.plannedSec <= 20 * 60 + 1,
+    'waktu bebas harus ~20 menit, actual=' + ses2.plannedSec);
+
+  // Total resmi: 40 + 20 = 60 menit
+  const official = sessions.officialSeconds(s.sessions, t0 - 1000, t60 + 1000);
+  assert.ok(official >= 60 * 60 - 2 && official <= 60 * 60 + 2,
+    'total fokus resmi harus ~60 menit (40+20), actual=' + official);
+});

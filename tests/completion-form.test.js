@@ -14,7 +14,7 @@ test('dialog setelah timer: "Tandai selesai" menggantikan "Kembali ke tugas"', (
   assert.doesNotMatch(core, /Kembali ke tugas/);
   assert.match(core, /label: 'Tandai selesai'/);
   assert.match(core, /JF\.completion\.open\(t, s,/);
-  assert.match(core, /onCancel: function \(\) \{ showCompletionChoices\(s, t\); \}/);
+  assert.match(core, /onCancel: function \(\) \{ showCompletionChoices\(s, t, copts\); \}/);
   assert.match(core, /label: 'Istirahat'/);
   assert.match(core, /label: 'Lanjut fokus'/);
 });
@@ -54,6 +54,8 @@ function setup(opts) {
   };
   JF.app = {
     rawState: () => state, save() { calls.saved++; },
+    findTask: (id) => state.tasks.find((t) => t.id === id) || null,
+    currentSession: () => null, emit() { calls.emits = (calls.emits || 0) + 1; },
     completeTask(id) { calls.completed.push(id); return true; }
   };
   JF.documents = {
@@ -150,4 +152,156 @@ test('file yang sudah terlampir sebelumnya tidak ikut dilepas saat batal', async
   m.actions[0].onClick();
   await new Promise((r) => setTimeout(r, 5));
   assert.deepStrictEqual(s.calls.removed, []);
+});
+
+
+const find = (n, pred) => { if (pred(n)) return n; for (const c of n.children || []) { const r = find(c, pred); if (r) return r; } return null; };
+
+test('forTask membaca ringkasan terbaru, tautan, dan file milik tugas', () => {
+  const s = setup();
+  const lib = require('../shared/library.js');
+  s.state.library.push(
+    lib.createItem({ type: 'note', title: 'Ringkasan: a', noteText: 'lama', taskIds: ['t1'], source: { module: 'tugas', entityId: 't1' } }, 1),
+    lib.createItem({ type: 'note', title: 'Ringkasan: a', noteText: 'baru', taskIds: ['t1'], source: { module: 'tugas', entityId: 't1' } }, 5),
+    lib.createItem({ type: 'link', url: 'https://a.id', taskIds: ['t1'] }, 2),
+    lib.createItem({ type: 'link', url: 'https://b.id', taskIds: ['lain'] }, 2),
+    lib.createItem({ type: 'file', title: 'f.pdf', fileName: 'f.pdf', taskIds: ['t1'] }, 3)
+  );
+  const info = s.JF.completion.forTask('t1');
+  assert.strictEqual(info.summary.noteText, 'baru');
+  assert.strictEqual(info.links.length, 1);
+  assert.strictEqual(info.files.length, 1);
+  assert.strictEqual(info.count, 2);
+  assert.strictEqual(info.any, true);
+  assert.strictEqual(s.JF.completion.forTask('kosong').any, false);
+});
+
+test('mode ubah: memperbarui ringkasan yang ada, tidak menggandakan, tidak menyelesaikan tugas', () => {
+  const s = setup();
+  const lib = require('../shared/library.js');
+  s.state.tasks[0].done = true;
+  s.state.library.push(lib.createItem({ type: 'note', title: 'Ringkasan: Tulis laporan', noteText: 'awal', taskIds: ['t1'], source: { module: 'tugas', entityId: 't1' } }, 1));
+  s.JF.completion.open(task(s), null, { mode: 'edit' });
+  const m = s.calls.modal;
+  assert.strictEqual(m.title, 'Ringkasan tugas');
+  assert.deepStrictEqual(m.actions.map((a) => a.label), ['Batal', 'Simpan']);
+  const ta = find({ children: m.body }, (n) => n.attrs && n.attrs.oninput && n.attrs.rows);
+  ta.attrs.oninput({ target: { value: 'sudah direvisi' } });
+  m.actions[1].onClick();
+  const notes = s.state.library.filter((i) => i.type === 'note');
+  assert.strictEqual(notes.length, 1);
+  assert.strictEqual(notes[0].noteText, 'sudah direvisi');
+  assert.deepStrictEqual(s.calls.completed, []);
+});
+
+test('mode ubah: mengosongkan ringkasan menghapus catatan itu', () => {
+  const s = setup();
+  const lib = require('../shared/library.js');
+  s.state.tasks[0].done = true;
+  s.state.library.push(lib.createItem({ type: 'note', title: 'x', noteText: 'awal', taskIds: ['t1'], source: { module: 'tugas', entityId: 't1' } }, 1));
+  s.JF.completion.open(task(s), null, { mode: 'edit' });
+  const ta = find({ children: s.calls.modal.body }, (n) => n.attrs && n.attrs.oninput && n.attrs.rows);
+  ta.attrs.oninput({ target: { value: '   ' } });
+  s.calls.modal.actions[1].onClick();
+  assert.strictEqual(s.state.library.filter((i) => i.type === 'note').length, 0);
+});
+
+test('start hanya untuk tugas aktif; summaryBlock hanya untuk tugas selesai', () => {
+  const s = setup();
+  assert.strictEqual(s.JF.completion.start('t1'), true);
+  assert.strictEqual(s.calls.modal.title, 'Tandai selesai');
+  assert.strictEqual(s.JF.completion.start('tidak-ada'), false);
+  assert.strictEqual(s.JF.completion.summaryBlock(task(s)), null);
+  task(s).done = true;
+  assert.strictEqual(s.JF.completion.start('t1'), false);
+  assert.ok(s.JF.completion.summaryBlock(task(s)));
+  assert.strictEqual(s.JF.completion.chip('t1'), null);
+});
+
+test('reportSection hanya muncul bila ada ringkasan atau lampiran pada tugas selesai', () => {
+  const s = setup();
+  const lib = require('../shared/library.js');
+  assert.strictEqual(s.JF.completion.reportSection(['t1']), null);
+  task(s).done = true;
+  assert.strictEqual(s.JF.completion.reportSection(['t1']), null);
+  s.state.library.push(lib.createItem({ type: 'link', url: 'https://a.id', taskIds: ['t1'] }, 1));
+  assert.ok(s.JF.completion.reportSection(['t1']));
+});
+
+test('tombol "Selesai + ringkasan" ada di Tugas, Beranda, dan Capybara; ringkasan tampil di Riwayat dan Laporan', () => {
+  assert.match(read('renderer', 'pages', 'tugas.js'), /Selesai \+ ringkasan[\s\S]*JF\.completion\.start\(t\.id\)/);
+  assert.match(read('renderer', 'pages', 'tugas.js'), /JF\.completion\.summaryBlock\(t\)/);
+  const ber = read('renderer', 'pages', 'beranda.js');
+  assert.strictEqual((ber.match(/Selesai \+ ringkasan/g) || []).length, 3);
+  assert.match(read('renderer', 'pages', 'riwayat.js'), /JF\.completion\.chip\(s\.taskId\)/);
+  const lap = read('renderer', 'pages', 'laporan.js');
+  assert.match(lap, /detailBlock\(snap\.completedTaskIds, snap\.unfinishedTaskIds, state\)/);
+  assert.match(lap, /detailBlock\(todayDone, \[\], todayState\)/);
+  assert.match(lap, /JF\.completion\.summaryBlock\(t\)/);
+  assert.match(read('renderer', 'experiences', 'capybara-world', 'pages.js'), /Selesai \+ ringkasan/);
+  assert.match(read('renderer', 'experiences', 'capybara-world', 'beranda.js'), /Selesai \+ ringkasan/);
+});
+
+test('tautan http(s) dibuka lewat browser bawaan, bukan jendela baru', () => {
+  const main = read('main.js');
+  assert.match(main, /shell\.openExternal/);
+  assert.match(main, /action: 'deny'/);
+});
+
+test('Tugas (Original): tidak ada centang cepat; selesai hanya lewat "Selesai + ringkasan"', () => {
+  const js = read('renderer', 'pages', 'tugas.js');
+  assert.doesNotMatch(js, /button\.tick/);
+  assert.doesNotMatch(js, /app\.completeTask\(/);
+  assert.match(js, /Selesai \+ ringkasan/);
+  assert.match(js, /span\.done-mark/);                 // tanda status tugas selesai (bukan tombol)
+  assert.match(js, /app\.reopenTask\(t\.id\)/);        // mengembalikan lewat tombol Urungkan
+  const css = read('renderer', 'theme.css');
+  assert.doesNotMatch(css, /\.task-row \.tick/);
+  assert.match(css, /\.task-row \.done-mark/);
+});
+
+test('Laporan harian: kartu ringkas dengan "Lihat selengkapnya" / "Tutup" dan panah', () => {
+  const lap = read('renderer', 'pages', 'laporan.js');
+  assert.match(lap, /'Lihat selengkapnya'/);
+  assert.match(lap, /'Tutup'/);
+  assert.match(lap, /aria-expanded/);
+  assert.match(lap, /M6 9l6 6 6-6/);        // panah bawah (buka)
+  assert.match(lap, /M6 15l6-6 6 6/);       // panah atas (tutup)
+  assert.match(lap, /var openCards = \{\}/);  // status buka/tutup bertahan antar render
+  assert.match(lap, /detail\.style\.display = isOpen \? '' : 'none'/);
+  const css = read('renderer', 'theme.css');
+  assert.match(css, /\.report \.rep-toggle/);
+  assert.match(css, /\.report \.rep-detail/);
+});
+
+test('jalur selesai seragam: Kalender dan Goals membuka form "Selesai + ringkasan"', () => {
+  const kal = read('renderer', 'pages', 'kalender.js');
+  assert.doesNotMatch(kal, /app\.completeTask\(/);
+  assert.match(kal, /'Selesai \+ ringkasan', function \(\) \{ JF\.completion\.start\(t\.id\); \}/);
+  const gl = read('renderer', 'pages', 'goals.js');
+  assert.doesNotMatch(gl, /app\.completeTask\(/);
+  assert.match(gl, /t\.done \? app\.reopenTask\(t\.id\) : JF\.completion\.start\(t\.id\)/);
+});
+
+test('jendela mini: tombol ikon "Lanjut fokus" memakai slot tombol yang ada, ukuran jendela tetap', () => {
+  const mini = read('mini.html');
+  assert.match(mini, /#pill\{[^}]*width:280px;height:88px/);          // ukuran pill tidak berubah
+  assert.match(read('main.js'), /const w = 296, h = 104;/);           // ukuran jendela tidak berubah
+  assert.match(mini, /var CONT=/);
+  assert.match(mini, /window\.mini\.cmd\(st\.mode==="idle"&&st\.canContinue\?"continue":"toggle"\)/);
+  assert.match(mini, /"Lanjut fokus"/);
+  assert.match(mini, /#pp\.cont\{/);
+  assert.match(mini, /<button id="pp"[^>]*hidden>/);                  // tombol yang sama, tersembunyi saat tidak dipakai
+  assert.strictEqual((mini.match(/<button /g) || []).length, 2);      // tidak ada tombol tambahan
+  assert.match(read('main.js'), /c === 'toggle' \|\| c === 'continue'/);
+});
+
+test('inti: Lanjut fokus dari mini hanya aktif selama dialog sesi selesai terbuka', () => {
+  const core = read('renderer', 'core.js');
+  assert.match(core, /var completionDialog = null, completionCtx = null;/);
+  assert.match(core, /canContinue: true/);
+  assert.match(core, /app\.continueFocus = function/);
+  assert.match(core, /if \(c === 'continue'\) \{ app\.continueFocus\(\); return; \}/);
+  assert.match(core, /closeCompletionDialog\(\);   \/\/ memulai fokus dari mana pun/);
+  assert.match(core, /onClose: function \(\) \{ completionDialog = null; completionCtx = null;/);
 });

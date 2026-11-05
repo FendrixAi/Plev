@@ -136,18 +136,17 @@
 
     if (opts && opts.sel) r.appendChild(opts.sel.box(t));
 
-    var tick = ui.el('button.tick', {
-      type: 'button',
-      title: t.done ? 'Urungkan penyelesaian' : 'Tandai selesai',
-      'aria-label': t.done ? 'Urungkan' : 'Selesai',
-      onclick: function () { t.done ? app.reopenTask(t.id) : app.completeTask(t.id); }
-    }, ui.svg(ui.ICON.check, 12, 3));
-    r.appendChild(tick);
+    // Tidak ada centang cepat: menandai selesai lewat "Selesai + ringkasan". Tugas selesai hanya diberi tanda status
+    // (bukan tombol); mengembalikannya lewat tombol "Urungkan".
+    if (t.done) {
+      r.appendChild(ui.el('span.done-mark', { role: 'img', 'aria-label': 'Selesai', title: 'Selesai' }, ui.svg(ui.ICON.check, 12, 3)));
+    }
 
     var body = ui.el('div.body');
     body.appendChild(ui.el('div.tt', t.title));
     if (t.description) body.appendChild(ui.el('div.desc', t.description));
     body.appendChild(metaChips(t, d));
+    if (t.done && JF.completion) { var sb = JF.completion.summaryBlock(t); if (sb) body.appendChild(sb); }
     r.appendChild(body);
 
     var acts = ui.el('div.acts');
@@ -159,6 +158,7 @@
       } else {
         acts.appendChild(ui.btn('Jeda', function () { app.pause(); }, { sm: true, primary: true }));
       }
+      if (JF.completion) acts.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { sm: true, ghost: true }));
     } else {
       acts.appendChild(ui.btn('Urungkan', function () { app.reopenTask(t.id); }, { sm: true, ghost: true }));
     }

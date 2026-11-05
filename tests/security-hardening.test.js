@@ -10,7 +10,10 @@ const root = path.join(__dirname, '..');
 const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
 
 test('navigasi dan jendela baru dibatasi', () => {
-  assert.match(main, /setWindowOpenHandler\(\(\) => \(\{ action: 'deny' \}\)\)/);
+  assert.match(main, /setWindowOpenHandler\(\(\{ url \}\) =>/);
+  assert.match(main, /\^https\?:\\\/\\\//);
+  assert.match(main, /shell\.openExternal\(String\(url\)\)/);
+  assert.match(main, /return \{ action: 'deny' \};/);
   assert.match(main, /will-navigate', \(ev\) => ev\.preventDefault\(\)/);
   assert.match(main, /will-redirect', \(ev\) => ev\.preventDefault\(\)/);
   assert.match(main, /lockNavigation\(win\)/);

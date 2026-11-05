@@ -403,10 +403,16 @@
     return o;
   }
   /** Pure search/filter/sort used by the Library page. */
+  /* Hari (zona waktu perangkat) saat dokumen ditambahkan, format YYYY-MM-DD. */
+  function addedDay(ms) {
+    var d = new Date(ms), p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
   function query(state, opts, statusMap) {
     opts = opts || {};
     var q = String(opts.search || '').trim().toLowerCase();
     var rows = list(state).filter(function (it) {
+      if (opts.date && addedDay(it.createdAt) !== opts.date) return false;
       if (opts.type && opts.type !== 'all' && typeGroup(it) !== opts.type) return false;
       if (opts.module && opts.module !== 'all' && it.source.module !== opts.module) return false;
       if (opts.goalId && opts.goalId !== 'all') {
@@ -439,7 +445,7 @@
   return {
     TYPES: TYPES, LIMITS: LIMITS,
     TYPE_GROUPS: TYPE_GROUPS, TYPE_GROUP_LABEL: TYPE_GROUP_LABEL,
-    typeGroup: typeGroup, moduleLabel: moduleLabel, registerModule: registerModule,
+    typeGroup: typeGroup, moduleLabel: moduleLabel, registerModule: registerModule, addedDay: addedDay,
     findById: findById, findByHash: findByHash, findByFileName: findByFileName,
     attachmentsForTask: attachmentsForTask, taskContext: taskContext, registerFile: registerFile,
     fileRefCount: fileRefCount, removeDocument: removeDocument, detachFromTask: detachFromTask,

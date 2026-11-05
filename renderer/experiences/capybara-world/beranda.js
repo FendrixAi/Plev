@@ -362,6 +362,9 @@
         sm: true, ghost: true, disabled: !!anotherSession,
         title: anotherSession ? 'Selesaikan sesi yang sedang berjalan terlebih dahulu' : 'Mulai fokus pada tugas ini'
       }));
+      if (JF.completion) row.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(task.id); }, {
+        sm: true, ghost: true, title: 'Tandai selesai dengan ringkasan dan lampiran'
+      }));
     }
     return row;
   }

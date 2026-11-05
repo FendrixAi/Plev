@@ -27,11 +27,16 @@
     return state().tasks.filter(function (task) { return !task.archived && task.targetDate === day; })
       .sort(function (a, b) { return Number(a.done) - Number(b.done) || ({ high: 0, normal: 1, low: 2 }[a.priority] - { high: 0, normal: 1, low: 2 }[b.priority]); });
   }
+  var CW_SUM = {
+    chip: 'span.cw-chip', hint: 'p.cw-hint',
+    button: function (label, fn) { return C.button(label, fn, 'quiet'); }
+  };
   function taskActions(task, host, options) {
     options = options || {};
     if (!task.done && !task.archived) {
       host.appendChild(C.button(options.compact ? 'Fokus' : 'Mulai fokus', function () { JF.app.startTask(task.id); }, 'primary'));
       if (!options.compact) host.appendChild(C.button('Tandai selesai', function () { JF.app.completeTask(task.id); }, 'quiet'));
+      if (!options.compact && JF.completion) host.appendChild(C.button('Selesai + ringkasan', function () { JF.completion.start(task.id); }, 'quiet'));
     } else if (task.done && !task.archived && !options.compact) {
       host.appendChild(C.button('Buka kembali', function () { JF.app.reopenTask(task.id); }, 'quiet'));
     }
@@ -58,6 +63,7 @@
       C.badge('Prioritas ' + (JF.model.PRIORITY_LABEL[task.priority] || 'Normal'), task.priority),
       C.badge('Tenggat ' + ui.fmt.dateShort(task.targetDate), JF.dates.diffDays(task.targetDate, JF.app.today()) > 0 && !task.done ? 'warn' : 'soft'),
       task.requiresOutput ? C.badge('Perlu output', 'soft') : null));
+    if (task.done && JF.completion) { var sb = JF.completion.summaryBlock(task, CW_SUM); if (sb) main.appendChild(sb); }
     box.appendChild(main);
     var actions = C.el('div.cw-task-actions');
     taskActions(task, actions, options);
@@ -149,6 +155,7 @@
       C.el('span.cw-chip.cw-chip-prio', JF.model.PRIORITY_LABEL[task.priority] || 'Normal'),
       task.requiresOutput ? C.el('span.cw-chip', 'Perlu output') : null));
     var actions = C.el('div.cw-note-actions');
+    if (task.done && JF.completion) { var nc = JF.completion.chip(task.id, { cls: 'cw-chip' }); if (nc) actions.appendChild(nc); }
     taskActions(task, actions, { edit: true, archive: true, compact: true });
     box.appendChild(actions);
     if (task.done) box.appendChild(C.el('span.cw-stamp', { 'aria-hidden': 'true' }, 'BERES'));

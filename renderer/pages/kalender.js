@@ -107,7 +107,7 @@
       if (t.done) {
         r.appendChild(ui.btn('Urungkan', function () { app.reopenTask(t.id); }, { sm: true, ghost: true }));
       } else {
-        r.appendChild(ui.btn('Selesai', function () { app.completeTask(t.id); }, { sm: true }));
+        r.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { sm: true }));
       }
       r.appendChild(ui.btn('Ubah', function () { JF.taskUI.openEdit(t); }, { sm: true, ghost: true }));
     }
@@ -162,12 +162,23 @@
       });
     } else sec3.appendChild(ui.el('div.hint', 'Belum ada penyelesaian pada tanggal ini.'));
     p.appendChild(sec3);
-    p.appendChild(ui.el('div.dp-journal-link-wrap',
-      ui.el('button.cal-journal-link', {
-        type: 'button',
-        title: 'Buka jurnal tanggal ini',
-        onclick: function () { location.hash = '#jurnal?date=' + selectedDay; }
-      }, 'See journaling')));
+    // Pintasan ke Jurnal dan Library untuk tanggal ini (kotak berwarna: kuning = jurnal, hijau = library)
+    var hasJournal = !!(JF.journal && JF.journal.entryFor(state, selectedDay));
+    var addedDocs = JF.library ? JF.library.query(state, { date: selectedDay }, null).length : 0;
+    var links = ui.el('div.dp-journal-link-wrap.dp-links');
+    links.appendChild(ui.el('button.cal-journal-link.cal-link-box.journal', {
+      type: 'button',
+      title: 'Buka jurnal tanggal ini',
+      onclick: function () { location.hash = '#jurnal?date=' + selectedDay; }
+    }, ui.el('span.clb-main', ui.el('span.clb-title', 'See journaling'),
+      ui.el('span.clb-sub', hasJournal ? 'Ada catatan jurnal' : 'Belum ada catatan'))));
+    links.appendChild(ui.el('button.cal-library-link.cal-link-box.library', {
+      type: 'button',
+      title: 'Buka dokumen Library yang ditambahkan pada tanggal ini',
+      onclick: function () { location.hash = '#library?date=' + selectedDay; }
+    }, ui.el('span.clb-main', ui.el('span.clb-title', 'See library'),
+      ui.el('span.clb-sub', addedDocs ? addedDocs + ' dokumen ditambahkan' : 'Belum ada yang ditambahkan'))));
+    p.appendChild(links);
 
     // Focus summary for the date
     var f = focusFor(selectedDay);

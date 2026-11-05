@@ -459,11 +459,19 @@
     if (brk) {
       var nx = brk.nextTaskId ? findTask(brk.nextTaskId) : null;
       out = { mode: 'brk', name: nx ? 'Berikutnya: ' + nx.title : 'Istirahat', endAt: brk.endAt, total: brk.total };
+    } else if (s && s.state === 'running' && sess.isOpen(s)) {
+      // Waktu bebas: jendela mini menghitung maju dari 'since'.
+      out = { mode: 'run', open: true, name: s.taskName, since: Date.now() - Math.floor(sess.activeSeconds(s, Date.now())) * 1000, total: 0 };
+    } else if (s && s.state === 'paused' && sess.isOpen(s)) {
+      out = { mode: 'pause', open: true, name: s.taskName, left: Math.floor(sess.activeSeconds(s, Date.now())), total: 0 };
     } else if (s && s.state === 'running') {
       var rem = Math.max(0, Math.ceil(sess.remainingSeconds(s, Date.now())));
       out = { mode: 'run', name: s.taskName, endAt: Date.now() + rem * 1000, total: s.plannedSec };
     } else if (s && s.state === 'paused') {
       out = { mode: 'pause', name: s.taskName, left: Math.max(0, Math.ceil(sess.remainingSeconds(s, Date.now()))), total: s.plannedSec };
+    } else if (completionDialog && completionCtx) {
+      // Sesi baru selesai dan dialog pilihan langkah menunggu: mini menampilkan tombol "Lanjut fokus".
+      out = { mode: 'idle', name: completionCtx.name, left: 0, total: 0, canContinue: true };
     } else {
       t = contextTask();
       var partial = t && !t.done && t.left < t.durationSec;
@@ -475,6 +483,13 @@
 
   /* ── timer engine ────────────────────────────────────────────────── */
   var warn8Fired = false;
+  // Dialog "Sesi fokus selesai" yang sedang terbuka (null bila tidak ada). Selama terbuka, jendela mini menawarkan "Lanjut fokus".
+  var completionDialog = null, completionCtx = null;
+  function closeCompletionDialog() {
+    var d = completionDialog;
+    completionDialog = null; completionCtx = null;
+    if (d) { try { d.close(false); } catch (e) {} }
+  }
   var app = {
     state: null,
     bus: createBus(),
@@ -496,15 +511,34 @@
 
   function syncTaskLeft(s) {
     var t = s.taskId ? findTask(s.taskId) : null;
-    if (t) t.left = Math.max(0, Math.round(sess.remainingSeconds(s, Date.now())));
+    if (t && !sess.isOpen(s)) t.left = Math.max(0, Math.round(sess.remainingSeconds(s, Date.now())));   // waktu bebas tidak punya sisa waktu
     return t;
   }
+
+  /** Mengakhiri sesi yang masih hidup tanpa kehilangan waktu secara tidak adil:
+      sesi waktu bebas tidak punya target, jadi waktu berjalannya adalah hasilnya (dihitung);
+      sesi biasa yang belum habis tetap terputus dan tidak dihitung. */
+  function endLive(s, now) {
+    if (sess.isOpen(s)) {
+      var r = sess.finishOpenSession(state, s, now);
+      var t = s.taskId ? findTask(s.taskId) : null;
+      if (t && r.ok) t.left = 0;
+      return r;
+    }
+    var r2 = sess.stopSession(state, s, now);
+    syncTaskLeft(s);
+    return r2;
+  }
+  // Waktu bebas yang berjalan terus-menerus tanpa jeda lebih dari ini dijeda otomatis (mis. laptop ditinggal).
+  var OPEN_RUN_CAP_MS = 3 * 3600 * 1000;
+  var openSeg = { id: null, since: 0 };
 
   /** Start (or resume) focus. v1-equivalent: only one session runs at a time. */
   app.startTask = function (id, opts) {
     opts = opts || {};
     var t = id ? findTask(id) : null;
     if (id && (!t || t.done || t.archived)) return null;
+    closeCompletionDialog();   // memulai fokus dari mana pun menutup dialog "Sesi fokus selesai" yang menggantung
     if (!t && !opts.standalone) {
       // pick first active task when caller passes null without standalone flag
       var act = store.activeTasks(state, today());
@@ -527,19 +561,24 @@
         app.emit('change'); pushState();
         return cur;
       }
-      // Another (or same but fresh) run: stop the previous one, honestly.
-      sess.stopSession(state, cur, now);
-      syncTaskLeft(cur);
-      if (!opts.quiet) JF.ui && JF.ui.toast('Sesi sebelumnya dihentikan (terputus, tidak dihitung ke total fokus).', { kind: 'ok' });
+      // Another (or same but fresh) run: end the previous one, honestly.
+      var wasOpen = sess.isOpen(cur);
+      endLive(cur, now);
+      if (!opts.quiet) {
+        if (wasOpen) JF.ui && JF.ui.toast('Sesi waktu bebas disimpan: ' + fmtDur(cur.plannedSec) + ' masuk total fokus.', { kind: 'ok' });
+        else JF.ui && JF.ui.toast('Sesi sebelumnya dihentikan (terputus, tidak dihitung ke total fokus).', { kind: 'ok' });
+      }
     }
 
     var planned = t ? t.left : state.settings.defaultFocusSec;
     if (!(planned > 0)) planned = (t && t.durationSec > 0) ? t.durationSec : state.settings.defaultFocusSec;
     if (!(planned > 0)) planned = 1500;
+    var openRun = !!opts.open;   // waktu bebas: hitung maju sampai "Selesai sesi"
     var s = sess.createSession(state, {
       taskId: t ? t.id : null,
       taskName: t ? t.title : 'Fokus tanpa tugas',
-      plannedSec: planned
+      plannedSec: openRun ? 1 : planned,
+      openEnded: openRun
     }, now);
     warn8Fired = false;
     askNotif();
@@ -563,6 +602,20 @@
     sess.resumeSession(state, s, Date.now());
     warn8Fired = false;
     save(); app.emit('change'); pushState();
+    return true;
+  };
+
+  /** Akhiri sesi waktu bebas: waktu berjalan (tanpa jeda) dihitung ke total fokus, lalu tampilkan pilihan langkah berikutnya. */
+  app.finishOpen = function () {
+    var s = current();
+    if (!s || !sess.isOpen(s) || (s.state !== 'running' && s.state !== 'paused')) return false;
+    var r = endLive(s, Date.now());
+    if (!r.ok) return false;
+    var t = s.taskId ? findTask(s.taskId) : null;
+    save(); pushState();
+    app.emit('session-complete', s, t);
+    app.emit('change');
+    showCompletionChoices(s, t, { resumeOpen: true });
     return true;
   };
 
@@ -607,8 +660,20 @@
     }
     var s = current();
     if (s && s.taskId === id && (s.state === 'running' || s.state === 'paused')) {
-      sess.stopSession(state, s, Date.now());
-      syncTaskLeft(s);
+      var now = Date.now();
+      if (sess.isOpen(s)) {
+        // Waktu bebas: hitung seluruh waktu aktual yang sudah berjalan.
+        var ro = sess.finishOpenSession(state, s, now);
+        var tt = s.taskId ? findTask(s.taskId) : null;
+        if (tt && ro.ok) tt.left = 0;
+      } else {
+        // Sesi biasa selesai lebih awal: waktu fokus nyata tetap dihitung ke total.
+        var re = sess.finishEarlySession(state, s, now);
+        if (re.ok) {
+          var tf = s.taskId ? findTask(s.taskId) : null;
+          if (tf) tf.left = 0;
+        }
+      }
     }
     var r = store.completeTask(state, id, Date.now(), 'user', opts || undefined);
     if (r.ok && r.changed) {
@@ -677,9 +742,39 @@
     showCompletionChoices(s, t);
   }
 
-  function showCompletionChoices(s, t) {
+  /* "Lanjut fokus" berjalan sebagai waktu bebas (hitung maju) di tampilan Original. Capybara World belum punya
+     kontrol "Selesai sesi", jadi di sana "Lanjut fokus" tetap memulai sesi berdurasi tetap seperti sebelumnya. */
+  function freeTimeAvailable() {
+    return !(JF.homeExperience && JF.homeExperience.get && JF.homeExperience.get() === 'capybara-world');
+  }
+  /* Sesi waktu bebas yang baru diakhiri bisa dilanjutkan sebagai sesi yang sama (hitungan tidak kembali ke nol). */
+  function resumeFinished(id) {
+    var s = sess.findSession(state, id);
+    if (!s || !sess.isOpen(s) || s.state !== 'completed' || current()) return null;
+    var t = s.taskId ? findTask(s.taskId) : null;
+    if (s.taskId && (!t || t.done || t.archived)) return null;   // tugasnya sudah selesai: mulai sesi baru saja
+    var now = Date.now();
+    closeCompletionDialog();
+    if (brk) { brk = null; saveBrk(); }
+    stopAllMusic();
+    sess.reopenOpenSession(state, s, now);
+    warn8Fired = false; askNotif();
+    if (t) { app.lastTaskId = t.id; app.selectedTaskId = t.id; }
+    save(); app.emit('change'); pushState();
+    return s;
+  }
+  function continueFrom(c) {
+    if (c.resumeId) { var r = resumeFinished(c.resumeId); if (r) return r; }
+    return app.startTask(c.taskId, { standalone: c.standalone, open: freeTimeAvailable() });
+  }
+  function showCompletionChoices(s, t, copts) {
     var canMarkDone = !!(t && !t.done && !t.archived && JF.completion);
-    JF.ui.modal({
+    var freeTime = freeTimeAvailable();
+    var resumeId = copts && copts.resumeOpen && sess.isOpen(s) ? s.id : null;
+    closeCompletionDialog();
+    var ctx = { taskId: t ? t.id : null, standalone: !t, name: s.taskName, resumeId: resumeId };
+    completionCtx = ctx;
+    completionDialog = JF.ui.modal({
       title: 'Sesi fokus selesai',
       body: [
         JF.ui.el('div', JF.ui.el('strong', s.taskName)),
@@ -687,17 +782,28 @@
           'Fokus ' + JF.ui.fmt.dur(s.plannedSec) + ' · tanpa waktu jeda.'),
         JF.ui.el('p.hint', { style: { marginTop: '10px' } },
           'Tugas tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
-      ],
+      ].concat(resumeId ? [JF.ui.el('p.hint', { style: { marginTop: '6px' } },
+        'Lanjut fokus melanjutkan sesi ini dari ' + JF.ui.fmt.dur(s.plannedSec) + ' (hitungan tidak mulai dari nol). Akhiri lagi dengan "Selesai sesi".')]
+        : freeTime ? [JF.ui.el('p.hint', { style: { marginTop: '6px' } },
+        'Lanjut fokus berjalan tanpa batas waktu. Akhiri dengan "Selesai sesi" supaya waktunya masuk total fokus.')] : []),
       actions: (canMarkDone ? [{ label: 'Tandai selesai', ghost: true, onClick: function () {
         // Form ringkasan + lampiran. Batal -> kembali ke pilihan langkah ini.
-        JF.completion.open(t, s, { onCancel: function () { showCompletionChoices(s, t); } });
+        JF.completion.open(t, s, { onCancel: function () { showCompletionChoices(s, t, copts); } });
       } }] : []).concat([
         { label: 'Istirahat', ghost: true, onClick: function () { startBreak(state.settings.shortBreakMin, null, false); } },
-        { label: 'Lanjut fokus', primary: true, onClick: function () { app.startTask(t ? t.id : null, { standalone: !t }); } }
+        { label: 'Lanjut fokus', primary: true, onClick: function () { continueFrom(ctx); } }
       ]),
-      onClose: function () { app.emit('change'); }
+      onClose: function () { completionDialog = null; completionCtx = null; app.emit('change'); pushState(); }
     });
+    pushState();
   }
+
+  /** "Lanjut fokus" dari jendela mini: sama dengan tombol di dialog (waktu bebas di Original). */
+  app.continueFocus = function () {
+    if (!completionDialog || !completionCtx) return false;
+    var r = continueFrom(completionCtx);
+    return !!r;
+  };
 
   /* ── breaks ──────────────────────────────────────────────────────── */
   function startBreak(mins, nextTaskId, isLong) {
@@ -741,7 +847,22 @@
   function check() {
     var now = Date.now();
     var s = current();
-    if (s && s.state === 'running') {
+    if (s && s.state === 'running' && sess.isOpen(s)) {
+      // Waktu bebas tidak pernah selesai sendiri. Pengaman: jeda otomatis bila terus berjalan terlalu lama
+      // (mis. laptop ditinggal). Dihitung dari awal/lanjut terakhir, bukan dari checkpoint.
+      if (openSeg.id !== s.id) { openSeg.id = s.id; openSeg.since = s.runStartedAt != null ? s.runStartedAt : now; }
+      if (now - openSeg.since >= OPEN_RUN_CAP_MS) {
+        openSeg.id = null;
+        sess.pauseSession(state, s, now);
+        save(); app.emit('change'); pushState();
+        notify('Waktu bebas dijeda', 'Sudah 3 jam berjalan tanpa jeda. Lanjutkan bila masih fokus, atau pilih Selesai sesi.');
+        JF.ui && JF.ui.toast('Waktu bebas dijeda otomatis setelah 3 jam. Lanjutkan atau pilih Selesai sesi.', { kind: 'ok', timeout: 9000 });
+        s = current();
+      }
+    } else {
+      openSeg.id = null;
+    }
+    if (s && s.state === 'running' && !sess.isOpen(s)) {
       var rem = sess.remainingSeconds(s, now);
       var settings = state.settings;
       if (settings.warn8 && !warn8Fired && rem > 0 && rem <= 8 && s.plannedSec >= 30) {
@@ -750,11 +871,11 @@
         if (root.desk && root.desk.warn8) root.desk.warn8();
       }
       if (rem <= 0) { onNaturalComplete(s); s = current(); }
-      // Periodic checkpoint: crash recovery only loses ≤10 s of focus time.
-      if (s && s.state === 'running' && now - s.checkpointAt >= 10000) {
-        sess.checkpoint(s, now);
-        save();
-      }
+    }
+    // Periodic checkpoint: crash recovery only loses 10 s of focus time.
+    if (s && s.state === 'running' && now - s.checkpointAt >= 10000) {
+      sess.checkpoint(s, now);
+      save();
     }
     if (brk && now >= brk.endAt) { endBreak(true); }
 
@@ -773,6 +894,10 @@
   function fmtDur(sec) { return JF.ui.fmt.dur(sec); }
 
   /** Sidebar status + document title (v1 updated the title the same way). */
+  /* Jam sesi: sisa waktu (sesi biasa) atau "+waktu berjalan" (waktu bebas). */
+  function clockText(s) {
+    return sess.isOpen(s) ? '+' + JF.ui.fmt.mmss(sess.activeSeconds(s, Date.now())) : JF.ui.fmt.mmss(sess.remainingSeconds(s, Date.now()));
+  }
   function updateChrome() {
     var s = current(), el2 = JF.ui.$('sideStatus');
     if (el2) {
@@ -781,17 +906,17 @@
         el2.textContent = JF.ui.fmt.mmss(Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000))) + ' · Istirahat';
       } else if (s && s.state === 'running') {
         el2.className = 'side-status run';
-        el2.textContent = JF.ui.fmt.mmss(sess.remainingSeconds(s, Date.now())) + ' · ' + s.taskName;
+        el2.textContent = clockText(s) + ' · ' + s.taskName;
       } else if (s && s.state === 'paused') {
         el2.className = 'side-status';
-        el2.textContent = JF.ui.fmt.mmss(sess.remainingSeconds(s, Date.now())) + ' · dijeda';
+        el2.textContent = clockText(s) + ' · dijeda';
       } else {
         el2.className = 'side-status';
         el2.textContent = JF.dates.dayKey ? JF.ui.fmt.dateShort(today()) : '';
       }
     }
     if (brk) document.title = JF.ui.fmt.mmss(Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000))) + ' · Istirahat';
-    else if (s && s.state === 'running') document.title = JF.ui.fmt.mmss(sess.remainingSeconds(s, Date.now())) + ' · ' + s.taskName;
+    else if (s && s.state === 'running') document.title = clockText(s) + ' · ' + s.taskName;
     else document.title = 'Jam Fokus';
   }
 
@@ -800,6 +925,7 @@
     if (!root.desk || !root.desk.onCmd) return;
     root.desk.onCmd(function (c) {
       if (c === 'push') { pushState(); return; }
+      if (c === 'continue') { app.continueFocus(); return; }
       if (c === 'toggle') {
         var s = current();
         if (s && s.state === 'running') app.pause();

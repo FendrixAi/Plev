@@ -91,29 +91,35 @@
     }
 
     if (s && s.state === 'running') {
-      card.appendChild(stateLine('Sedang berjalan', 'run'));
+      var open1 = JF.sessions.isOpen(s);
+      card.appendChild(stateLine(open1 ? 'Waktu bebas' : 'Sedang berjalan', 'run'));
       card.appendChild(taskLine(s));
-      card.appendChild(ui.el('div.session-clock.run', { id: 'ses-clock' }, ui.fmt.mmss(sessRem(s))));
+      card.appendChild(ui.el('div.session-clock.run', { id: 'ses-clock' }, clockLabel(s)));
       card.appendChild(ui.el('div.session-sub', { id: 'ses-sub' },
-        'Mulai ' + ui.fmt.time(s.startedAt) + ' · target ' + ui.fmt.dur(s.plannedSec)));
-      card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
+        'Mulai ' + ui.fmt.time(s.startedAt) + (open1 ? ' · tanpa batas waktu' : ' · target ' + ui.fmt.dur(s.plannedSec))));
+      if (!open1) card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
       var c1 = ui.el('div.session-controls');
       c1.appendChild(ui.btn('Jeda', function () { app.pause(); }, { primary: true }));
+      if (open1) c1.appendChild(ui.btn('Selesai sesi', function () { app.finishOpen(); }, {}));
       c1.appendChild(ui.btn('Hentikan sesi', confirmStop, { danger: true }));
+      if (s.taskId && JF.completion) c1.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(s.taskId); }, { ghost: true }));
       card.appendChild(c1);
       return;
     }
 
     if (s && s.state === 'paused') {
+      var open2 = JF.sessions.isOpen(s);
       card.appendChild(stateLine('DIJEDA', 'paused'));
       card.appendChild(taskLine(s));
-      card.appendChild(ui.el('div.session-clock', { id: 'ses-clock' }, ui.fmt.mmss(sessRem(s))));
+      card.appendChild(ui.el('div.session-clock', { id: 'ses-clock' }, clockLabel(s)));
       card.appendChild(ui.el('div.session-sub', { id: 'ses-sub' },
         'Fokus terkumpul ' + ui.fmt.dur(s.activeSec) + ' · jeda ' + ui.fmt.dur(s.pausedSec)));
-      card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
+      if (!open2) card.appendChild(ui.el('div.progress', ui.el('i', { id: 'ses-bar' })));
       var c2 = ui.el('div.session-controls');
       c2.appendChild(ui.btn('Lanjutkan', function () { app.resume(); }, { primary: true }));
+      if (open2) c2.appendChild(ui.btn('Selesai sesi', function () { app.finishOpen(); }, {}));
       c2.appendChild(ui.btn('Hentikan sesi', confirmStop, { danger: true }));
+      if (s.taskId && JF.completion) c2.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(s.taskId); }, { ghost: true }));
       card.appendChild(c2);
       return;
     }
@@ -222,6 +228,7 @@
       var sid = selected; pickNone = false;
       app.startTask(sid, { standalone: !sid });
     }, { primary: true }));
+    if (t && JF.completion) c3.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { ghost: true }));
     card.appendChild(c3);
   }
 
@@ -237,12 +244,18 @@
     return Math.max(0, Math.min(100, p * 100)).toFixed(2) + '%';
   }
   function sessRem(s) { return JF.sessions.remainingSeconds(s, Date.now()); }
+  /* Teks jam sesi: sisa waktu, atau "+waktu berjalan" untuk sesi waktu bebas. */
+  function clockLabel(s) {
+    return JF.sessions.isOpen(s) ? '+' + ui.fmt.mmss(JF.sessions.activeSeconds(s, Date.now())) : ui.fmt.mmss(sessRem(s));
+  }
 
   function confirmStop() {
+    var cs = app.currentSession();
     ui.confirm({
       title: 'Hentikan sesi ini?',
       body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan ' +
-        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus.',
+        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus.' +
+        (cs && JF.sessions.isOpen(cs) ? ' Untuk memasukkan waktu ini ke total, pilih "Selesai sesi" saja.' : ''),
       okLabel: 'Hentikan permanen', danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
     return false; // keep modal open until confirm resolves
@@ -326,6 +339,12 @@
       return;
     }
     if (s && (s.state === 'running' || s.state === 'paused') && clk) {
+      if (JF.sessions.isOpen(s)) {
+        clk.textContent = clockLabel(s);
+        clock.setProgress(null);          // waktu bebas: tidak ada target, tidak ada progres
+        clock.setRunning(s.state === 'running');
+        return;
+      }
       var rem = sessRem(s);
       clk.textContent = ui.fmt.mmss(rem);
       if (bar) bar.style.width = progressPct(s.plannedSec, 1 - rem / (s.plannedSec || 1));

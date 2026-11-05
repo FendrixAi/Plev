@@ -52,10 +52,11 @@
     var nums = ui.el('div.hnums');
     var f = ui.el('div.hn2', ui.el('div.k', 'Fokus'), ui.el('div.v' + (s.contributesToOfficial ? '.ok' : ''), ui.fmt.durShort(s.activeSec)));
     var p = ui.el('div.hn2', ui.el('div.k', 'Jeda'), ui.el('div.v' + (s.pausedSec > 0 ? '' : '.muted'), ui.fmt.durShort(s.pausedSec)));
-    var t = ui.el('div.hn2', ui.el('div.k', 'Target'), ui.el('div.v.muted', ui.fmt.durShort(s.plannedSec)));
+    var t = ui.el('div.hn2', ui.el('div.k', 'Target'), ui.el('div.v.muted', s.openEnded ? 'Bebas' : ui.fmt.durShort(s.plannedSec)));
     nums.appendChild(f); nums.appendChild(p); nums.appendChild(t);
     var chips = ui.el('div.hn2', { style: { display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' } });
     if (s.legacy) chips.appendChild(ui.el('span.chip.outline', { title: 'Dipindahkan dari riwayat lama' }, 'Data lama'));
+    if (s.taskId && JF.completion) { var sc = JF.completion.chip(s.taskId); if (sc) chips.appendChild(sc); }
     if (s.state === 'completed') chips.appendChild(ui.el('span.chip.ok', 'Terhitung'));
     else if (s.state === 'interrupted') chips.appendChild(ui.el('span.chip.danger', 'Tidak terhitung'));
     else chips.appendChild(stateChip(s));
