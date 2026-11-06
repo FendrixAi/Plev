@@ -10,6 +10,10 @@
     return JF.homeExperience && JF.homeExperience.get() === 'capybara-world';
   }
 
+  function isMolaWorld() {
+    return JF.homeExperience && JF.homeExperience.get() === 'mola-world';
+  }
+
   function pageIdFromHash() {
     var h = (location.hash || '').replace(/^#/, '').split('?')[0];
     if (h && JF.pages.get(h)) return h;
@@ -23,12 +27,20 @@
     currentId = id;
 
     var capybaraWorld = isCapybaraWorld();
-    activeExperience = capybaraWorld ? 'capybara-world' : 'original';
+    var molaWorld = isMolaWorld();
+    activeExperience = capybaraWorld ? 'capybara-world' : molaWorld ? 'mola-world' : 'original';
     if (JF.experiences && JF.experiences.capybaraWorld) {
       JF.experiences.capybaraWorld.setActive(capybaraWorld);
     }
+    if (JF.experiences && JF.experiences.molaWorld) {
+      JF.experiences.molaWorld.setActive(molaWorld);
+    }
     if (capybaraWorld) {
       JF.experiences.capybaraWorld.render(id);
+      return;
+    }
+    if (molaWorld) {
+      JF.experiences.molaWorld.render(id);
       return;
     }
 
@@ -126,6 +138,8 @@
     var cur = JF.pages.get(currentId);
     if (activeExperience === 'capybara-world') {
       if (JF.experiences && JF.experiences.capybaraWorld) JF.experiences.capybaraWorld.frame(ts);
+    } else if (activeExperience === 'mola-world') {
+      if (JF.experiences && JF.experiences.molaWorld) JF.experiences.molaWorld.frame(ts);
     } else if (cur && cur.frame) { try { cur.frame(ts); } catch (e) { /* don't kill the loop */ } }
     requestAnimationFrame(frame);
   }
@@ -148,13 +162,17 @@
 
     app.on('change', function () {
       refreshBadges();
-      var selectedExperience = isCapybaraWorld() ? 'capybara-world' : 'original';
+      var selectedExperience = isCapybaraWorld() ? 'capybara-world' : isMolaWorld() ? 'mola-world' : 'original';
       if (selectedExperience !== activeExperience) {
         showPage(currentId || pageIdFromHash());
         return;
       }
       if (selectedExperience === 'capybara-world') {
         JF.experiences.capybaraWorld.refresh(currentId || pageIdFromHash());
+        return;
+      }
+      if (selectedExperience === 'mola-world') {
+        JF.experiences.molaWorld.refresh(currentId || pageIdFromHash());
         return;
       }
       refreshTopbar();

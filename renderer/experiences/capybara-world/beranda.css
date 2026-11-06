@@ -589,9 +589,14 @@
     grid-template-columns: 26px minmax(0, 1fr);
   }
 
-  .capy-home .cw-task-row > .btn {
+  .capy-home .cw-task-row > .btn,
+  .capy-home .cw-task-row > .cw-task-actions {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .capy-home .cw-task-row > .cw-task-actions {
+    justify-content: flex-start;
   }
 
   .capy-home .cw-today-focus {
@@ -613,3 +618,65 @@
 .capy-home .cw-picker .cw-fsel, .capy-home .cw-picker .cw-fdate { width: auto; min-height: 0; padding: 4px 8px; font-size: 12px; border-radius: 9px; }
 /* Dropdown tugas tidak boleh melebarkan kartu meski judulnya panjang */
 .capy-home .cw-picker > select { width: 100%; max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Teman fokus (waktu bebas): CapyRafi + tahap + jejak kaki tiap 15 menit ── */
+.capy-home .cw-companion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--cw-line);
+  border-radius: 14px;
+  background: var(--cw-soft-green);
+}
+
+.capy-home .cw-companion-art {
+  flex: 0 0 64px;
+  width: 64px;
+  line-height: 0;
+}
+
+.capy-home .cw-companion-art svg {
+  width: 64px;
+  height: auto;
+}
+
+.capy-home .cw-companion-body {
+  min-width: 0;
+}
+
+.capy-home .cw-companion-tier {
+  color: var(--cw-green);
+  font-size: 13px;
+}
+
+.capy-home .cw-companion-line {
+  margin: 2px 0 6px;
+  color: var(--cw-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.capy-home .cw-paws {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.capy-home .cw-paw {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.22;
+  filter: grayscale(1);
+  transition: opacity 0.4s ease, filter 0.4s ease;
+}
+
+.capy-home .cw-paw.is-on {
+  opacity: 1;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capy-home .cw-paw { transition: none; }
+}

@@ -1,0 +1,166 @@
+/* Mola World: tampilan siang saja. Semua aturan dikunci ke data-experience="mola-world" dan tidak membaca data-theme. */
+@font-face { font-family: "Mola Outfit"; font-weight: 700; src: url("../../fonts/outfit-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Mola Outfit"; font-weight: 800; src: url("../../fonts/outfit-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Mola DM Sans"; font-weight: 400; src: url("../../fonts/dm-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Mola DM Sans"; font-weight: 500; src: url("../../fonts/dm-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Mola DM Sans"; font-weight: 700; src: url("../../fonts/dm-sans-latin-700-normal.woff2") format("woff2"); }
+
+:root[data-experience="mola-world"] { color-scheme: light; }
+:root[data-experience="mola-world"] body { margin: 0; overflow: hidden; }
+
+.app.mola-world-active, :root[data-experience="mola-world"] #modalRoot, :root[data-experience="mola-world"] #toastRoot {
+  --mw-sky: #cfeefa; --mw-sea: #4aa3d6; --mw-deep: #1f6fa8; --mw-navy: #1d2f55;
+  --mw-card: rgb(255 255 255 / 90%); --mw-solid: #ffffff; --mw-soft: #e7f5fb; --mw-line: #bfdff0;
+  --mw-ink: #1d2f55; --mw-muted: #52688c; --mw-sun: #f7b84a; --mw-coral: #e8744a; --mw-accent: #e8744a;
+  --mw-accent-ink: #ffffff; --mw-ok: #2f9e72; --mw-danger: #c23b3b; --mw-sand: #f3e2b8;
+}
+.app.mola-world-active {
+  position: fixed; inset: 0; overflow: hidden; color: var(--mw-ink);
+  font: 400 14px/1.5 "Mola DM Sans", "Segoe UI", sans-serif; background: var(--mw-sky);
+}
+.app.mola-world-active > .sidebar, .app.mola-world-active > .main { display: none !important; }
+.mw-shell, .mw-shell *, .mw-shell *::before, .mw-shell *::after { box-sizing: border-box; }
+.mw-shell {
+  position: fixed; z-index: 20; inset: 0; display: grid; grid-template-columns: 264px minmax(0, 1fr) 88px; gap: 18px;
+  padding: 18px; overflow: hidden; color: var(--mw-ink);
+  background: linear-gradient(180deg, #d9f2fc 0%, #a9dcf2 34%, #5fb2dc 72%, #3a8fc4 100%);
+}
+.mw-shell[hidden] { display: none; }
+
+/* latar laut */
+.mw-sea { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.mw-sun { position: absolute; top: -50px; right: 12%; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle, #ffd37a 0 38%, rgb(255 211 122 / 35%) 39% 62%, transparent 63%); animation: mw-sun 9s ease-in-out infinite alternate; }
+.mw-wave { position: absolute; left: -10%; width: 120%; height: 120px; border-radius: 45% 55% 0 0 / 60% 60% 0 0; background: rgb(255 255 255 / 22%); }
+.mw-wave.w1 { bottom: 18%; animation: mw-sway 11s ease-in-out infinite alternate; }
+.mw-wave.w2 { bottom: 6%; background: rgb(31 111 168 / 22%); animation: mw-sway 14s ease-in-out infinite alternate-reverse; }
+.mw-bub { position: absolute; bottom: -30px; width: 14px; height: 14px; border: 2px solid rgb(255 255 255 / 70%); border-radius: 50%; animation: mw-rise 14s linear infinite; }
+.mw-bub.b1 { left: 8%; } .mw-bub.b2 { left: 32%; width: 9px; height: 9px; animation-duration: 18s; animation-delay: -6s; }
+.mw-bub.b3 { left: 55%; animation-duration: 16s; animation-delay: -3s; } .mw-bub.b4 { left: 78%; width: 10px; height: 10px; animation-delay: -9s; } .mw-bub.b5 { left: 92%; animation-duration: 20s; animation-delay: -12s; }
+@keyframes mw-rise { to { transform: translateY(-110vh) translateX(20px); } }
+@keyframes mw-sway { to { transform: translateX(4%); } }
+@keyframes mw-sun { to { transform: translateY(8px) scale(1.04); } }
+
+.mw-side, .mw-stage, .mw-buoys { position: relative; z-index: 1; min-height: 0; min-width: 0; }
+
+/* rel kiri: Mola */
+.mw-side { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 14px; border: 1px solid rgb(255 255 255 / 75%); border-radius: 30px; background: var(--mw-card); box-shadow: 0 14px 38px rgb(31 80 130 / 22%); overflow: auto; }
+.mw-pet { width: 100%; border: 0; border-radius: 24px; background: linear-gradient(180deg, #e9f7fd, #bfe4f5); cursor: pointer; padding: 6px; }
+.mw-pet-art svg { width: 100%; height: auto; max-height: 190px; animation: mw-float 5s ease-in-out infinite; }
+@keyframes mw-float { 50% { transform: translateY(-7px) rotate(-1.5deg); } }
+.mw-pet-info { width: 100%; display: grid; gap: 3px; text-align: center; }
+.mw-pet-info b { font: 800 19px "Mola Outfit", sans-serif; }
+.mw-pet-info small { color: var(--mw-muted); font-weight: 500; }
+.mw-xp, .mw-bar { display: block; height: 10px; border-radius: 999px; background: var(--mw-soft); border: 1px solid var(--mw-line); overflow: hidden; }
+.mw-xp i, .mw-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mw-sea), var(--mw-sun)); transition: width .5s ease; }
+.mw-timer-pill { width: 100%; padding: 8px 10px; border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-solid); color: var(--mw-ink); font: 700 12px "Mola DM Sans", sans-serif; cursor: pointer; }
+.mw-timer-pill.is-run { background: var(--mw-deep); border-color: var(--mw-deep); color: #fff; }
+.mw-timer-pill.is-break { background: var(--mw-ok); border-color: var(--mw-ok); color: #fff; }
+.mw-music { display: flex; align-items: center; gap: 4px; width: 100%; padding: 4px 8px; border-radius: 999px; background: var(--mw-soft); }
+.mw-music-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.mw-music button, .mw-mini { border: 0; background: transparent; color: var(--mw-ink); cursor: pointer; font: 700 12px "Mola DM Sans", sans-serif; }
+.mw-mini { margin-top: auto; padding: 8px 12px; border: 1px dashed var(--mw-line); border-radius: 14px; }
+
+/* panggung tengah */
+.mw-stage { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+.mw-head { display: grid; gap: 0; padding: 4px 8px; color: #0f3a63; text-shadow: 0 1px 0 rgb(255 255 255 / 55%); }
+.mw-date-line { font-weight: 700; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #245b8c; }
+.mw-page-title { margin: 0; font: 800 30px/1.1 "Mola Outfit", sans-serif; }
+.mw-content { min-height: 0; overflow: auto; padding: 4px 6px 28px 2px; scrollbar-width: thin; }
+.mw-home { display: grid; gap: 16px; }
+.mw-duo { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; }
+
+.mw-card { padding: 18px 20px; border: 1px solid rgb(255 255 255 / 80%); border-radius: 26px 26px 26px 10px; background: var(--mw-card); box-shadow: 0 10px 30px rgb(31 80 130 / 18%); backdrop-filter: blur(6px); }
+.mw-card h2 { margin: 0; font: 800 20px/1.2 "Mola Outfit", sans-serif; }
+.mw-eyebrow { display: block; font: 700 11px/1.3 "Mola DM Sans", sans-serif; letter-spacing: .1em; color: var(--mw-deep); }
+.mw-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.mw-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 360px); align-items: center; gap: 12px; background: linear-gradient(120deg, rgb(255 255 255 / 92%), rgb(223 244 252 / 88%)); }
+.mw-hero h2 { font-size: 26px; margin: 4px 0; }
+.mw-date { margin: 0; color: var(--mw-muted); }
+.mw-say { margin: 10px 0 0; padding: 10px 14px; border-radius: 18px 18px 18px 4px; background: var(--mw-soft); border: 1px solid var(--mw-line); }
+.mw-hero-art { cursor: pointer; border-radius: 22px; overflow: hidden; }
+.mw-hero-art svg { display: block; width: 100%; height: auto; }
+.mw-hero-art.is-poked .mw-hero-mola, .mw-hero-art.is-poked .mw-body { animation: mw-poke .6s ease; transform-origin: center; }
+@keyframes mw-poke { 30% { transform: scale(1.12) rotate(-4deg); } 60% { transform: scale(.97) rotate(3deg); } }
+.mw-b { animation: mw-bubble 4s ease-in-out infinite; } .mw-b.b2 { animation-delay: -1s; } .mw-b.b3 { animation-delay: -2s; } .mw-b.b4 { animation-delay: -3s; }
+@keyframes mw-bubble { 50% { transform: translateY(-14px); } }
+
+.mw-dot { width: 12px; height: 12px; margin-top: 6px; border-radius: 50%; background: #9db6cf; }
+.mw-dot.running { background: var(--mw-ok); box-shadow: 0 0 0 5px rgb(47 158 114 / 22%); } .mw-dot.paused { background: var(--mw-sun); } .mw-dot.break { background: var(--mw-sea); }
+.mw-clock { margin: 10px 0 4px; font: 800 56px/1 "Mola Outfit", sans-serif; letter-spacing: .02em; font-variant-numeric: tabular-nums; text-align: center; }
+.mw-clock.active { color: var(--mw-deep); }
+.mw-task-now { margin: 0; font-weight: 700; text-align: center; }
+.mw-note { margin: 4px 0 10px; color: var(--mw-muted); font-size: 13px; text-align: center; }
+.mw-picker { display: grid; gap: 6px; margin-bottom: 4px; }
+.mw-pick-label { font-weight: 700; font-size: 12px; color: var(--mw-muted); }
+.mw-select { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid var(--mw-line); border-radius: 12px; background: var(--mw-solid); color: var(--mw-ink); font: 500 13px "Mola DM Sans", sans-serif; }
+.mw-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.mw-block { display: grid; gap: 6px; margin-bottom: 14px; }
+.mw-label { display: flex; justify-content: space-between; gap: 8px; }
+.mw-block .mw-note { text-align: left; margin: 0; }
+.mw-foot { display: flex; align-items: center; gap: 8px; color: var(--mw-muted); } .mw-foot strong { color: var(--mw-ink); }
+.mw-shell-ico { font-size: 24px; }
+
+.mw-sub { margin: 10px 0 6px; font: 800 13px "Mola Outfit", sans-serif; } .mw-sub.late { color: var(--mw-danger); }
+.mw-empty { margin: 6px 0; color: var(--mw-muted); }
+.mw-task { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--mw-line); border-radius: 16px; background: var(--mw-solid); }
+.mw-task.late { border-color: #f0b3a8; background: #fff6f3; } .mw-task.done .mw-task-title { text-decoration: line-through; color: var(--mw-muted); }
+.mw-check { flex: none; width: 28px; height: 28px; border: 2px solid var(--mw-sea); border-radius: 50%; background: #fff; color: #fff; font-weight: 800; cursor: pointer; }
+.mw-check.on { background: var(--mw-ok); border-color: var(--mw-ok); }
+.mw-task-body { flex: 1; min-width: 0; } .mw-task-title { font-weight: 700; overflow-wrap: anywhere; }
+.mw-task-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--mw-muted); } .mw-task-meta .late { color: var(--mw-danger); font-weight: 700; }
+.mw-prio.high { color: var(--mw-coral); font-weight: 700; }
+
+.mw-track { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.mw-step { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border-radius: 16px; background: var(--mw-soft); text-align: center; font-size: 12px; }
+.mw-step.cur { outline: 3px solid var(--mw-sun); background: #fff7e0; } .mw-step.lock { opacity: .45; filter: grayscale(.6); }
+.mw-step svg { width: 100%; max-width: 72px; height: auto; } .mw-step small { color: var(--mw-muted); }
+.mw-pending p { margin: 6px 0 14px; max-width: 56ch; }
+
+/* tombol */
+.mw-shell .btn, :root[data-experience="mola-world"] #modalRoot .btn { min-height: 38px; padding: 8px 16px; border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-solid); color: var(--mw-ink); font: 700 13px "Mola DM Sans", sans-serif; cursor: pointer; }
+.mw-shell .btn:hover:not(:disabled) { border-color: var(--mw-sea); }
+.mw-shell .btn.primary, :root[data-experience="mola-world"] #modalRoot .btn.primary { border-color: var(--mw-accent); background: var(--mw-accent); color: var(--mw-accent-ink); }
+.mw-shell .btn.block { width: 100%; } .mw-shell .btn.sm { min-height: 32px; padding: 5px 12px; font-size: 12px; } .mw-shell .btn:disabled { opacity: .5; cursor: not-allowed; }
+.mw-shell .btn.danger, :root[data-experience="mola-world"] #modalRoot .btn.danger { color: var(--mw-danger); }
+.mw-shell :focus-visible, :root[data-experience="mola-world"] #modalRoot :focus-visible { outline: 3px solid var(--mw-sun); outline-offset: 2px; }
+
+/* rel kanan: pelampung */
+.mw-buoys { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; border-radius: 36px; background: rgb(255 255 255 / 55%); border: 1px solid rgb(255 255 255 / 80%); box-shadow: 0 12px 30px rgb(31 80 130 / 20%); overflow: auto; scrollbar-width: none; }
+.mw-buoy { position: relative; display: grid; justify-items: center; gap: 1px; width: 66px; padding: 7px 2px 5px; border: 2px solid transparent; border-radius: 22px; background: transparent; color: var(--mw-ink); cursor: pointer; font: 700 10px/1.15 "Mola DM Sans", sans-serif; }
+.mw-buoy-ico { font-size: 22px; line-height: 1.1; transition: transform .2s; } .mw-buoy:hover .mw-buoy-ico { transform: translateY(-3px) rotate(-6deg); }
+.mw-buoy-label { text-align: center; overflow-wrap: anywhere; }
+.mw-buoy.is-current { background: #fff; border-color: var(--mw-coral); box-shadow: 0 4px 12px rgb(232 116 74 / 28%); }
+.mw-badge { position: absolute; top: 2px; right: 6px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--mw-danger); color: #fff; font-size: 10px; line-height: 17px; text-align: center; }
+
+.mw-confetti { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
+.mw-confetti i { position: absolute; top: -12px; width: 12px; height: 12px; border-radius: 50%; animation: mw-fall 2.4s ease-in forwards; }
+@keyframes mw-fall { to { transform: translate(var(--dx), 105vh); opacity: .85; } }
+
+/* dialog dan toast bersama (#modalRoot, #toastRoot dipakai semua tampilan) */
+:root[data-experience="mola-world"] #modalRoot { position: relative; z-index: 100; }
+:root[data-experience="mola-world"] #modalRoot .modal-veil { position: fixed; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(14 45 80 / 45%); }
+:root[data-experience="mola-world"] #modalRoot .modal { width: min(520px, 100%); max-height: min(88vh, 780px); overflow: auto; border: 1px solid var(--mw-line); border-radius: 26px 26px 26px 10px; background: var(--mw-solid); color: var(--mw-ink); box-shadow: 0 24px 70px rgb(14 45 80 / 35%); font: 400 14px/1.5 "Mola DM Sans", sans-serif; }
+:root[data-experience="mola-world"] #modalRoot .modal.wide { width: min(760px, 100%); }
+:root[data-experience="mola-world"] #modalRoot .m-head, :root[data-experience="mola-world"] #modalRoot .m-body, :root[data-experience="mola-world"] #modalRoot .m-foot { padding: 16px 20px; }
+:root[data-experience="mola-world"] #modalRoot .m-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--mw-line); }
+:root[data-experience="mola-world"] #modalRoot .m-head h2 { margin: 0; font: 800 18px "Mola Outfit", sans-serif; }
+:root[data-experience="mola-world"] #modalRoot .m-body { display: grid; gap: 12px; }
+:root[data-experience="mola-world"] #modalRoot .m-foot { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--mw-line); }
+:root[data-experience="mola-world"] #modalRoot input, :root[data-experience="mola-world"] #modalRoot textarea, :root[data-experience="mola-world"] #modalRoot select { width: 100%; padding: 8px 10px; border: 1px solid var(--mw-line); border-radius: 12px; background: #fff; color: var(--mw-ink); font: 400 14px "Mola DM Sans", sans-serif; }
+:root[data-experience="mola-world"] #toastRoot { position: fixed; z-index: 120; right: 16px; bottom: 16px; display: grid; gap: 7px; max-width: min(420px, calc(100vw - 32px)); }
+:root[data-experience="mola-world"] #toastRoot .toast { padding: 11px 14px; border: 1px solid var(--mw-line); border-radius: 16px; background: var(--mw-solid); color: var(--mw-ink); box-shadow: 0 8px 24px rgb(14 45 80 / 22%); }
+:root[data-experience="mola-world"] #toastRoot .toast.err { border-color: var(--mw-danger); }
+
+/* layar sempit: rel kiri jadi strip atas, pelampung pindah ke bawah */
+@media (max-width: 960px) {
+  .mw-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 10px; }
+  .mw-side { flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 8px 12px; border-radius: 22px; }
+  .mw-pet { width: 64px; } .mw-pet-art svg { max-height: 56px; } .mw-pet-info { width: auto; flex: 1; min-width: 120px; text-align: left; }
+  .mw-timer-pill, .mw-music { width: auto; } .mw-mini { margin-top: 0; }
+  .mw-buoys { grid-row: 3; flex-direction: row; justify-content: flex-start; border-radius: 26px; padding: 6px; }
+  .mw-buoy { flex: none; width: 62px; }
+  .mw-duo, .mw-hero { grid-template-columns: minmax(0, 1fr); }
+  .mw-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mw-page-title { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .mw-shell *, .mw-shell *::before { animation: none !important; transition: none !important; } }

@@ -77,11 +77,8 @@
 
     var state = app.rawState();
     var all = state.sessions.slice().sort(function (a, b) { return (b.startedAt || 0) - (a.startedAt || 0); });
-    var totalSec = 0, totalDone = 0, totalPutus = 0;
-    all.forEach(function (s) {
-      if (s.state === 'completed') { totalDone++; totalSec += s.plannedSec; }
-      if (s.state === 'interrupted') totalPutus++;
-    });
+    var sum0 = JF.sessions.summary(all);
+    var totalSec = sum0.focusSec, totalDone = sum0.done, totalPutus = sum0.cut;
     [
       [totalDone + ' sesi selesai', 'ok'],
       [ui.fmt.dur(totalSec) + ' total fokus', 'accent'],

@@ -35,6 +35,7 @@
       var select = ui.el('select', { 'aria-label': 'Experience aplikasi' });
       select.appendChild(ui.el('option', { value: 'original' }, 'Original'));
       select.appendChild(ui.el('option', { value: 'capybara-world' }, 'Capybara World'));
+      select.appendChild(ui.el('option', { value: 'mola-world' }, 'Mola World (siang)'));
       select.value = JF.homeExperience.get();
       select.addEventListener('change', function () {
         try {

@@ -5,6 +5,7 @@
   var C = JF.capybaraUI;
   var ui = JF.ui;
   var selectedDay = JF.app.today();
+  var cwQuickDate = '';          // tanggal yang dibawa dari Kalender ke formulir Tugas
   var calendarMonth = JF.app.today().slice(0, 7) + '-01';
   var analyticsKind = 'week';
   var analyticsAnchor = JF.app.today();
@@ -24,7 +25,7 @@
     return box;
   }
   function dayTasks(day) {
-    return state().tasks.filter(function (task) { return !task.archived && task.targetDate === day; })
+    return JF.store.tasksTargeting(state(), day)
       .sort(function (a, b) { return Number(a.done) - Number(b.done) || ({ high: 0, normal: 1, low: 2 }[a.priority] - { high: 0, normal: 1, low: 2 }[b.priority]); });
   }
   var CW_SUM = {
@@ -131,7 +132,7 @@
 
   function noteCard(task) {
     var today = JF.app.today();
-    var late = !task.done && task.targetDate < today;
+    var late = JF.model.isOverdue(task, today);
     var box = C.el('article.cw-note.cw-prio-' + task.priority + (task.done ? '.is-done' : '') + (late ? '.is-late' : ''), { draggable: 'true' });
     box.style.setProperty('--tilt', ((hashOf(task.id) % 5) - 2) * 0.35 + 'deg');
     box.addEventListener('dragstart', function (ev) {
@@ -299,7 +300,7 @@
     });
   }
   function cwMatch(t, today) {
-    if (cwFilter === 'late') return !t.done && t.targetDate < today;
+    if (cwFilter === 'late') return JF.model.isOverdue(t, today);
     if (cwFilter === 'today') return t.targetDate === today;
     if (cwFilter === 'tomorrow') return t.targetDate === JF.dates.addDays(today, 1);
     if (cwFilter === 'date') return !cwPicked || t.targetDate === cwPicked;
@@ -332,7 +333,7 @@
       pick.addEventListener('change', function () { cwPicked = JF.dates.isDayKey(pick.value) ? pick.value : ''; cwSel = {}; renderTasks(ui.clear(host)); });
       box.appendChild(pick);
     }
-    var late = open.filter(function (t) { return t.targetDate < today; });
+    var late = open.filter(function (t) { return JF.model.isOverdue(t, today); });
     if (late.length > 1) box.appendChild(C.button('Rapikan terlambat (' + late.length + ')', function () { openLateTidy(late, today); }, 'quiet'));
   }
   function openLateTidy(late, today) {
@@ -362,7 +363,8 @@
 
     var form = C.el('form.cw-quick');
     var title = C.input('text', '', { placeholder: 'Apa langkah kecil berikutnya? (Enter untuk menambah)', maxlength: '120', required: '', 'aria-label': 'Nama tugas' });
-    var date = C.input('date', JF.app.today(), { required: '', 'aria-label': 'Tenggat' });
+    var date = C.input('date', cwQuickDate || JF.app.today(), { required: '', 'aria-label': 'Tenggat' });
+    var carried = !!cwQuickDate; cwQuickDate = '';
     var priority = C.select(JF.model.PRIORITIES.map(function (p) { return { value: p, label: JF.model.PRIORITY_LABEL[p] }; }), 'normal', { 'aria-label': 'Prioritas' });
     var details = C.el('textarea.cw-input', { placeholder: 'Catatan kecil (opsional)', rows: '2', maxlength: '2000', 'aria-label': 'Catatan' });
     var add = C.button('＋ Tempel', function () {}, 'primary');
@@ -377,6 +379,7 @@
       } catch (error) { ui.toast(error.message, { kind: 'err' }); }
     });
     host.appendChild(form);
+    if (carried) setTimeout(function () { if (title.isConnected) title.focus(); }, 120);
 
     var seg = C.el('div.cw-filter-tabs', { role: 'tablist', 'aria-label': 'Tampilan tugas' });
     [['board', 'Papan'], ['archive', 'Arsip']].forEach(function (item) {
@@ -387,7 +390,7 @@
     host.appendChild(seg);
 
     if (taskSeg === 'archive') {
-      var archived = state().tasks.filter(function (t) { return t.archived; }).sort(byPriority);
+      var archived = JF.store.archivedTasks(state()).sort(byPriority);
       var list = C.el('div.cw-task-board');
       if (!archived.length) list.appendChild(C.empty('Arsip masih kosong', 'Tugas yang kamu arsipkan akan disimpan di sini.'));
       var ag = cwGroup(archived);
@@ -402,7 +405,7 @@
 
     var today = JF.app.today();
     var live = state().tasks.filter(function (t) { return !t.archived && cwMatch(t, today); });
-    var overdue = live.filter(function (t) { return !t.done && t.targetDate < today; }).sort(byPriority);
+    var overdue = live.filter(function (t) { return JF.model.isOverdue(t, today); }).sort(byPriority);
     var now = live.filter(function (t) { return !t.done && t.targetDate === today; }).sort(byPriority);
     var later = live.filter(function (t) { return !t.done && t.targetDate > today; }).sort(function (a, b) { return a.targetDate.localeCompare(b.targetDate) || byPriority(a, b); });
     var done = live.filter(function (t) { return t.done; }).sort(function (a, b) { return (b.completedAt || 0) - (a.completedAt || 0); });
@@ -477,8 +480,12 @@
     var side = C.el('div.cw-cal-side');
     var agenda = panel(ui.fmt.date(selectedDay), 'Agenda tanggal terpilih');
     var dayList = dayTasks(selectedDay);
-    if (!dayList.length) agenda.appendChild(C.empty('Belum ada agenda', 'Tambahkan tugas dengan tanggal ini dari halaman Tugas.'));
+    if (!dayList.length) agenda.appendChild(C.empty('Belum ada agenda', 'Belum ada tugas pada tanggal ini.'));
     else dayList.forEach(function (task) { agenda.appendChild(taskCard(task, { edit: true })); });
+    agenda.appendChild(C.button('＋ Tambah tugas pada tanggal ini', function () {
+      if (JF.dates.isDayKey(selectedDay)) cwQuickDate = selectedDay;
+      root.location.hash = '#tugas';
+    }, 'quiet'));
     side.appendChild(agenda);
     var target = JF.store.focusTargetFor(state(), selectedDay);
     var sessions = state().sessions.filter(function (session) {
@@ -686,17 +693,14 @@
     if (day === JF.dates.addDays(today, -1)) return 'Kemarin';
     return ui.fmt.date(day);
   }
-  function sessionEnd(session) { return session.completedAt || session.endedAt || session.startedAt; }
+  function sessionEnd(session) { return JF.sessions.endTime(session); }
 
   function renderHistory(host) {
     heading(host, 'JEJAK KAKI FOKUS', 'Sesi yang sudah kamu jalani', 'Sesi selesai dan sesi terputus disajikan terpisah sesuai catatan timer. Setiap sesi yang selesai ikut membentuk jejakmu.');
     var again = function () { renderHistory(ui.clear(host)); };
     var all = state().sessions.slice().sort(function (a, b) { return sessionEnd(b) - sessionEnd(a); });
-    var totals = all.reduce(function (acc, session) {
-      if (session.state === 'completed') { acc.done++; acc.focus += session.plannedSec || 0; acc.longest = Math.max(acc.longest, session.plannedSec || 0); }
-      if (session.state === 'interrupted') { acc.cut++; acc.interrupted += session.activeSec || 0; }
-      return acc;
-    }, { done: 0, cut: 0, focus: 0, interrupted: 0, longest: 0 });
+    var sum = JF.sessions.summary(all);
+    var totals = { done: sum.done, cut: sum.cut, focus: sum.focusSec, interrupted: sum.cutSec, longest: sum.longestSec };
     host.appendChild(C.el('div.cw-stat-grid',
       C.stat('Sesi selesai', String(totals.done), ui.fmt.dur(totals.focus) + ' total fokus'),
       C.stat('Sesi terputus', String(totals.cut), ui.fmt.dur(totals.interrupted) + ' fokus aktif'),
@@ -705,8 +709,7 @@
 
     /* peta jejak 4 minggu */
     var today = JF.app.today();
-    var focusByDay = {};
-    all.forEach(function (s) { if (s.state === 'completed') { var k = JF.dates.dayKey(sessionEnd(s)); focusByDay[k] = (focusByDay[k] || 0) + (s.plannedSec || 0); } });
+    var focusByDay = JF.sessions.focusByDay(all);
     var start = JF.dates.addDays(JF.dates.addDays(today, -ui.dowIndex(today)), -21);
     var cells = [], maxDay = 1, i;
     for (i = 0; i < 28; i++) { var d = JF.dates.addDays(start, i); cells.push(d); maxDay = Math.max(maxDay, focusByDay[d] || 0); }
@@ -745,7 +748,7 @@
       current.items.push(session);
     });
     groups.forEach(function (group) {
-      var dayFocus = group.items.reduce(function (n, s) { return n + (s.state === 'completed' ? s.plannedSec || 0 : 0); }, 0);
+      var dayFocus = JF.sessions.summary(group.items).focusSec;
       var section = C.el('section.cw-tl-day');
       section.appendChild(C.el('header.cw-tl-head', C.el('h3', dayLabel(group.day)),
         C.el('span.cw-chip' + (dayFocus ? '.cw-chip-good' : ''), dayFocus ? ui.fmt.dur(dayFocus) + ' fokus selesai' : 'tanpa sesi selesai'),
@@ -757,8 +760,10 @@
           C.el('span.cw-tl-node', { 'aria-hidden': 'true' }, complete ? '✓' : '–'),
           C.el('div.cw-tl-card',
             C.el('div.cw-tl-top', C.el('h4', session.taskName || 'Fokus mandiri'),
+              session.legacy ? C.el('span.cw-chip', { title: 'Dipindahkan dari riwayat lama' }, 'Data lama') : null,
+              (session.taskId && JF.completion) ? JF.completion.chip(session.taskId) : null,
               C.badge(complete ? 'Selesai' : session.state === 'interrupted' ? 'Terputus' : 'Status: ' + session.state, complete ? 'good' : 'warn')),
-            C.el('p', ui.fmt.time(session.startedAt) + ' – ' + ui.fmt.time(sessionEnd(session)) + ' · ' + ui.fmt.dur(dur)),
+            C.el('p', ui.fmt.time(session.startedAt) + ' – ' + ui.fmt.time(sessionEnd(session)) + ' · ' + ui.fmt.dur(dur) + (session.openEnded ? ' · waktu bebas' : '')),
             C.el('div.cw-tl-bar', C.el('i', { style: { width: Math.max(4, Math.round((dur || 0) / longest * 100)) + '%' } }))));
         section.appendChild(card);
       });
@@ -772,6 +777,30 @@
     var r = 46, c = 2 * Math.PI * r, off = c * (1 - Math.max(0, Math.min(100, pct)) / 100);
     return '<svg class="cw-ring" viewBox="0 0 120 120" role="img" aria-label="' + label + '"><circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--cw-soft)" stroke-width="12"/>' +
       '<circle class="cw-ring-arc" cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--cw-green)" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '" transform="rotate(-90 60 60)"/></svg>';
+  }
+
+  /* Rincian tugas untuk laporan (hari ini / album): selesai + ringkasannya, dan yang belum selesai. */
+  function reportDetail(completedIds, unfinishedIds) {
+    var st = state();
+    var done = (completedIds || []).map(function (id) { return JF.store.find(st, id); }).filter(function (t) { return t && t.done; });
+    var open = (unfinishedIds || []).map(function (id) { return JF.store.find(st, id); }).filter(Boolean);
+    if (!done.length && !open.length) return null;
+    var box = C.el('div.cw-report-tasks');
+    if (done.length) {
+      box.appendChild(C.el('h5', 'Tugas selesai (' + done.length + ')'));
+      done.forEach(function (t) {
+        var item = C.el('div.cw-report-task', C.el('strong', t.title));
+        var sb = JF.completion ? JF.completion.summaryBlock(t) : null;
+        if (sb) item.appendChild(sb);
+        box.appendChild(item);
+      });
+    }
+    if (open.length) {
+      box.appendChild(C.el('h5', 'Belum selesai (' + open.length + ')'));
+      open.forEach(function (t) { box.appendChild(C.el('div.cw-report-task.is-muted', C.el('span', t.title))); });
+    }
+    box.appendChild(C.el('p.cw-report-note', 'Ringkasan ditampilkan dari catatan terbaru; angka laporan tetap final.'));
+    return box;
   }
 
   function polaroid(snapshot) {
@@ -794,11 +823,11 @@
         C.el('span', C.el('strong', snapshot.officialFocusSec ? ui.fmt.dur(snapshot.officialFocusSec) : '—'), ' fokus'),
         C.el('span', C.el('strong', String(done)), ' selesai'),
         C.el('span', C.el('strong', String(left)), ' belum'))));
-    var completedNames = (snapshot.completedTaskIds || []).map(function (id) { return JF.store.find(state(), id); }).filter(Boolean);
     var corrections = JF.snapshots.correctionsFor(state(), snapshot);
     var detail = C.el('details.cw-more.cw-pola-more', C.el('summary', 'Lihat rincian'));
     if (snapshot.targetMin != null) detail.appendChild(C.el('p.cw-report-note', 'Target hari itu: ' + ui.fmt.min(snapshot.targetMin) + (metTarget ? ' (tercapai)' : ' (belum tercapai)')));
-    if (completedNames.length) detail.appendChild(C.el('p.cw-report-note', 'Selesai: ' + completedNames.map(function (task) { return task.title; }).join(', ')));
+    var taskDetail = reportDetail(snapshot.completedTaskIds, snapshot.unfinishedTaskIds);
+    if (taskDetail) detail.appendChild(taskDetail);
     else detail.appendChild(C.el('p.cw-report-note', 'Tidak ada tugas yang tercatat selesai.'));
     if (corrections.length) detail.appendChild(C.el('p.cw-report-correction', 'Perubahan setelah laporan: ' + corrections.map(function (item) { return item.title + ' dibuka kembali'; }).join('; ')));
     if (!snapshot.complete) detail.appendChild(C.el('p.cw-report-note', 'Sebagian data hari ini tidak lengkap: ' + (snapshot.incompleteReasons || []).join(', ')));
@@ -830,6 +859,10 @@
         C.stat('Tugas terlambat', String(todayStats.overdue)))));
     hero.appendChild(C.el('div.cw-today-art', { html: cr.svg({ stage: info.stage, mood: mood, width: 130 }) }));
     host.appendChild(hero);
+    var todayDoneIds = state().tasks.filter(function (t) { return t.done && t.completedAt && JF.dates.dayKey(t.completedAt) === JF.app.today(); })
+      .map(function (t) { return t.id; });
+    var todayDetail = reportDetail(todayDoneIds, []);
+    if (todayDetail) host.appendChild(C.el('details.cw-more.cw-today-more', C.el('summary', 'Lihat tugas selesai hari ini'), todayDetail));
 
     var snapshots = state().snapshots.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
     var withTarget = snapshots.filter(function (s) { return s.targetMin != null && s.officialFocusSec != null; });
@@ -947,18 +980,114 @@
     });
   }
 
+  /* ── output tugas: lampiran hasil kerja per tugas (logika di JF.documents / JF.library / JF.store) ── */
+  function outputInfo(task) {
+    var D = JF.documents;
+    var docs = JF.library.attachmentsForTask(state(), task.id);
+    var avail = D ? docs.filter(function (d) { return D.availability(d) === 'ok'; }).length : 0;
+    var missing = D ? docs.filter(function (d) { return D.availability(d) === 'missing'; }).length : 0;
+    var hadOutput = !!(task.requiresOutput || (task.deliverables && task.deliverables.length));
+    var checked = D ? (Object.keys(D.statusMap()).length > 0 || !docs.length) : false;
+    return { docs: docs, avail: avail, missing: missing, lost: !!task.done && hadOutput && avail === 0 && checked };
+  }
+  function outputChips(task) {
+    var o = outputInfo(task), chips = [];
+    if (o.docs.length) chips.push(C.el('span.cw-chip', o.docs.length + ' file'));
+    if (task.requiresOutput && !task.done && !o.docs.length) chips.push(C.el('span.cw-chip.cw-chip-warn', 'Butuh output'));
+    if (o.lost) chips.push(C.el('span.cw-chip.cw-chip-warn', 'Output hilang'));
+    else if (o.missing) chips.push(C.el('span.cw-chip.cw-chip-warn', o.missing + ' file hilang'));
+    return chips;
+  }
+  function openOutput(goal, task) {
+    var D = JF.documents, locked = !!goal.archived, busy = false;
+    var reqBox = C.el('div'), listBox = C.el('div.cw-out-list'), body = C.el('div.cw-out');
+    body.appendChild(C.el('p.cw-report-note', goal.title + ' → ' + task.title));
+    if (task.description) body.appendChild(C.el('p.cw-report-note', task.description));
+    body.appendChild(reqBox); body.appendChild(listBox);
+    function fresh() { return JF.store.find(state(), task.id) || task; }
+    function report(out) {
+      var n = out.added.length + out.linked.length;
+      if (n) ui.toast(n === 1 ? 'File dilampirkan dan masuk ke Library.' : n + ' file dilampirkan dan masuk ke Library.', { kind: 'ok' });
+      if (out.failed.length) ui.toast(out.failed.map(function (f) { return (f.name ? f.name + ': ' : '') + D.message(f.reason); }).join(' '), { kind: 'err', timeout: 8000 });
+    }
+    function finish(out) { busy = false; report(out); D.refreshStatus().then(function () { paint(); }); }
+    function paint() {
+      var t = fresh();
+      ui.clear(reqBox); ui.clear(listBox);
+      var cb = C.input('checkbox', '', { checked: !!t.requiresOutput });
+      cb.disabled = locked || !!t.done;
+      cb.addEventListener('change', function () {
+        var r = JF.store.setRequiresOutput(state(), t.id, cb.checked, Date.now());
+        if (r.ok) save();
+        paint();
+      });
+      reqBox.appendChild(C.el('label.cw-out-req', cb, C.el('span', ' Wajib ada file output sebelum tugas bisa diselesaikan')));
+      var o = outputInfo(t);
+      if (o.lost) listBox.appendChild(C.el('p.cw-report-correction', 'Tugas ini sudah selesai, tetapi file outputnya tidak ditemukan lagi. Status selesai tetap tersimpan; lampirkan ulang file jika perlu.'));
+      if (!o.docs.length) listBox.appendChild(C.el('p.cw-report-note', 'Belum ada file output.'));
+      o.docs.forEach(function (d) {
+        var av = D.availability(d);
+        var row = C.el('div.cw-linked-task',
+          C.el('span', d.title + ' · ' + [D.fmtSize(d.size), ui.fmt.dateTime(d.createdAt)].filter(Boolean).join(' · ')),
+          C.el('span.cw-chip' + (av === 'ok' ? '.cw-chip-good' : av === 'missing' ? '.cw-chip-warn' : ''), D.availLabel(d)));
+        var open = C.button('Buka', function () {
+          D.open(d).then(function (r) { if (!r.ok) ui.toast('Tidak bisa membuka file: ' + D.message(r.reason), { kind: 'err' }); paint(); });
+        }, 'quiet');
+        open.disabled = av === 'missing';
+        row.appendChild(open);
+        if (!locked) {
+          var swap = C.button('Ganti', function () {
+            if (busy) return; busy = true;
+            JF.documents.attachToTask(t.id).then(function (out) {
+              if (out.canceled) { busy = false; return; }
+              if (!(out.added.length + out.linked.length)) { finish(out); return; }
+              var keep = out.added.concat(out.linked).some(function (x) { return x.id === d.id; });
+              (keep ? Promise.resolve() : D.removeFromTask(d, t.id)).then(function () { finish(out); });
+            }, function () { busy = false; });
+          }, 'quiet');
+          var del = C.button('Hapus', function () {
+            ui.confirm({
+              title: 'Hapus output?',
+              body: 'File "' + d.title + '" akan dilepas dari tugas ini. Jika tidak dipakai di tempat lain, file juga dihapus dari Library. Status selesai tugas tidak berubah.',
+              okLabel: 'Hapus', danger: true
+            }).then(function (yes) {
+              if (!yes) return;
+              D.removeFromTask(d, t.id).then(function () { D.refreshStatus().then(function () { paint(); }); });
+            });
+          }, 'quiet');
+          swap.disabled = busy; del.disabled = busy;
+          row.appendChild(swap); row.appendChild(del);
+        }
+        listBox.appendChild(row);
+      });
+    }
+    paint();
+    var m = ui.modal({
+      title: 'Output tugas', body: body, wide: true,
+      actions: [
+        { label: 'Tutup', ghost: true },
+        { label: 'Lampirkan file', primary: true, disabled: locked, onClick: function () {
+          if (busy) return false;
+          busy = true;
+          JF.documents.attachToTask(task.id).then(function (out) { if (out.canceled) { busy = false; return; } finish(out); },
+            function () { busy = false; ui.toast('Gagal melampirkan file.', { kind: 'err' }); });
+          return false;
+        } }
+      ]
+    });
+    D.refreshStatus().then(paint);
+    return m;
+  }
+
   function linkedTaskRow(goal, task, milestone) {
+    var chips = outputChips(task);
     var row = C.el('div.cw-linked-task',
       C.el('span', task.title),
+      chips.length ? C.el.apply(null, ['span.cw-linked-chips'].concat(chips)) : null,
       C.button(task.requiresOutput ? 'Output wajib' : 'Output opsional', function () {
         JF.store.setRequiresOutput(state(), task.id, !task.requiresOutput, Date.now()); save();
       }, task.requiresOutput ? 'primary' : 'quiet'),
-      C.button('Lampirkan file', function () {
-        JF.documents.attachToTask(task.id).then(function (out) {
-          if (out.failed.length) ui.toast('Sebagian file gagal dilampirkan: ' + out.failed.map(function (f) { return f.name || f.reason; }).join(', '), { kind: 'err' });
-          if (out.added.length || out.linked.length) ui.toast('Lampiran tersimpan di Library.', { kind: 'ok' });
-        });
-      }, 'quiet'),
+      C.button('Kelola output', function () { openOutput(goal, task); }, 'quiet'),
       C.button('Lepas', function () {
         JF.goals.unlinkTask(state(), goal.id, task.id, Date.now()); save();
       }, 'quiet'));
@@ -1044,6 +1173,8 @@
 
   function renderGoals(host) {
     heading(host, 'KEBUN CITA-CITA', 'Tanam tujuan, panen langkah kecil', 'Setiap goal tumbuh jadi pohon. Milestone selesai menjadi buah, sisanya masih kuncup. Setiap goal tercapai memberi CapyRafi 120 XP.');
+    // Cek ulang ketersediaan file output (paling cepat tiap 2 detik; hanya render ulang bila ada perubahan).
+    if (JF.documents) JF.documents.ensureFresh(function () { if (host.dataset.page === 'goals') renderGoals(ui.clear(host)); });
     var goals = JF.goals.list(state());
     var live = goals.filter(function (g) { return !g.archived; });
     var grown = live.filter(function (g) { return g.status === 'completed'; }).length;
@@ -1249,6 +1380,15 @@
     host.appendChild(layout);
   }
 
+  /* Ubah satu pengaturan dan catat event `settings.changed` (sama dengan Original); hanya bila nilainya berubah. */
+  function setSetting(key, val) {
+    var s = state();
+    if (s.settings[key] === val) return false;
+    s.settings[key] = val;
+    JF.store.ev(s, Date.now(), 'settings.changed', null, { key: key, val: val });
+    return true;
+  }
+
   function renderSettings(host) {
     heading(host, 'PENGATUR RUANG', 'Sesuaikan sesi dan suasana', 'Preferensi experience, timer, dan target disimpan melalui sumber state aplikasi yang sama.');
     var stateNow = state();
@@ -1262,7 +1402,9 @@
       ['original', 'Original', 'Sidebar klasik dan halaman standar.',
         '<svg viewBox="0 0 120 80" aria-hidden="true"><rect width="120" height="80" rx="10" fill="var(--cw-soft)"/><rect x="6" y="6" width="26" height="68" rx="6" fill="var(--cw-line)"/><rect x="38" y="8" width="74" height="12" rx="4" fill="var(--cw-card)"/><rect x="38" y="26" width="74" height="22" rx="5" fill="var(--cw-card)"/><rect x="38" y="52" width="74" height="22" rx="5" fill="var(--cw-card)"/></svg>'],
       ['capybara-world', 'Capybara World', 'Rumah CapyRafi, papan tugas, kebun goal.',
-        JF.capyrafi.svg({ stage: crNow.stage, mood: 'happy', crop: 'head', cls: 'cr-still' })]
+        JF.capyrafi.svg({ stage: crNow.stage, mood: 'happy', crop: 'head', cls: 'cr-still' })],
+      ['mola-world', 'Mola World', 'Suasana laut siang bersama Mola.',
+        JF.mola.svg({ stage: crNow.stage, mood: 'happy', cls: 'mw-mini' })]
     ];
     tileSpecs.forEach(function (spec) {
       var tile = C.el('button.cw-exp-tile' + (current === spec[0] ? '.is-current' : ''), {
@@ -1326,11 +1468,11 @@
         if (!isFinite(value) || value < f[3] || value > f[4]) {
           ui.toast(f[1] + ' di luar batas yang diizinkan.', { kind: 'err' }); return;
         }
-        if (f[0] !== 'defaultFocusTargetMin') settings[f[0]] = Math.round(value) * f[5];
+        if (f[0] !== 'defaultFocusTargetMin') setSetting(f[0], Math.round(value) * f[5]);
       }
       JF.store.setFocusTargetDefault(state(), controls.defaultFocusTargetMin.value, Date.now());
-      settings.pomoOn = pomo.checked;
-      settings.warn8 = warn.checked;
+      setSetting('pomoOn', pomo.checked);
+      setSetting('warn8', warn.checked);
       save();
       ui.toast('Pengaturan timer tersimpan.', { kind: 'ok' });
     }, 'primary'));
@@ -1439,10 +1581,16 @@
     sections.musik.push(music);
 
     var data = panel('Data lokal', 'Tidak ada database atau sistem penyimpanan kedua untuk Capybara World.');
+    var use = JF.app.storageUsage();
+    function kb(n) { return Math.max(1, Math.round(n / 1024)).toLocaleString('id-ID') + ' KB'; }
     data.appendChild(C.el('div.cw-stat-grid',
       C.stat('Tugas', String(stateNow.tasks.length)),
+      C.stat('Sesi fokus', String(stateNow.sessions.length)),
+      C.stat('Laporan harian', String(stateNow.snapshots.length)),
+      C.stat('Catatan jurnal', String(JF.journal.count(stateNow))),
       C.stat('Goal', String(stateNow.goals.length)),
-      C.stat('Dokumen', String(stateNow.library.length))));
+      C.stat('Dokumen', String(stateNow.library.length)),
+      C.stat('Penyimpanan', kb(use.total), 'dari ±' + kb(use.limit) + (use.total > use.limit * 0.8 ? ' · hampir penuh' : ''))));
     data.appendChild(C.button('Buka kartu mini', function () { if (root.desk && root.desk.mini) root.desk.mini(true); }, 'quiet'));
     data.appendChild(C.button('Ekspor cadangan JSON', exportBackup, 'quiet'));
     var backupFile = C.input('file', '', { accept: '.json,application/json', hidden: '' });
@@ -1467,6 +1615,18 @@
         });
       }).catch(function () { ui.toast('Berkas cadangan tidak dapat dibaca.', { kind: 'err' }); });
     });
+    if (use.hasLegacy) data.appendChild(C.button('Hapus salinan data lama', function () {
+      ui.confirm({
+        title: 'Hapus salinan data lama?',
+        body: 'Salinan data versi lama (v1) dan cadangannya akan dihapus untuk membebaskan sekitar ' + kb(use.legacy) + '. Data yang sedang dipakai tidak terpengaruh. Disarankan ekspor cadangan dulu.',
+        okLabel: 'Hapus', danger: true
+      }).then(function (yes) {
+        if (!yes) return;
+        var freed = JF.app.removeLegacyCopies();
+        ui.toast('Salinan lama dihapus (' + kb(freed) + ' dibebaskan).', { kind: 'ok' });
+        renderSettings(ui.clear(host));
+      });
+    }, 'quiet'));
     sections.data.push(data);
 
     var upd = panel('Pembaruan aplikasi', 'Unduh, pasang, dan restart otomatis. Datamu dicadangkan lebih dulu.');

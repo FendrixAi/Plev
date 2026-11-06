@@ -23,7 +23,8 @@
   }
   function apply(m, persist, notify) {
     mode = m === 'dark' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', mode);
+    // Mola World hanya punya mode siang: atribut tetap 'light' walau pilihan/sistem gelap.
+    document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-experience') === 'mola-world' ? 'light' : mode);
     if (persist) { try { localStorage.setItem(KEY, mode); } catch (e) {} }
     if (root.desk && root.desk.setTheme) { try { root.desk.setTheme(mode); } catch (e) {} }
     paintToggle();

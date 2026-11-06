@@ -395,12 +395,12 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
 .cw-insight { margin: 7px 0; padding: 9px 11px; border-left: 3px solid var(--cw-accent); border-radius: 0 10px 10px 0; background: var(--cw-soft); }
 
 .cw-history-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px dashed var(--cw-line); }
-.cw-history-row h3 { margin: 0; font-size: 13px; }
-.cw-history-row p { margin: 3px 0 0; color: var(--cw-muted); font-size: 11px; }
+.cw-history-row > div { min-width: 0; }
+.cw-history-row h3 { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+.cw-history-row p { margin: 3px 0 0; color: var(--cw-muted); font-size: 11px; overflow-wrap: anywhere; }
 .cw-history-mark { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: var(--cw-soft-green); color: var(--cw-green); }
 .cw-history-mark.is-cut { background: var(--cw-soft); color: var(--cw-muted); }
-.cw-history-time { display: grid; justify-items: end; gap: 4px; }
-.cw-history-time strong { font-size: 12px; }
+.cw-history-row > strong { min-width: 0; font-size: 12px; white-space: nowrap; }
 
 .cw-report-card { padding: 13px 0; border-top: 1px dashed var(--cw-line); }
 .cw-report-top { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
@@ -411,9 +411,12 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
 
 .cw-progress { height: 10px; overflow: hidden; border-radius: 999px; background: var(--cw-soft); }
 .cw-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #dfa76d, var(--cw-accent)); }
-.cw-goal-card { padding: 14px 0; border-top: 1px dashed var(--cw-line); }
-.cw-goal-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.cw-goal-top h3 { margin: 3px 0; font-size: 16px; }
+.cw-goal-card { min-width: 0; padding: 14px 0; border-top: 1px dashed var(--cw-line); }
+.cw-goal-top { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cw-goal-top > :first-child { min-width: 0; flex: 1; }
+.cw-goal-top > .cw-badge { flex: 0 0 auto; }
+.cw-goal-top h3 { margin: 3px 0; font-size: 16px; overflow-wrap: anywhere; }
+.cw-goal-top .cw-eyebrow { overflow-wrap: anywhere; }
 .cw-goal-card > p { color: var(--cw-muted); font-size: 12px; }
 .cw-goal-card > .cw-progress { margin: 11px 0 5px; }
 .cw-milestone-list { display: grid; gap: 5px; margin: 12px 0; }
@@ -421,7 +424,7 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
 .cw-milestone-row > div { min-width: 0; flex: 1; }
 .cw-milestone-row strong { display: block; font-size: 12px; }
 .cw-linked-task { justify-content: space-between; flex-wrap: wrap; color: var(--cw-muted); font-size: 11px; }
-.cw-linked-task > span { flex: 1; color: var(--cw-ink); }
+.cw-linked-task > span { min-width: 0; flex: 1; color: var(--cw-ink); overflow-wrap: anywhere; }
 .cw-goal-actions { margin-top: 10px; }
 
 .cw-library-row { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; gap: 10px; padding: 13px 0; border-top: 1px dashed var(--cw-line); }
@@ -476,7 +479,7 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
   .cw-calendar-grid { gap: 3px; }
   .cw-day { min-height: 47px; border-radius: 10px; }
   .cw-history-row { grid-template-columns: 25px minmax(0, 1fr); }
-  .cw-history-time { grid-column: 2; justify-items: start; }
+  .cw-history-row > strong { grid-column: 2; justify-self: start; }
   .cw-report-metrics { grid-template-columns: 1fr; }
 }
 

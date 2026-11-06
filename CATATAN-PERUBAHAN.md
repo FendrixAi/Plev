@@ -1,5 +1,31 @@
 # Catatan perubahan
 
+## Mola World: tampilan penuh ketiga, Fase 1 (baru)
+- **Tema ikan mola-mola (sunfish), hanya mode siang.** Tidak ada mode malam: `data-theme` dikunci `light` selama Mola aktif (juga saat sistem gelap atau `JF.theme.set('dark')`), dan semua gayanya tidak membaca `data-theme`.
+- **Layout baru**: kartu maskot Mola di rel kiri (XP, pil timer, musik, kartu mini), panggung konten di tengah, dan rel pelampung di kanan sebagai navigasi. Layar sempit: rel kiri jadi strip atas, pelampung pindah ke bawah.
+- **Maskot Mola** digambar sebagai SVG (`mola-world/mola.js`), tumbuh 6 tahap dari XP yang sama dengan CapyRafi (`JF.capyrafi.compute`), jadi tidak ada penyimpanan baru.
+- **Beranda Mola** sudah lengkap: hero + colek Mola, timer fokus (mulai, jeda, lanjut, Selesai sesi untuk waktu bebas, hentikan, lewati istirahat), progres harian, daftar tugas (Fokus, Selesai + ringkasan, centang), dan Perjalanan Mola.
+- **Halaman lain** (Tugas, Kalender, Analitik, Riwayat, Laporan, Goals, Jurnal, Pengaturan, Library) belum dibuat di Mola: menampilkan kartu "sedang dibangun" dengan tombol pindah ke Capybara World atau Original. Statusnya `pending` di `PARITY.md`.
+- **Wiring**: opsi "Mola World (siang)" di Pengaturan > Experience; `JF.homeExperience` menerima `mola-world`; `boot.js` memilih tampilan dari satu nama; skrip awal `index.html` ikut mengunci siang.
+
+## Capybara World: 8 fitur yang tertinggal sudah dibuatkan (baru)
+- **Riwayat**: chip ringkasan tugas (dan penanda "Data lama") di tiap sesi.
+- **Album harian**: rincian foto sekarang menampilkan tugas selesai beserta ringkasannya dan daftar yang belum selesai; kartu "hari ini" punya rincian yang sama.
+- **Kalender Stiker**: tombol "＋ Tambah tugas pada tanggal ini" membawa tanggal ke formulir Tugas dan langsung fokus ke kolom nama.
+- **Kebun Cita-cita**: chip output (jumlah file, Butuh output, file/output hilang) dan dialog **Kelola output** (wajib output, lampirkan, buka, ganti, hapus); status file dicek ulang saat halaman dibuka.
+- **Pengaturan > Data**: kartu Sesi, Laporan, Jurnal, dan Penyimpanan terpakai, serta tombol Hapus salinan data lama.
+- **Pengaturan timer** mencatat event `settings.changed` hanya bila nilainya berubah, sama seperti Original.
+- Scanner paritas: alias yang dideklarasikan beberapa kali ke modul yang sama tidak lagi dianggap ambigu.
+
+## Fondasi multi-tampilan (baru)
+- **Logika duplikat di Capybara dipindah ke `shared/`**: "tugas hari ini" (`JF.store.tasksTargeting`), terlambat (`JF.model.isOverdue`), arsip (`JF.store.archivedTasks`), serta total riwayat (`JF.sessions.summary`, `focusByDay`, `endTime`) sekarang dipanggil dari kode bersama. Riwayat Original ikut memakai `sessions.summary`. Hasil angkanya sama; bedanya aturan hanya ada satu tempat.
+- **Paritas multi-tampilan**: setiap folder di `renderer/experiences/<nama>/` otomatis dianggap tampilan dan wajib punya bagian di `PARITY.md`. `node tests/parity-scan.js --init <nama>` mencetak kerangka berisi semua fitur Original yang belum dibuat. `npm test` gagal kalau ada tampilan tanpa bagian, atau fitur Original baru yang belum dicatat di salah satu tampilan.
+
+## Paritas Original ↔ Capybara World (baru)
+- **Waktu bebas sekarang juga di Capybara World**: "Lanjut fokus" setelah timer habis memulai sesi hitung maju di kedua tampilan (pengaman khusus mode di `core.js` dihapus). Kartu fokus Capybara menampilkan **+mm:ss**, label "Waktu bebas", tombol **Selesai sesi**, dan **teman fokus**: CapyRafi berganti tahap makin lama kamu fokus (Pemanasan, Mulai mengalir, Dalam flow, Fokus dalam, Maraton) dengan satu **jejak kaki tiap 15 menit** (maksimal 8). Pil timer di HUD ikut hitung maju (+mm:ss), konfirmasi Hentikan mengingatkan soal Selesai sesi, dan Riwayat menandai sesi "waktu bebas". Tata letaknya khas Capybara, logikanya memakai `app.finishOpen` dan `JF.sessions` yang sama dengan Original.
+- **`PARITY.md` + tes `parity`**: daftar fitur Original yang belum ada di Capybara. Dua lapis: (A) simbol logika yang dipindai otomatis (`node tests/parity-scan.js`) dan (B) fitur per halaman dengan penanda di berkas. `npm test` gagal kalau ada fitur Original baru yang belum dicatat, atau kalau status `ported`/`pending` tidak sesuai kode. Daftar yang masih pending tampil sebagai ringkasan di keluaran tes.
+- **Dibersihkan**: `cek.bat` yang tertinggal di folder dihapus (menyelesaikan tes `ui-integrity` yang gagal).
+
 ## Perbaikan terbaru
 - **Suara penyelesaian**: pilihan eksplisit per kanal (sesi fokus selesai, istirahat selesai): *Pakai beep*, *Pakai lagu*, atau *Tanpa suara*, lengkap dengan tombol Tes. Mode Tanpa suara tidak pernah jatuh ke beep. Pengguna lama tetap seperti sebelumnya (ada lagu = lagu, tidak ada = beep). Peringatan 8 detik terpisah dan tetap berbunyi. Tersedia di Pengaturan (Original) dan tab Musik (Capybara World).
 - **Dialog setelah timer selesai**: "Kembali ke tugas" diganti **Tandai selesai**. Tombol ini membuka form berisi ringkasan pekerjaan dan lampiran (file apa pun atau tautan). Simpan menandai tugas selesai; Batal kembali ke pilihan langkah. Ringkasan, tautan, dan file disimpan di Library dan terhubung ke tugas (sumber: "Ringkasan tugas"), jadi tidak ada penyimpanan baru. Berlaku untuk Original dan Capybara World.

@@ -70,7 +70,7 @@
 .cw-tree { display: block; width: 100%; height: auto; }
 .cw-tree-canopy { transform-box: fill-box; transform-origin: 50% 100%; animation: cr-sway 6s ease-in-out infinite; }
 .cw-goal-body { min-width: 0; }
-.cw-goal-desc { margin: 4px 0 8px; color: var(--cw-muted); font-size: 12px; }
+.cw-goal-desc { margin: 4px 0 8px; color: var(--cw-muted); font-size: 12px; overflow-wrap: anywhere; }
 .cw-path { position: relative; display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
 .cw-path::before { content: ""; position: absolute; top: 14px; bottom: 14px; left: 13px; border-left: 2px dashed var(--cw-line); }
 .cw-stone { position: relative; display: grid; gap: 6px; }
@@ -279,7 +279,7 @@
 .cw-set-tab.is-current { background: var(--cw-accent); color: var(--cw-accent-ink); }
 .cw-settings-pane { display: grid; gap: 14px; min-width: 0; }
 .cw-settings-pane .cw-panel { margin: 0; }
-.cw-exp-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.cw-exp-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .cw-exp-tile { display: grid; justify-items: start; gap: 4px; padding: 12px; border: 2px solid var(--cw-line); border-radius: 22px; background: var(--cw-paper); color: var(--cw-ink); text-align: left; cursor: pointer; transition: transform 160ms cubic-bezier(.3, 1.6, .5, 1), border-color 140ms ease; }
 .cw-exp-tile:hover { transform: translateY(-3px); }
 .cw-exp-tile.is-current { border-color: var(--cw-green); background: var(--cw-soft-green); }
@@ -351,8 +351,10 @@
 /* Tombol generik di Beranda (ui.btn) memakai gaya Capybara */
 :where(.capy-home) .btn { padding: 6px 14px; border: 1px solid var(--cw-line); border-radius: 999px; background: var(--cw-paper); color: var(--cw-ink); font: 800 12px/1.2 "Segoe UI", "Aptos", sans-serif; cursor: pointer; }
 :where(.capy-home) .btn:hover { border-color: var(--cw-accent); color: var(--cw-accent); }
-:where(.capy-home) .cw-task-row > .btn { border-color: var(--cw-accent); background: var(--cw-accent); color: var(--cw-accent-ink); }
-:where(.capy-home) .cw-task-row > .btn:hover { color: var(--cw-accent-ink); filter: brightness(1.06); }
+:where(.capy-home) .cw-task-row > .btn,
+:where(.capy-home) .cw-task-row > .cw-task-actions .btn { border-color: var(--cw-accent); background: var(--cw-accent); color: var(--cw-accent-ink); }
+:where(.capy-home) .cw-task-row > .btn:hover,
+:where(.capy-home) .cw-task-row > .cw-task-actions .btn:hover { color: var(--cw-accent-ink); filter: brightness(1.06); }
 
 /* ── Pilih banyak + filter tanggal (ringkas) ───────────────────────── */
 .cw-fsel, .cw-fdate, .cw-sel-act { padding: 5px 8px; width: auto; max-width: 100%; border: 1px solid var(--cw-line); border-radius: 10px; background: var(--cw-paper); color: var(--cw-ink); font: 700 12.5px/1.2 "Segoe UI", "Aptos", sans-serif; }
@@ -366,3 +368,15 @@
 .cw-late-list { display: grid; gap: 6px; max-height: 46vh; overflow: auto; margin-top: 10px; }
 .cw-late-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-card); cursor: pointer; }
 .cw-late-title { flex: 1; min-width: 0; font-weight: 700; }
+
+/* ── Paritas: rincian laporan, output tugas, chip peringatan ── */
+.cw-chip-warn { background: color-mix(in srgb, var(--cw-accent) 18%, var(--cw-paper)); color: var(--cw-ink); }
+.cw-linked-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.cw-report-tasks { display: grid; gap: 6px; margin-top: 8px; }
+.cw-report-tasks h5 { margin: 8px 0 0; font-size: 12px; color: var(--cw-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.cw-report-task { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--cw-line); border-radius: 10px; background: var(--cw-paper); font-size: 13px; }
+.cw-report-task.is-muted { color: var(--cw-muted); background: transparent; }
+.cw-today-more { margin: 10px 0 18px; }
+.cw-out { display: grid; gap: 10px; }
+.cw-out-req { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.cw-out-list { display: grid; gap: 6px; }

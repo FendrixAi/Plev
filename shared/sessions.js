@@ -238,8 +238,32 @@
     return recovered;
   }
 
+  /** Ringkasan riwayat sesi untuk SEMUA tampilan (satu aturan, bukan dihitung ulang di tiap UI):
+      done/focusSec/longestSec = sesi selesai (plannedSec); cut/cutSec = sesi terputus (activeSec). */
+  function summary(sessions) {
+    var r = { done: 0, focusSec: 0, longestSec: 0, cut: 0, cutSec: 0 };
+    (sessions || []).forEach(function (s) {
+      if (s.state === 'completed') { r.done++; r.focusSec += s.plannedSec || 0; r.longestSec = Math.max(r.longestSec, s.plannedSec || 0); }
+      else if (s.state === 'interrupted') { r.cut++; r.cutSec += s.activeSec || 0; }
+    });
+    return r;
+  }
+  /** Waktu akhir sesi untuk pengelompokan per hari. */
+  function endTime(s) { return s.completedAt || s.endedAt || s.startedAt; }
+  /** Total fokus selesai per hari: { 'YYYY-MM-DD': detik }. */
+  function focusByDay(sessions) {
+    var out = {};
+    (sessions || []).forEach(function (s) {
+      if (s.state !== 'completed') return;
+      var k = dates.dayKey(endTime(s));
+      out[k] = (out[k] || 0) + (s.plannedSec || 0);
+    });
+    return out;
+  }
+
   return {
     STATES: STATES,
+    summary: summary, endTime: endTime, focusByDay: focusByDay,
     createSession: createSession, checkpoint: checkpoint,
     activeSeconds: activeSeconds, remainingSeconds: remainingSeconds,
     isOpen: isOpen, clockSeconds: clockSeconds, finishOpenSession: finishOpenSession, finishEarlySession: finishEarlySession, reopenOpenSession: reopenOpenSession,

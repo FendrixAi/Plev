@@ -742,11 +742,6 @@
     showCompletionChoices(s, t);
   }
 
-  /* "Lanjut fokus" berjalan sebagai waktu bebas (hitung maju) di tampilan Original. Capybara World belum punya
-     kontrol "Selesai sesi", jadi di sana "Lanjut fokus" tetap memulai sesi berdurasi tetap seperti sebelumnya. */
-  function freeTimeAvailable() {
-    return !(JF.homeExperience && JF.homeExperience.get && JF.homeExperience.get() === 'capybara-world');
-  }
   /* Sesi waktu bebas yang baru diakhiri bisa dilanjutkan sebagai sesi yang sama (hitungan tidak kembali ke nol). */
   function resumeFinished(id) {
     var s = sess.findSession(state, id);
@@ -765,11 +760,10 @@
   }
   function continueFrom(c) {
     if (c.resumeId) { var r = resumeFinished(c.resumeId); if (r) return r; }
-    return app.startTask(c.taskId, { standalone: c.standalone, open: freeTimeAvailable() });
+    return app.startTask(c.taskId, { standalone: c.standalone, open: true });
   }
   function showCompletionChoices(s, t, copts) {
     var canMarkDone = !!(t && !t.done && !t.archived && JF.completion);
-    var freeTime = freeTimeAvailable();
     var resumeId = copts && copts.resumeOpen && sess.isOpen(s) ? s.id : null;
     closeCompletionDialog();
     var ctx = { taskId: t ? t.id : null, standalone: !t, name: s.taskName, resumeId: resumeId };
@@ -784,8 +778,8 @@
           'Tugas tidak ditandai selesai otomatis dan sesi baru tidak dimulai otomatis. Pilih langkah berikutnya:')
       ].concat(resumeId ? [JF.ui.el('p.hint', { style: { marginTop: '6px' } },
         'Lanjut fokus melanjutkan sesi ini dari ' + JF.ui.fmt.dur(s.plannedSec) + ' (hitungan tidak mulai dari nol). Akhiri lagi dengan "Selesai sesi".')]
-        : freeTime ? [JF.ui.el('p.hint', { style: { marginTop: '6px' } },
-        'Lanjut fokus berjalan tanpa batas waktu. Akhiri dengan "Selesai sesi" supaya waktunya masuk total fokus.')] : []),
+        : [JF.ui.el('p.hint', { style: { marginTop: '6px' } },
+        'Lanjut fokus berjalan tanpa batas waktu. Akhiri dengan "Selesai sesi" supaya waktunya masuk total fokus.')]),
       actions: (canMarkDone ? [{ label: 'Tandai selesai', ghost: true, onClick: function () {
         // Form ringkasan + lampiran. Batal -> kembali ke pilihan langkah ini.
         JF.completion.open(t, s, { onCancel: function () { showCompletionChoices(s, t, copts); } });

@@ -27,7 +27,7 @@
   function ctxNow() {
     var app = JF.app, st = app.rawState(), day = app.today();
     var session = app.currentSession();
-    var today = st.tasks.filter(function (t) { return !t.archived && t.targetDate === day; });
+    var today = JF.store.tasksTargeting(st, day);
     var ts = app.todayStats();
     return {
       dayKey: day,
@@ -203,10 +203,13 @@
     var brk = app.breakInfo(), s = app.currentSession(), text = '', cls = '';
     if (brk) {
       text = JF.ui.fmt.mmss(Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000))) + ' · Istirahat'; cls = 'is-break';
-    } else if (s && s.state === 'running') {
-      text = JF.ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now())) + ' · ' + (s.taskName || 'Fokus'); cls = 'is-run';
-    } else if (s && s.state === 'paused') {
-      text = JF.ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now())) + ' · dijeda'; cls = 'is-paused';
+    } else if (s && (s.state === 'running' || s.state === 'paused')) {
+      // Waktu bebas menghitung maju (+mm:ss); sesi biasa menghitung mundur.
+      var clock = JF.sessions.isOpen(s)
+        ? '+' + JF.ui.fmt.mmss(JF.sessions.activeSeconds(s, Date.now()))
+        : JF.ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now()));
+      if (s.state === 'running') { text = clock + ' · ' + (s.taskName || 'Fokus'); cls = 'is-run'; }
+      else { text = clock + ' · dijeda'; cls = 'is-paused'; }
     }
     var sig = cls + '|' + text;
     if (sig === timerSig) return;

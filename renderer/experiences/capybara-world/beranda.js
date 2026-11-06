@@ -79,7 +79,7 @@
   function heroContext(info) {
     var state = app.rawState(), day = app.today();
     var session = app.currentSession();
-    var today = state.tasks.filter(function (t) { return !t.archived && t.targetDate === day; });
+    var today = JF.store.tasksTargeting(state, day);
     return {
       dayKey: day, info: info,
       running: !!(session && session.state === 'running'),
@@ -136,8 +136,9 @@
 
   function stateText(session, breakState) {
     if (breakState) return 'Waktu istirahat';
-    if (session && session.state === 'running') return 'Sedang fokus';
-    if (session && session.state === 'paused') return 'Sesi dijeda';
+    var open = !!(session && JF.sessions.isOpen(session));
+    if (session && session.state === 'running') return open ? 'Waktu bebas' : 'Sedang fokus';
+    if (session && session.state === 'paused') return open ? 'Waktu bebas dijeda' : 'Sesi dijeda';
     return 'Siap untuk fokus';
   }
 
@@ -149,10 +150,55 @@
     return null;
   }
 
+  /* Teks jam: sisa waktu (sesi biasa / istirahat) atau "+waktu berjalan" (waktu bebas). */
+  function clockLabel(session, breakState) {
+    if (breakState) return ui.fmt.mmss(remaining(null, breakState));
+    if (!session || (session.state !== 'running' && session.state !== 'paused')) return null;
+    return JF.sessions.isOpen(session)
+      ? '+' + ui.fmt.mmss(JF.sessions.activeSeconds(session, Date.now()))
+      : ui.fmt.mmss(remaining(session, null));
+  }
+
+  /* Teman fokus: CapyRafi + tahap + deretan jejak kaki (1 jejak / 15 menit) untuk sesi waktu bebas. */
+  var companionSig = '';
+  function companionNode(session) {
+    var cr = JF.capyrafi;
+    if (!cr || !cr.companion) return null;
+    var info = cr.compute(app.rawState());
+    var c = cr.companion(JF.sessions.activeSeconds(session, Date.now()));
+    var paws = ui.el('div.cw-paws', { role: 'img', id: 'cw-paws' });
+    for (var i = 0; i < c.maxPaws; i++) paws.appendChild(ui.el('span.cw-paw', { 'aria-hidden': 'true' }, '\uD83D\uDC3E'));
+    var art = ui.el('span.cw-companion-art', { 'aria-hidden': 'true' });
+    art.innerHTML = cr.svg({ stage: info.stage, mood: session.state === 'running' ? 'focus' : 'happy', crop: 'head', width: 64 });
+    var node = ui.el('div.cw-companion', { id: 'cw-companion' },
+      art,
+      ui.el('div.cw-companion-body',
+        ui.el('strong.cw-companion-tier', { id: 'cw-companion-tier' }, c.label),
+        ui.el('p.cw-companion-line', { id: 'cw-companion-line' }, c.line),
+        paws));
+    companionSig = '';
+    paintCompanion(node, c);
+    return node;
+  }
+  function paintCompanion(root, c) {
+    var sig = c.tier + '|' + c.paws;
+    if (sig === companionSig) return;
+    companionSig = sig;
+    var tier = root.querySelector('#cw-companion-tier'), line = root.querySelector('#cw-companion-line'), box = root.querySelector('#cw-paws');
+    if (tier) tier.textContent = c.label;
+    if (line) line.textContent = c.line;
+    if (box) {
+      box.setAttribute('aria-label', c.paws + ' dari ' + c.maxPaws + ' jejak kaki (1 jejak tiap 15 menit)');
+      Array.prototype.forEach.call(box.children, function (el, i) { el.classList.toggle('is-on', i < c.paws); });
+    }
+  }
+
   function stopSession() {
+    var cs = app.currentSession();
     ui.confirm({
       title: 'Hentikan sesi ini?',
-      body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan sebagai sesi terputus, tetapi tidak dihitung ke total fokus.',
+      body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan sebagai sesi terputus, tetapi tidak dihitung ke total fokus.' +
+        (cs && JF.sessions.isOpen(cs) ? ' Untuk memasukkan waktu ini ke total, pilih "Selesai sesi" saja.' : ''),
       okLabel: 'Ya, hentikan',
       danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
@@ -178,15 +224,23 @@
     }
 
     if (session && (session.state === 'running' || session.state === 'paused')) {
+      var isOpen = JF.sessions.isOpen(session);
       card.appendChild(ui.el('p.cw-current-task', session.taskName || 'Fokus tanpa tugas'));
       card.appendChild(ui.el('div.cw-timer-value' + (session.state === 'running' ? '.active' : ''), {
-        id: 'cw-timer-value', 'aria-label': 'Sisa waktu sesi fokus'
-      }, ui.fmt.mmss(remaining(session, null))));
+        id: 'cw-timer-value', 'aria-label': isOpen ? 'Waktu fokus berjalan' : 'Sisa waktu sesi fokus'
+      }, clockLabel(session, null)));
       card.appendChild(ui.el('p.cw-timer-note',
-        (session.state === 'running' ? 'Dimulai ' : 'Dijeda · ') + ui.fmt.time(session.startedAt) + ' · target ' + ui.fmt.dur(session.plannedSec)));
+        (session.state === 'running' ? 'Dimulai ' : 'Dijeda · ') + ui.fmt.time(session.startedAt) +
+        (isOpen ? ' · tanpa batas waktu' : ' · target ' + ui.fmt.dur(session.plannedSec))));
+      if (isOpen) {
+        var comp = companionNode(session);
+        if (comp) card.appendChild(comp);
+        card.appendChild(ui.el('p.cw-timer-note', 'Waktunya masuk total fokus saat kamu pilih Selesai sesi.'));
+      }
       var controls = ui.el('div.cw-focus-actions');
       controls.appendChild(ui.btn(session.state === 'running' ? 'Jeda fokus' : 'Lanjutkan fokus',
         function () { session.state === 'running' ? app.pause() : app.resume(); }, { primary: true }));
+      if (isOpen) controls.appendChild(ui.btn('Selesai sesi', function () { app.finishOpen(); }, {}));
       controls.appendChild(ui.btn('Hentikan', stopSession, { ghost: true }));
       card.appendChild(controls);
       return;
@@ -197,7 +251,7 @@
     var todayKey = app.today(), tomorrowKey = JF.dates.addDays(todayKey, 1);
     var PF = {
       all: function () { return true; },
-      late: function (t) { return t.targetDate < todayKey; },
+      late: function (t) { return JF.model.isOverdue(t, todayKey); },
       today: function (t) { return t.targetDate === todayKey; },
       tomorrow: function (t) { return t.targetDate === tomorrowKey; },
       date: function (t) { return !pickDate || t.targetDate === pickDate; }
@@ -292,7 +346,7 @@
   function renderProgress() {
     var state = app.rawState();
     var stats = app.todayStats();
-    var todayTasks = state.tasks.filter(function (task) { return !task.archived && task.targetDate === app.today(); });
+    var todayTasks = JF.store.tasksTargeting(state, app.today());
     var completed = todayTasks.filter(function (task) { return task.done; }).length;
     var taskPercent = todayTasks.length ? Math.round(completed / todayTasks.length * 100) : 0;
     var focusTargetSec = stats.target.min * 60;
@@ -358,13 +412,15 @@
     if (!task.done) {
       var session = app.currentSession();
       var anotherSession = session && (session.state === 'running' || session.state === 'paused') && session.taskId !== task.id;
-      row.appendChild(ui.btn('Fokus', function () { app.startTask(task.id); }, {
+      var actions = ui.el('div.cw-task-actions');
+      actions.appendChild(ui.btn('Fokus', function () { app.startTask(task.id); }, {
         sm: true, ghost: true, disabled: !!anotherSession,
         title: anotherSession ? 'Selesaikan sesi yang sedang berjalan terlebih dahulu' : 'Mulai fokus pada tugas ini'
       }));
-      if (JF.completion) row.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(task.id); }, {
+      if (JF.completion) actions.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(task.id); }, {
         sm: true, ghost: true, title: 'Tandai selesai dengan ringkasan dan lampiran'
       }));
+      row.appendChild(actions);
     }
     return row;
   }
@@ -372,8 +428,8 @@
   function renderTasks() {
     var state = app.rawState();
     var day = app.today();
-    var overdueTasks = JF.store.overdueTasks(state, day).filter(function (task) { return !task.archived; });
-    var todayTasks = state.tasks.filter(function (task) { return !task.archived && task.targetDate === day; });
+    var overdueTasks = JF.store.overdueTasks(state, day);
+    var todayTasks = JF.store.tasksTargeting(state, day);
     var order = { high: 0, normal: 1, low: 2 };
     function sortTasks(a, b) {
       return order[a.priority] - order[b.priority] || a.title.localeCompare(b.title, 'id');
@@ -415,8 +471,12 @@
     if (!label) return;
     var current = app.currentSession();
     var breakState = app.breakInfo();
-    var seconds = remaining(current, breakState);
-    if (seconds != null) label.textContent = ui.fmt.mmss(seconds);
+    var text = clockLabel(current, breakState);
+    if (text != null && label.textContent !== text) label.textContent = text;
+    var box = document.getElementById('cw-companion');
+    if (box && current && JF.sessions.isOpen(current) && JF.capyrafi && JF.capyrafi.companion) {
+      paintCompanion(box, JF.capyrafi.companion(JF.sessions.activeSeconds(current, Date.now())));
+    }
   }
 
   JF.capybaraHome = {

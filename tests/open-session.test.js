@@ -80,11 +80,10 @@ test('sesi waktu bebas yang berjalan saat aplikasi mati dipulihkan sebagai dijed
   assert.strictEqual(sess.officialSeconds(st.sessions), 300);
 });
 
-test('wiring: Lanjut fokus = waktu bebas (Original), Selesai sesi, pengaman 3 jam', () => {
+test('wiring: Lanjut fokus = waktu bebas (Original + Capybara), Selesai sesi, pengaman 3 jam', () => {
   const core = read('renderer', 'core.js');
-  assert.match(core, /open: freeTime/);
-  assert.match(core, /function freeTimeAvailable\(\)/);
-  assert.match(core, /capybara-world/);
+  assert.match(core, /open: true/);
+  assert.doesNotMatch(core, /freeTimeAvailable/);   // waktu bebas berlaku di Original dan Capybara World
   assert.match(core, /app\.finishOpen = function/);
   assert.match(core, /function endLive\(s, now\)/);
   assert.match(core, /OPEN_RUN_CAP_MS = 3 \* 3600 \* 1000/);

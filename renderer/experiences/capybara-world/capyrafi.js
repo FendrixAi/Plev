@@ -211,7 +211,32 @@
       '</svg>';
   }
 
+  /* ── Teman fokus: CapyRafi menemani sesi waktu bebas (hitung maju) ──
+     Murni dari detik fokus aktif: tahap berubah makin lama kamu fokus, dan satu jejak kaki
+     menyala tiap 15 menit (maksimal 8 jejak = 2 jam). */
+  var COMPANION_PAWS = 8;
+  var COMPANION_TIERS = [
+    { at: 0,    label: 'Pemanasan',      line: 'Pemanasan dulu. Aku temenin sampai selesai.' },
+    { at: 600,  label: 'Mulai mengalir', line: 'Mulai ngalir nih, kayak capybara di sungai.' },
+    { at: 1800, label: 'Dalam flow',     line: 'Lagi dalam flow. Jangan diganggu, ya.' },
+    { at: 3600, label: 'Fokus dalam',    line: 'Sudah lebih dari sejam. Jangan lupa minum air.' },
+    { at: 5400, label: 'Maraton',        line: 'Maraton! Kalau mata mulai pegal, pilih Selesai sesi lalu berendam sebentar.' }
+  ];
+  function companion(sec) {
+    sec = Math.max(0, Number(sec) || 0);
+    var tier = 0;
+    COMPANION_TIERS.forEach(function (t, i) { if (sec >= t.at) tier = i; });
+    return {
+      tier: tier,
+      label: COMPANION_TIERS[tier].label,
+      line: COMPANION_TIERS[tier].line,
+      paws: Math.min(COMPANION_PAWS, Math.floor(sec / 900)),
+      maxPaws: COMPANION_PAWS
+    };
+  }
+
   return {
-    XP: XP, STAGES: STAGES, compute: compute, moodOf: moodOf, say: say, svg: svg, room: room
+    XP: XP, STAGES: STAGES, compute: compute, moodOf: moodOf, say: say, svg: svg, room: room,
+    companion: companion
   };
 });
