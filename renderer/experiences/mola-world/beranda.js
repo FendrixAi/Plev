@@ -3,7 +3,7 @@
   'use strict';
   var JF = root.JF;
   var ui, app, host, refs = {}, pokeCount = 0;
-  var selectedTaskId = null, pickFilter = null, pickNone = false;
+  var selectedTaskId = null, pickFilter = null, pickDate = '', pickNone = false;
 
   function greeting() {
     var h = new Date().getHours();
@@ -33,13 +33,15 @@
       : ui.fmt.mmss(JF.sessions.remainingSeconds(s, Date.now()));
   }
 
+  /* Acuan fitur: renderer/pages/beranda.js (Original). Tata letak khas Mola, logika dan daftar fitur sama. */
   function stopSession() {
     var cs = app.currentSession();
     ui.confirm({
       title: 'Hentikan sesi ini?',
-      body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu yang sudah berjalan tersimpan sebagai sesi terputus, tetapi tidak dihitung ke total fokus.' +
+      body: 'Sesi berhenti total dan tidak bisa dilanjutkan. Waktu fokus yang sudah berjalan tetap tersimpan ' +
+        'sebagai sesi terputus, tetapi tidak dihitung ke total fokus.' +
         (cs && JF.sessions.isOpen(cs) ? ' Untuk memasukkan waktu ini ke total, pilih "Selesai sesi" saja.' : ''),
-      okLabel: 'Ya, hentikan', danger: true
+      okLabel: 'Hentikan permanen', danger: true
     }).then(function (ok) { if (ok) app.stopPermanent(); });
     return false;
   }
@@ -58,7 +60,6 @@
       pokeCount += 1;
       var c = ctxNow();
       refs.say.textContent = M.say(JF.capyrafi.moodOf(c), c, pokeCount);
-      var g = art.querySelector('.mw-hero-mola');
       art.classList.remove('is-poked'); void art.offsetWidth; art.classList.add('is-poked');
     }
     art.addEventListener('click', poke);
@@ -67,137 +68,178 @@
     return card;
   }
 
+  function stateHead(label, cls) {
+    return ui.el('div.mw-card-head', ui.el('div', ui.el('span.mw-eyebrow', 'TIMER FOKUS'), ui.el('h2', label)), ui.el('span.mw-dot.' + cls, { 'aria-hidden': 'true' }));
+  }
+  function taskLine(s) { return ui.el('p.mw-task-now', s.taskId ? s.taskName : ui.el('span.mw-standalone', s.taskName)); }
+  function progressPct(total, p) { return !(total > 0) ? '0%' : Math.max(0, Math.min(100, p * 100)).toFixed(2) + '%'; }
+
   function focusCard() {
     var s = app.currentSession(), brk = app.breakInfo();
     var card = ui.el('section.mw-card.mw-focus');
-    var state = brk ? 'break' : s && s.state === 'running' ? 'running' : s && s.state === 'paused' ? 'paused' : 'idle';
-    var open = !!(s && JF.sessions.isOpen(s));
-    var title = brk ? 'Waktu istirahat' : state === 'running' ? (open ? 'Waktu bebas' : 'Sedang fokus')
-      : state === 'paused' ? (open ? 'Waktu bebas dijeda' : 'Sesi dijeda') : 'Siap untuk fokus';
-    card.appendChild(ui.el('div.mw-card-head', ui.el('div', ui.el('span.mw-eyebrow', 'TIMER FOKUS'), ui.el('h2', title)), ui.el('span.mw-dot.' + state, { 'aria-hidden': 'true' })));
 
     if (brk) {
-      card.appendChild(ui.el('p.mw-task-now', 'Istirahat' + (brk.isLong ? ' panjang' : ' singkat')));
-      card.appendChild(ui.el('div.mw-clock', { id: 'mw-clock', 'aria-label': 'Sisa waktu istirahat' }, clockText(null, brk)));
-      card.appendChild(ui.btn('Lewati istirahat', function () { app.skipBreak(); }, { primary: true, block: true }));
+      card.appendChild(stateHead('Istirahat', 'break'));
+      card.appendChild(ui.el('p.mw-task-now', 'Istirahat ' + ui.fmt.min(Math.round(brk.total / 60)) + (brk.isLong ? ' (panjang)' : '')));
+      card.appendChild(ui.el('div.mw-clock.active', { id: 'mw-clock', 'aria-label': 'Sisa waktu istirahat' }, clockText(null, brk)));
+      card.appendChild(ui.el('p.mw-note', brk.nextTaskId ? 'Berikutnya: ' + (app.findTask(brk.nextTaskId) || {}).title : 'Kembali ke tugas setelah selesai'));
+      var bb = bar(0, 'Progres istirahat'); bb.id = 'mw-sbar'; card.appendChild(bb);
+      card.appendChild(ui.el('div.mw-actions', ui.btn('Lewati istirahat', function () { try { app.skipBreak(); } catch (e) {} }, { primary: true })));
       return card;
     }
+
     if (s && (s.state === 'running' || s.state === 'paused')) {
-      card.appendChild(ui.el('p.mw-task-now', s.taskName || 'Fokus tanpa tugas'));
-      card.appendChild(ui.el('div.mw-clock' + (s.state === 'running' ? '.active' : ''), { id: 'mw-clock', 'aria-label': open ? 'Waktu fokus berjalan' : 'Sisa waktu sesi fokus' }, clockText(s, null)));
-      card.appendChild(ui.el('p.mw-note', (s.state === 'running' ? 'Dimulai ' : 'Dijeda · ') + ui.fmt.time(s.startedAt) +
-        (open ? ' · tanpa batas waktu. Masuk total fokus saat kamu pilih Selesai sesi.' : ' · target ' + ui.fmt.dur(s.plannedSec))));
+      var run = s.state === 'running', open = JF.sessions.isOpen(s);
+      card.appendChild(stateHead(run ? (open ? 'Waktu bebas' : 'Sedang berjalan') : 'Dijeda', run ? 'running' : 'paused'));
+      card.appendChild(taskLine(s));
+      card.appendChild(ui.el('div.mw-clock' + (run ? '.active' : ''), { id: 'mw-clock', 'aria-label': open ? 'Waktu fokus berjalan' : 'Sisa waktu sesi fokus' }, clockText(s, null)));
+      card.appendChild(ui.el('p.mw-note', run
+        ? 'Mulai ' + ui.fmt.time(s.startedAt) + (open ? ' · tanpa batas waktu' : ' · target ' + ui.fmt.dur(s.plannedSec))
+        : 'Fokus terkumpul ' + ui.fmt.dur(s.activeSec) + ' · jeda ' + ui.fmt.dur(s.pausedSec)));
+      if (!open) { var sb = bar(0, 'Progres sesi'); sb.id = 'mw-sbar'; card.appendChild(sb); }
       var row = ui.el('div.mw-actions');
-      row.appendChild(ui.btn(s.state === 'running' ? 'Jeda fokus' : 'Lanjutkan fokus', function () { s.state === 'running' ? app.pause() : app.resume(); }, { primary: true }));
+      row.appendChild(ui.btn(run ? 'Jeda' : 'Lanjutkan', function () { run ? app.pause() : app.resume(); }, { primary: true }));
       if (open) row.appendChild(ui.btn('Selesai sesi', function () { app.finishOpen(); }, {}));
-      row.appendChild(ui.btn('Hentikan', stopSession, { ghost: true }));
+      row.appendChild(ui.btn('Hentikan sesi', stopSession, { danger: true }));
+      if (s.taskId && JF.completion) row.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(s.taskId); }, { ghost: true }));
       card.appendChild(row);
       return card;
     }
 
+    card.appendChild(stateHead('Siap fokus', 'idle'));
     var st = app.rawState(), todayKey = app.today(), tomorrowKey = JF.dates.addDays(todayKey, 1);
-    var avail = JF.store.activeTasks(st, todayKey).concat(JF.store.upcomingTasks(st, todayKey));
-    var F = {
+    var all = JF.store.activeTasks(st, todayKey).concat(JF.store.upcomingTasks(st, todayKey));
+    var PF = {
       all: function () { return true; },
-      late: function (t) { return JF.model.isOverdue(t, todayKey); },
-      today: function (t) { return t.targetDate === todayKey; },
-      tomorrow: function (t) { return t.targetDate === tomorrowKey; }
+      late: function (x) { return x.targetDate < todayKey; },
+      today: function (x) { return x.targetDate === todayKey; },
+      tomorrow: function (x) { return x.targetDate === tomorrowKey; },
+      date: function (x) { return !pickDate || x.targetDate === pickDate; }
     };
-    function count(f) { return avail.filter(F[f]).length; }
-    var eff = pickFilter || (count('today') ? 'today' : 'all');
-    var pr = { high: 0, normal: 1, low: 2 };
-    var list = avail.filter(F[eff]).sort(function (a, b) {
-      return a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 : (pr[a.priority] - pr[b.priority]) || a.title.localeCompare(b.title, 'id');
+    function countOf(f) { return all.filter(PF[f]).length; }
+    var eff = pickFilter || (countOf('today') ? 'today' : 'all');
+    var W = { high: 0, normal: 1, low: 2 };
+    var list = all.filter(PF[eff]).sort(function (a, b) {
+      return a.targetDate < b.targetDate ? -1 : a.targetDate > b.targetDate ? 1 : (W[a.priority] - W[b.priority]) || a.title.localeCompare(b.title, 'id');
     });
-    if (selectedTaskId != null && !list.some(function (t) { return t.id === selectedTaskId; })) selectedTaskId = null;
+    if (selectedTaskId != null && !app.findTask(selectedTaskId)) selectedTaskId = null;
+    if (selectedTaskId != null && !list.some(function (x) { return x.id === selectedTaskId; })) selectedTaskId = null;
     if (!pickNone) {
-      if (selectedTaskId == null && list.some(function (t) { return t.id === app.selectedTaskId; })) selectedTaskId = app.selectedTaskId;
+      if (selectedTaskId == null && app.selectedTaskId && list.some(function (x) { return x.id === app.selectedTaskId; })) selectedTaskId = app.selectedTaskId;
       if (selectedTaskId == null && list.length) selectedTaskId = list[0].id;
     }
+
     var fsel = ui.el('select.mw-select', { 'aria-label': 'Filter tanggal tugas' });
     [['today', 'Hari ini'], ['tomorrow', 'Besok'], ['late', 'Terlambat'], ['all', 'Semua']].forEach(function (o) {
-      var op = ui.el('option', { value: o[0] }, o[1] + ' (' + count(o[0]) + ')');
+      var op = ui.el('option', { value: o[0] }, o[1] + ' (' + countOf(o[0]) + ')');
       if (eff === o[0]) op.selected = true;
       fsel.appendChild(op);
     });
-    fsel.addEventListener('change', function () { pickFilter = fsel.value; pickNone = false; render(host); });
+    var odt = ui.el('option', { value: 'date' }, 'Pilih tanggal…');
+    if (eff === 'date') odt.selected = true;
+    fsel.appendChild(odt);
+    fsel.addEventListener('change', function () {
+      pickFilter = fsel.value; if (pickFilter !== 'date') pickDate = '';
+      pickNone = false; render(host);
+    });
+    var pfil = ui.el('div.mw-pick-filters', fsel);
+    if (eff === 'date') {
+      var pdate = ui.el('input.mw-select', { type: 'date', 'aria-label': 'Pilih tanggal tertentu', value: pickDate });
+      pdate.addEventListener('change', function () { pickDate = JF.dates.isDayKey(pdate.value) ? pdate.value : ''; pickNone = false; render(host); });
+      pfil.appendChild(pdate);
+    }
+    function fitLabel(title, dateText, max) {
+      var tail = dateText ? ' · ' + dateText : '', room = max - tail.length;
+      if (title.length <= room) return title + tail;
+      return title.slice(0, Math.max(8, room - 1)).replace(/\s+$/, '') + '…' + tail;
+    }
     var sel = ui.el('select.mw-select', {
-      'aria-label': 'Pilih tugas untuk sesi fokus',
+      id: 'mw-ses-pick', 'aria-label': 'Tugas untuk sesi ini',
       onchange: function () { selectedTaskId = this.value || null; pickNone = !this.value; app.selectedTaskId = selectedTaskId; render(host); }
     });
-    sel.appendChild(ui.el('option', { value: '' }, list.length ? 'Fokus umum tanpa tugas' : 'Tidak ada tugas di filter ini · fokus umum'));
-    list.forEach(function (t) {
-      var o = ui.el('option', { value: t.id, title: t.title }, t.title.length > 38 ? t.title.slice(0, 37) + '…' : t.title);
-      if (t.id === selectedTaskId) o.selected = true;
-      sel.appendChild(o);
-    });
-    card.appendChild(ui.el('div.mw-picker', ui.el('span.mw-pick-label', 'Pilih tugas untuk sesi ini'), fsel, sel));
+    sel.appendChild(ui.el('option', { value: '' }, list.length ? 'Tanpa tugas (fokus umum)' : 'Tidak ada tugas di filter ini · fokus umum'));
+    function addOpt(parent, x) {
+      var o = ui.el('option', { value: x.id, title: x.title }, fitLabel(x.title, x.targetDate !== todayKey ? ui.fmt.dateShort(x.targetDate) : '', 36));
+      if (x.id === selectedTaskId) o.selected = true;
+      parent.appendChild(o);
+    }
+    if (eff === 'all') {
+      [['Terlambat', PF.late], ['Hari ini', PF.today], ['Besok', PF.tomorrow], ['Mendatang', function (x) { return x.targetDate > tomorrowKey; }]].forEach(function (g) {
+        var items = list.filter(g[1]);
+        if (!items.length) return;
+        var og = ui.el('optgroup', { label: g[0] + ' (' + items.length + ')' });
+        items.forEach(function (x) { addOpt(og, x); });
+        sel.appendChild(og);
+      });
+    } else { list.forEach(function (x) { addOpt(sel, x); }); }
+    card.appendChild(ui.el('div.mw-picker', ui.el('div.mw-pick-head', ui.el('label.mw-pick-label', { for: 'mw-ses-pick' }, 'Tugas untuk sesi ini'), pfil), sel));
 
-    var task = selectedTaskId ? app.findTask(selectedTaskId) : null;
-    var planned = task ? task.left : st.settings.defaultFocusSec;
-    if (!(planned > 0)) planned = task && task.durationSec > 0 ? task.durationSec : st.settings.defaultFocusSec;
+    var t = selectedTaskId ? app.findTask(selectedTaskId) : null;
+    var planned = t ? t.left : st.settings.defaultFocusSec;
+    if (!(planned > 0)) planned = (t && t.durationSec > 0) ? t.durationSec : st.settings.defaultFocusSec;
     if (!(planned > 0)) planned = 1500;
     card.appendChild(ui.el('div.mw-clock', { id: 'mw-clock' }, ui.fmt.mmss(planned)));
-    card.appendChild(ui.el('p.mw-note', task
-      ? 'Target tugas ' + ui.fmt.dur(task.durationSec) + (task.left < task.durationSec ? ' · sisa ' + ui.fmt.mmss(task.left) : '')
-      : 'Sesi fokus mandiri · ' + ui.fmt.dur(st.settings.defaultFocusSec)));
-    card.appendChild(ui.btn(task ? 'Mulai fokus' : 'Mulai fokus mandiri', function () {
+    card.appendChild(ui.el('p.mw-note', t
+      ? 'Target tugas ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')
+      : 'Sesi tanpa tugas · ' + ui.fmt.dur(st.settings.defaultFocusSec)));
+    var ctl = ui.el('div.mw-actions');
+    ctl.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa tugas', function () {
       var id = selectedTaskId; pickNone = false; app.startTask(id, { standalone: !id });
-    }, { primary: true, block: true }));
+    }, { primary: true }));
+    if (t && JF.completion) ctl.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { ghost: true }));
+    card.appendChild(ctl);
     return card;
   }
 
-  function progressCard() {
-    var st = app.rawState(), stats = app.todayStats();
-    var tasks = JF.store.tasksTargeting(st, app.today());
-    var done = tasks.filter(function (t) { return t.done; }).length;
-    var tPct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
-    var target = stats.target.min * 60;
-    var fPct = target ? Math.min(100, Math.round(stats.officialSec / target * 100)) : 0;
+  /* Ringkasan hari ini: empat angka yang sama dengan strip Original. */
+  function statsCard() {
+    var st = app.todayStats();
+    function tile(k, v, u) { return ui.el('div.mw-stat', ui.el('span.mw-stat-k', k), ui.el('strong.mw-stat-v', v), ui.el('small', u)); }
     var card = ui.el('section.mw-card.mw-progress');
-    card.appendChild(ui.el('div.mw-card-head', ui.el('div', ui.el('span.mw-eyebrow', 'PROGRES HARI INI'), ui.el('h2', 'Gelombang demi gelombang')), ui.el('span.mw-shell-ico', { 'aria-hidden': 'true' }, '🐚')));
-    card.appendChild(ui.el('div.mw-block', ui.el('div.mw-label', ui.el('span', 'Tugas selesai'), ui.el('strong', tasks.length ? done + ' dari ' + tasks.length : 'Belum ada target')), bar(tPct, 'Progres penyelesaian tugas')));
-    card.appendChild(ui.el('div.mw-block', ui.el('div.mw-label', ui.el('span', 'Waktu fokus tercatat'), ui.el('strong', ui.fmt.dur(stats.officialSec))), bar(fPct, 'Progres waktu fokus menuju target harian'),
-      ui.el('p.mw-note', target ? fPct + '% dari target ' + ui.fmt.min(stats.target.min) : 'Target fokus harian belum diatur.')));
-    card.appendChild(ui.el('div.mw-foot', ui.el('span', 'Rentetan'), ui.el('strong', stats.streak + ' hari')));
+    card.appendChild(ui.el('div.mw-card-head', ui.el('div', ui.el('span.mw-eyebrow', 'HARI INI'), ui.el('h2', 'Gelombang demi gelombang')), ui.el('span.mw-shell-ico', { 'aria-hidden': 'true' }, '🐚')));
+    var grid = ui.el('div.mw-stats');
+    grid.appendChild(tile('Fokus hari ini', st.officialSec ? ui.fmt.dur(st.officialSec) : '—', st.officialSec ? 'dari sesi selesai' : 'belum ada sesi selesai'));
+    grid.appendChild(tile('Target harian', st.target.min ? ui.fmt.min(st.target.min) : '—',
+      st.target.source === 'override' ? 'target khusus tanggal ini' : st.target.source === 'default' ? 'target bawaan' : 'belum diatur'));
+    grid.appendChild(tile('Tugas selesai hari ini', st.doneToday + ' / ' + st.tasksGoal, st.goalDone >= st.tasksGoal ? 'target tugas tercapai' : 'target ' + st.tasksGoal + ' tugas'));
+    grid.appendChild(tile('Rentetan hari', st.streak + ' hari', st.streak > 0 ? 'berturut-turut' : 'mulai hari ini'));
+    card.appendChild(grid);
     return card;
   }
 
-  function taskRow(task, overdue) {
-    var row = ui.el('article.mw-task' + (task.done ? '.done' : '') + (overdue ? '.late' : ''));
-    row.appendChild(ui.el('button.mw-check' + (task.done ? '.on' : ''), {
-      type: 'button', 'aria-pressed': String(!!task.done),
-      'aria-label': (task.done ? 'Tandai belum selesai: ' : 'Tandai selesai: ') + task.title,
-      onclick: function () { task.done ? app.reopenTask(task.id) : app.completeTask(task.id); }
-    }, task.done ? '✓' : ''));
-    row.appendChild(ui.el('div.mw-task-body', ui.el('div.mw-task-title', task.title),
-      ui.el('div.mw-task-meta', ui.el('span.mw-prio.' + task.priority, 'Prioritas ' + (JF.model.PRIORITY_LABEL[task.priority] || JF.model.PRIORITY_LABEL.normal)),
-        ui.el('span' + (overdue ? '.late' : ''), overdue ? 'Terlambat · ' + ui.fmt.dateShort(task.targetDate) : 'Tenggat hari ini'))));
-    if (!task.done) {
-      var s = app.currentSession();
-      var other = s && (s.state === 'running' || s.state === 'paused') && s.taskId !== task.id;
-      row.appendChild(ui.btn('Fokus', function () { app.startTask(task.id); }, { sm: true, ghost: true, disabled: !!other, title: other ? 'Selesaikan sesi yang sedang berjalan terlebih dahulu' : 'Mulai fokus pada tugas ini' }));
-      if (JF.completion) row.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(task.id); }, { sm: true, ghost: true, title: 'Tandai selesai dengan ringkasan dan lampiran' }));
-    }
+  function miniTask(t, overdue) {
+    var row = ui.el('div.mw-mini-task' + (overdue ? '.late' : '') + (t.done ? '.done' : ''));
+    row.appendChild(ui.el('span.mw-mt-name', t.title));
+    if (t.done) row.appendChild(ui.el('span.mw-chip.ok', 'Selesai'));
+    else row.appendChild(ui.el('span.mw-mt-date', ui.dayRel(t.targetDate) + ' · ' + ui.fmt.dateShort(t.targetDate)));
     return row;
   }
 
-  function tasksCard() {
-    var st = app.rawState(), day = app.today();
-    var od = JF.store.overdueTasks(st, day), td = JF.store.tasksTargeting(st, day);
-    var o = { high: 0, normal: 1, low: 2 };
-    function by(a, b) { return o[a.priority] - o[b.priority] || a.title.localeCompare(b.title, 'id'); }
-    od.sort(by); td.sort(by);
-    var card = ui.el('section.mw-card.mw-tasks');
-    card.appendChild(ui.el('div.mw-card-head', ui.el('div', ui.el('span.mw-eyebrow', 'LANGKAH KECIL, HASIL BERARTI'), ui.el('h2', 'Tugas hari ini')),
-      ui.btn('Semua tugas', function () { location.hash = '#tugas'; }, { ghost: true, sm: true })));
-    if (od.length) {
-      card.appendChild(ui.el('h3.mw-sub.late', 'Terlambat (' + od.length + ')'));
-      od.forEach(function (t) { card.appendChild(taskRow(t, true)); });
+  function listCard(title, chip, rows, emptyBig, emptySmall, extra) {
+    var card = ui.el('section.mw-card.mw-list');
+    var head = ui.el('div.mw-card-head', ui.el('div', ui.el('h2', title), ui.el('span.mw-chip' + (extra && extra.chipCls ? '.' + extra.chipCls : ''), chip)));
+    if (extra && extra.action) head.appendChild(extra.action);
+    card.appendChild(head);
+    if (!rows.length) card.appendChild(ui.el('div.mw-empty', ui.el('strong', emptyBig), ui.el('span', emptySmall)));
+    else {
+      rows.slice(0, 6).forEach(function (r) { card.appendChild(r); });
+      if (rows.length > 6) card.appendChild(ui.el('p.mw-note', { style: { textAlign: 'left' } }, '+ ' + (rows.length - 6) + ' lainnya'));
     }
-    if (!td.length && !od.length) card.appendChild(ui.el('p.mw-empty', 'Belum ada tugas untuk hari ini. Lautnya tenang. Tambah tugas dari halaman Tugas kalau perlu.'));
-    td.forEach(function (t) { card.appendChild(taskRow(t, false)); });
     return card;
+  }
+
+  function listsRow() {
+    var state = app.rawState(), d = app.today();
+    var plan = state.tasks.filter(function (t) { return !t.archived && t.targetDate === d; });
+    var late = JF.store.overdueTasks(state, d);
+    var active = plan.filter(function (t) { return !t.done; }).length;
+    var wrap = ui.el('div.mw-duo');
+    wrap.appendChild(listCard('Rencana hari ini', plan.length ? active + ' aktif · ' + plan.length : '0',
+      plan.map(function (t) { return miniTask(t, false); }), 'Belum ada rencana hari ini', 'Tambahkan tugas di halaman Tugas.',
+      { chipCls: plan.length && active ? 'accent' : '', action: ui.btn('Lihat semua', function () { location.hash = '#tugas'; }, { ghost: true, sm: true }) }));
+    wrap.appendChild(listCard('Tugas terlambat', late.length ? late.length + ' terlambat' : '0',
+      late.map(function (t) { return miniTask(t, true); }), 'Tidak ada tugas terlambat', 'Semua target sudah tercapai atau maju.', { chipCls: late.length ? 'danger' : '' }));
+    return wrap;
   }
 
   function journeyCard(info) {
@@ -225,9 +267,9 @@
     page.appendChild(hero(info));
     var row = ui.el('div.mw-duo');
     row.appendChild(focusCard());
-    row.appendChild(progressCard());
+    row.appendChild(statsCard());
     page.appendChild(row);
-    page.appendChild(tasksCard());
+    page.appendChild(listsRow());
     page.appendChild(journeyCard(info));
     ui.clear(container);
     container.appendChild(page);
@@ -238,8 +280,13 @@
     if (!app) return;
     var el = document.getElementById('mw-clock');
     if (!el) return;
-    var t = clockText(app.currentSession(), app.breakInfo());
+    var cs = app.currentSession(), brk = app.breakInfo();
+    var t = clockText(cs, brk);
     if (t && t !== lastClock) { lastClock = t; el.textContent = t; }
+    var sb = document.querySelector('#mw-sbar span');
+    if (!sb) return;
+    if (brk) { var rem = Math.max(0, Math.ceil((brk.endAt - Date.now()) / 1000)); sb.style.width = progressPct(brk.total, 1 - rem / (brk.total || 1)); }
+    else if (cs && !JF.sessions.isOpen(cs)) { var r2 = JF.sessions.remainingSeconds(cs, Date.now()); sb.style.width = progressPct(cs.plannedSec, 1 - r2 / (cs.plannedSec || 1)); }
   }
 
   JF.molaHome = { render: render, frame: frame };

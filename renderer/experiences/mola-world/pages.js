@@ -1,32 +1,56 @@
-/* Mola World: pengarah halaman. Halaman yang belum dibuat menampilkan kartu pengganti dengan jalan pulang. */
+/* Mola World: pengarah halaman.
+   Beranda dibuat khusus Mola (beranda.js). Halaman lain memakai logika dan markup Original langsung
+   (JF.pages.get(id).mount/render/frame) di dalam panggung Mola, jadi fitur selalu sama dengan Original dan
+   fitur baru Original otomatis ikut. Kulitnya (warna, font, kartu, animasi) diatur di mola.css. */
 (function (root) {
   'use strict';
   var JF = root.JF;
+  var hosts = {}, mounted = {}, cur = null;
 
-  var LABEL = { tugas: 'Tugas', kalender: 'Kalender', analitik: 'Analitik', riwayat: 'Riwayat fokus', laporan: 'Laporan harian', goals: 'Goals', jurnal: 'Journaling', pengaturan: 'Pengaturan', library: 'Library' };
+  function hostFor(id, parent) {
+    if (hosts[id] && hosts[id].parentNode === parent) return hosts[id];
+    var h = document.createElement(id === 'beranda' ? 'div' : 'section');
+    h.className = id === 'beranda' ? 'mw-page-host mw-home-host' : 'page mw-page-host mw-orig-host';
+    h.dataset.page = id; h.hidden = true;
+    parent.appendChild(h);
+    hosts[id] = h;
+    return h;
+  }
 
-  function pending(id, host) {
+  function headExtras(p) {
+    var sub = document.querySelector('.mw-sub-line'), act = document.querySelector('.mw-head-actions');
+    if (sub) sub.textContent = !p ? '' : (typeof p.sub === 'function' ? p.sub() : (p.sub || ''));
+    if (act) {
+      JF.ui.clear(act);
+      if (p && p.actions) { try { p.actions(act); } catch (e) { console.error('[mola actions]', e); } }
+    }
+  }
+
+  function render(id, parent) {
     var ui = JF.ui;
-    var card = ui.el('section.mw-card.mw-pending',
-      ui.el('span.mw-eyebrow', 'SEGERA HADIR DI MOLA WORLD'),
-      ui.el('h2', (LABEL[id] || 'Halaman') + ' sedang dibangun'),
-      ui.el('p', 'Halaman ini belum punya tampilan Mola. Datamu aman dan tetap satu, jadi kamu bisa membukanya dulu lewat tampilan lain lalu kembali ke sini kapan saja.'));
-    var row = ui.el('div.mw-actions');
-    row.appendChild(ui.btn('Buka di Capybara World', function () { JF.homeExperience.set('capybara-world'); }, { primary: true }));
-    row.appendChild(ui.btn('Buka di Original', function () { JF.homeExperience.set('original'); }, { ghost: true }));
-    card.appendChild(row);
-    host.appendChild(card);
+    cur = id;
+    Object.keys(hosts).forEach(function (k) { hosts[k].hidden = k !== id; });
+    var host = hostFor(id, parent);
+    host.hidden = false;
+    if (id === 'beranda') { headExtras(null); JF.molaHome.render(host); return; }
+    var p = JF.pages.get(id);
+    if (!p) { host.textContent = 'Halaman tidak ditemukan.'; return; }
+    try {
+      if (!mounted[id]) { p.mount && p.mount(host); mounted[id] = true; }
+      headExtras(p);
+      if (p.render) p.render(host);
+    } catch (e) {
+      console.error('[mola render:' + id + ']', e);
+      ui.clear(host);
+      host.appendChild(ui.el('div.error-box', ui.el('strong', 'Halaman gagal dimuat'), ui.el('p', String(e && e.message || e))));
+    }
+    parent.scrollTop = 0;
   }
 
-  function render(id, host) {
-    JF.ui.clear(host);
-    host.dataset.page = id;
-    if (id === 'beranda') JF.molaHome.render(host);
-    else pending(id, host);
-  }
-
-  function frame(id) {
-    if (id === 'beranda' && JF.molaHome) JF.molaHome.frame();
+  function frame(id, ts) {
+    if (id === 'beranda') { if (JF.molaHome) JF.molaHome.frame(); return; }
+    var p = JF.pages.get(id);
+    if (p && p.frame && mounted[id]) { try { p.frame(ts); } catch (e) { /* frame tidak boleh menjatuhkan loop */ } }
   }
 
   JF.molaPages = { render: render, frame: frame };

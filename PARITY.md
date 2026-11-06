@@ -73,64 +73,68 @@ Format sel: `berkas#fungsi: penanda` (jalur relatif ke `renderer/`).
 
 | Simbol | Status | Catatan |
 |---|---|---|
-| `app.emit` | pending | belum dibuat |
-| `app.removeLegacyCopies` | pending | belum dibuat |
-| `app.replaceState` | pending | belum dibuat |
-| `app.save` | pending | belum dibuat |
-| `app.storageUsage` | pending | belum dibuat |
-| `backup.MAX_CHARS` | pending | belum dibuat |
-| `backup.validate` | pending | belum dibuat |
-| `completion.chip` | pending | belum dibuat |
-| `completion.summaryBlock` | pending | belum dibuat |
-| `dates.buildDay` | pending | belum dibuat |
-| `dates.dayKey` | pending | belum dibuat |
-| `dates.isDayKey` | pending | belum dibuat |
-| `dates.parseDay` | pending | belum dibuat |
-| `documents.attachToTask` | pending | belum dibuat |
-| `documents.availLabel` | pending | belum dibuat |
-| `documents.availability` | pending | belum dibuat |
-| `documents.ensureFresh` | pending | belum dibuat |
-| `documents.fmtSize` | pending | belum dibuat |
-| `documents.message` | pending | belum dibuat |
-| `documents.open` | pending | belum dibuat |
-| `documents.refreshStatus` | pending | belum dibuat |
-| `documents.removeFromTask` | pending | belum dibuat |
-| `documents.statusMap` | pending | belum dibuat |
-| `goals.METHOD_LABEL` | pending | belum dibuat |
-| `goals.STATUS_LABEL` | pending | belum dibuat |
-| `goals.list` | pending | belum dibuat |
-| `homeExperience.get` | pending | belum dibuat |
-| `journal.count` | pending | belum dibuat |
-| `journal.createAutosave` | pending | belum dibuat |
-| `journal.entryFor` | pending | belum dibuat |
-| `journal.save` | pending | belum dibuat |
-| `journal.setGoalLink` | pending | belum dibuat |
-| `journal.summary` | pending | belum dibuat |
-| `library.attachmentsForTask` | pending | belum dibuat |
-| `library.query` | pending | belum dibuat |
-| `model.PRIORITIES` | pending | belum dibuat |
-| `report.buildReport` | pending | belum dibuat |
-| `report.fileName` | pending | belum dibuat |
-| `sessions.officialSeconds` | pending | belum dibuat |
-| `sessions.summary` | pending | belum dibuat |
-| `store.addTask` | pending | belum dibuat |
-| `store.archiveTask` | pending | belum dibuat |
-| `store.archivedTasks` | pending | belum dibuat |
-| `store.clearFocusTargetOverride` | pending | belum dibuat |
-| `store.deleteArchivedTasks` | pending | belum dibuat |
-| `store.editTask` | pending | belum dibuat |
-| `store.ev` | pending | belum dibuat |
-| `store.find` | pending | belum dibuat |
-| `store.focusTargetFor` | pending | belum dibuat |
-| `store.rescheduleTask` | pending | belum dibuat |
-| `store.restoreTask` | pending | belum dibuat |
-| `store.setFocusTargetDefault` | pending | belum dibuat |
-| `store.setFocusTargetOverride` | pending | belum dibuat |
-| `store.setRequiresOutput` | pending | belum dibuat |
-| `taskUI.openEdit` | pending | belum dibuat |
-| `taskUI.prefillAdd` | pending | belum dibuat |
-| `updateUI.mount` | pending | belum dibuat |
-| `xlsx.build` | pending | belum dibuat |
+| `app.emit` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.removeLegacyCopies` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.replaceState` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.save` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.storageUsage` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `backup.MAX_CHARS` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `backup.validate` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `completion.chip` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `completion.summaryBlock` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.buildDay` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.dayKey` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.isDayKey` | ported | |
+| `dates.parseDay` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.attachToTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.availLabel` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.availability` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.ensureFresh` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.fmtSize` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.message` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.open` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.refreshStatus` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.removeFromTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.statusMap` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.METHOD_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.STATUS_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.list` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `homeExperience.get` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.count` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.createAutosave` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.entryFor` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.save` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.setGoalLink` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.summary` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `library.attachmentsForTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `library.query` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.PRIORITIES` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `report.buildReport` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `report.fileName` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `sessions.officialSeconds` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `sessions.summary` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.addTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.archiveTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.archivedTasks` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.clearFocusTargetOverride` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.deleteArchivedTasks` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.editTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.ev` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.find` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.focusTargetFor` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.rescheduleTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.restoreTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setFocusTargetDefault` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setFocusTargetOverride` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setRequiresOutput` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `taskUI.openEdit` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `taskUI.prefillAdd` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `updateUI.mount` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `xlsx.build` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.reopenTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `homeExperience.set` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.PRIORITY_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.isOverdue` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
 
 ### B. Fitur per halaman
 

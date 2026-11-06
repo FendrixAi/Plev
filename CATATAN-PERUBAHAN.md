@@ -1,12 +1,15 @@
 # Catatan perubahan
 
-## Mola World: tampilan penuh ketiga, Fase 1 (baru)
-- **Tema ikan mola-mola (sunfish), hanya mode siang.** Tidak ada mode malam: `data-theme` dikunci `light` selama Mola aktif (juga saat sistem gelap atau `JF.theme.set('dark')`), dan semua gayanya tidak membaca `data-theme`.
-- **Layout baru**: kartu maskot Mola di rel kiri (XP, pil timer, musik, kartu mini), panggung konten di tengah, dan rel pelampung di kanan sebagai navigasi. Layar sempit: rel kiri jadi strip atas, pelampung pindah ke bawah.
-- **Maskot Mola** digambar sebagai SVG (`mola-world/mola.js`), tumbuh 6 tahap dari XP yang sama dengan CapyRafi (`JF.capyrafi.compute`), jadi tidak ada penyimpanan baru.
-- **Beranda Mola** sudah lengkap: hero + colek Mola, timer fokus (mulai, jeda, lanjut, Selesai sesi untuk waktu bebas, hentikan, lewati istirahat), progres harian, daftar tugas (Fokus, Selesai + ringkasan, centang), dan Perjalanan Mola.
-- **Halaman lain** (Tugas, Kalender, Analitik, Riwayat, Laporan, Goals, Jurnal, Pengaturan, Library) belum dibuat di Mola: menampilkan kartu "sedang dibangun" dengan tombol pindah ke Capybara World atau Original. Statusnya `pending` di `PARITY.md`.
-- **Wiring**: opsi "Mola World (siang)" di Pengaturan > Experience; `JF.homeExperience` menerima `mola-world`; `boot.js` memilih tampilan dari satu nama; skrip awal `index.html` ikut mengunci siang.
+## Mola World: tampilan penuh ketiga (baru)
+- **Aturan:** fitur dan fungsi mengikuti Original. Tampilan dan animasi bebas per tema.
+- **Tema ikan mola-mola (sunfish), hanya mode siang.** Tidak ada mode malam: `data-theme` dikunci `light` selama Mola aktif (juga saat sistem gelap atau `JF.theme.set('dark')`).
+- **Chrome baru**: kartu maskot Mola di rel kiri (XP, pil timer, musik, kartu mini), panggung di tengah, rel pelampung di kanan sebagai navigasi. Layar sempit: rel kiri jadi strip atas, pelampung ke bawah.
+- **Maskot Mola** digambar sebagai SVG (`mola-world/mola.js`), tumbuh 6 tahap dari XP yang sama dengan CapyRafi, tanpa penyimpanan baru.
+- **Beranda Mola** mengikuti daftar fitur Beranda Original: timer fokus (mulai, jeda, lanjut, Selesai sesi, hentikan sesi, lewati istirahat, Selesai + ringkasan, filter tanggal termasuk Pilih tanggal), empat angka ringkasan, Rencana hari ini, dan Tugas terlambat. Ditambah hero laut animasi (mercusuar, ubur-ubur, ikan badut, penyu, kepiting, terumbu, harta karun) dan Perjalanan Mola.
+- **Halaman lain** (Tugas, Kalender, Analitik, Riwayat, Laporan, Goals, Jurnal, Pengaturan, Library) memakai halaman Original langsung (`JF.pages.get(id)`) di panggung Mola dengan palet dan kartu laut. Fitur baru Original otomatis ikut. Tata letak dalam halamannya masih Original; desain khusus Mola dibuat bertahap (lihat `PARITY.md`, lapis B).
+- **Efek laut interaktif** (`mola-world/fx.js`, `critters.js`, `fx.css`): tiap halaman punya hewan maskot di header yang bisa diklik untuk tips sesuai fiturnya (Tugas: kepiting, Kalender: penyu, Analitik: kawanan ikan, Riwayat: kuda laut, Laporan: gurita, Goals: peti harta, Jurnal: kerang mutiara, Pengaturan: ikan buntal, Library: paus). Tiga teman laut di rel kiri (kepiting, bintang laut, ubur-ubur) memberi tips dan fakta singkat. Efek bereaksi pada fitur nyata lewat perbandingan data sebelum-sesudah: tugas selesai (kepiting membawa bendera), tugas baru (gelembung), milestone (bintang laut), goal tercapai (peti harta terbuka), jurnal tersimpan (mutiara), dokumen masuk Library (gurita mengintip), sesi fokus selesai (Mola melompat). Ikan, kepiting, dan ubur-ubur lewat sesekali di halaman selain Beranda; klik area kosong memunculkan gelembung. Tidak menyentuh data. Dimatikan oleh `prefers-reduced-motion`; impor atau ganti data tidak memicu perayaan.
+- **Wiring**: opsi "Mola World (siang)" di Pengaturan; `JF.homeExperience` menerima `mola-world`; `boot.js` memilih tampilan dari satu nama; `theme.css` Original tetap aktif untuk Mola (hanya variabel warna yang diganti).
+- `cek.bat` (berkas diagnosa) dihapus karena dilarang `ui-integrity.test.js`.
 
 ## Capybara World: 8 fitur yang tertinggal sudah dibuatkan (baru)
 - **Riwayat**: chip ringkasan tugas (dan penanda "Data lama") di tiap sesi.

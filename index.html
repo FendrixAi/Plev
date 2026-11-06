@@ -7,12 +7,13 @@
 <title>Jam Fokus</title>
 <script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-experience',localStorage.getItem('jamfokus.homeExperience')==='capybara-world'?'capybara-world':localStorage.getItem('jamfokus.homeExperience')==='mola-world'?'mola-world':'original');if(document.documentElement.getAttribute('data-experience')==='mola-world')document.documentElement.setAttribute('data-theme','light');}catch(e){document.documentElement.setAttribute('data-experience','original');}})();</script>
 <link id="original-theme" rel="stylesheet" href="renderer/theme.css">
-<script>if(document.documentElement.getAttribute('data-experience')!=='original'){document.getElementById('original-theme').disabled=true;}</script>
+<script>if(document.documentElement.getAttribute('data-experience')==='capybara-world'){document.getElementById('original-theme').disabled=true;}</script>
 <link rel="stylesheet" href="renderer/experiences/capybara-world/beranda.css">
 <link rel="stylesheet" href="renderer/experiences/capybara-world/experience.css">
 <link rel="stylesheet" href="renderer/experiences/capybara-world/capyrafi.css">
 <link rel="stylesheet" href="renderer/experiences/capybara-world/boards.css">
 <link rel="stylesheet" href="renderer/experiences/mola-world/mola.css">
+<link rel="stylesheet" href="renderer/experiences/mola-world/fx.css">
 <link rel="stylesheet" href="renderer/update.css">
 </head>
 <body>
@@ -141,6 +142,8 @@
 <script src="renderer/experiences/capybara-world/components.js"></script>
 <script src="renderer/experiences/capybara-world/pages.js"></script>
 <script src="renderer/experiences/mola-world/mola.js"></script>
+<script src="renderer/experiences/mola-world/critters.js"></script>
+<script src="renderer/experiences/mola-world/fx.js"></script>
 <script src="renderer/experiences/mola-world/beranda.js"></script>
 <script src="renderer/experiences/mola-world/pages.js"></script>
 <script src="renderer/pages/beranda.js"></script>

@@ -11,7 +11,7 @@
 .app.mola-world-active, :root[data-experience="mola-world"] #modalRoot, :root[data-experience="mola-world"] #toastRoot {
   --mw-sky: #cfeefa; --mw-sea: #4aa3d6; --mw-deep: #1f6fa8; --mw-navy: #1d2f55;
   --mw-card: rgb(255 255 255 / 90%); --mw-solid: #ffffff; --mw-soft: #e7f5fb; --mw-line: #bfdff0;
-  --mw-ink: #1d2f55; --mw-muted: #52688c; --mw-sun: #f7b84a; --mw-coral: #e8744a; --mw-accent: #e8744a;
+  --mw-ink: #1d2f55; --mw-muted: #52688c; --mw-sun: #f7b84a; --mw-coral: #e8744a; --mw-accent: #c4521f;
   --mw-accent-ink: #ffffff; --mw-ok: #2f9e72; --mw-danger: #c23b3b; --mw-sand: #f3e2b8;
 }
 .app.mola-world-active {
@@ -62,7 +62,7 @@
 
 /* panggung tengah */
 .mw-stage { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
-.mw-head { display: grid; gap: 0; padding: 4px 8px; color: #0f3a63; text-shadow: 0 1px 0 rgb(255 255 255 / 55%); }
+.mw-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 4px 8px; color: #0f3a63; text-shadow: 0 1px 0 rgb(255 255 255 / 55%); }
 .mw-date-line { font-weight: 700; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #245b8c; }
 .mw-page-title { margin: 0; font: 800 30px/1.1 "Mola Outfit", sans-serif; }
 .mw-content { min-height: 0; overflow: auto; padding: 4px 6px 28px 2px; scrollbar-width: thin; }
@@ -116,6 +116,20 @@
 .mw-step svg { width: 100%; max-width: 72px; height: auto; } .mw-step small { color: var(--mw-muted); }
 .mw-pending p { margin: 6px 0 14px; max-width: 56ch; }
 
+.mw-pick-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mw-pick-filters { display: flex; gap: 6px; flex-wrap: wrap; } .mw-pick-filters .mw-select { width: auto; min-width: 120px; }
+.mw-standalone { color: var(--mw-muted); font-style: italic; }
+.mw-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mw-stat { display: grid; gap: 1px; padding: 12px; border-radius: 16px; background: var(--mw-soft); border: 1px solid var(--mw-line); }
+.mw-stat-k { font-size: 12px; color: var(--mw-muted); font-weight: 700; } .mw-stat-v { font: 800 22px "Mola Outfit", sans-serif; } .mw-stat small { color: var(--mw-muted); }
+.mw-list .mw-card-head { align-items: center; }
+.mw-chip { display: inline-block; margin-top: 4px; padding: 1px 10px; border-radius: 999px; background: var(--mw-soft); border: 1px solid var(--mw-line); font-size: 12px; font-weight: 700; }
+.mw-chip.accent { background: #fff1d6; border-color: var(--mw-sun); } .mw-chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); } .mw-chip.ok { margin: 0; background: #e2f6ec; border-color: #9fd9bf; color: var(--mw-ok); }
+.mw-mini-task { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; margin-bottom: 7px; border: 1px solid var(--mw-line); border-radius: 14px; background: var(--mw-solid); }
+.mw-mini-task.late { border-color: #f0b3a8; background: #fff6f3; } .mw-mini-task.done .mw-mt-name { text-decoration: line-through; color: var(--mw-muted); }
+.mw-mt-name { font-weight: 700; overflow-wrap: anywhere; } .mw-mt-date { flex: none; font-size: 12px; color: var(--mw-muted); }
+.mw-empty { display: grid; gap: 2px; padding: 10px 0; } .mw-empty span { color: var(--mw-muted); }
+
 /* tombol */
 .mw-shell .btn, :root[data-experience="mola-world"] #modalRoot .btn { min-height: 38px; padding: 8px 16px; border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-solid); color: var(--mw-ink); font: 700 13px "Mola DM Sans", sans-serif; cursor: pointer; }
 .mw-shell .btn:hover:not(:disabled) { border-color: var(--mw-sea); }
@@ -136,21 +150,6 @@
 .mw-confetti i { position: absolute; top: -12px; width: 12px; height: 12px; border-radius: 50%; animation: mw-fall 2.4s ease-in forwards; }
 @keyframes mw-fall { to { transform: translate(var(--dx), 105vh); opacity: .85; } }
 
-/* dialog dan toast bersama (#modalRoot, #toastRoot dipakai semua tampilan) */
-:root[data-experience="mola-world"] #modalRoot { position: relative; z-index: 100; }
-:root[data-experience="mola-world"] #modalRoot .modal-veil { position: fixed; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(14 45 80 / 45%); }
-:root[data-experience="mola-world"] #modalRoot .modal { width: min(520px, 100%); max-height: min(88vh, 780px); overflow: auto; border: 1px solid var(--mw-line); border-radius: 26px 26px 26px 10px; background: var(--mw-solid); color: var(--mw-ink); box-shadow: 0 24px 70px rgb(14 45 80 / 35%); font: 400 14px/1.5 "Mola DM Sans", sans-serif; }
-:root[data-experience="mola-world"] #modalRoot .modal.wide { width: min(760px, 100%); }
-:root[data-experience="mola-world"] #modalRoot .m-head, :root[data-experience="mola-world"] #modalRoot .m-body, :root[data-experience="mola-world"] #modalRoot .m-foot { padding: 16px 20px; }
-:root[data-experience="mola-world"] #modalRoot .m-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--mw-line); }
-:root[data-experience="mola-world"] #modalRoot .m-head h2 { margin: 0; font: 800 18px "Mola Outfit", sans-serif; }
-:root[data-experience="mola-world"] #modalRoot .m-body { display: grid; gap: 12px; }
-:root[data-experience="mola-world"] #modalRoot .m-foot { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--mw-line); }
-:root[data-experience="mola-world"] #modalRoot input, :root[data-experience="mola-world"] #modalRoot textarea, :root[data-experience="mola-world"] #modalRoot select { width: 100%; padding: 8px 10px; border: 1px solid var(--mw-line); border-radius: 12px; background: #fff; color: var(--mw-ink); font: 400 14px "Mola DM Sans", sans-serif; }
-:root[data-experience="mola-world"] #toastRoot { position: fixed; z-index: 120; right: 16px; bottom: 16px; display: grid; gap: 7px; max-width: min(420px, calc(100vw - 32px)); }
-:root[data-experience="mola-world"] #toastRoot .toast { padding: 11px 14px; border: 1px solid var(--mw-line); border-radius: 16px; background: var(--mw-solid); color: var(--mw-ink); box-shadow: 0 8px 24px rgb(14 45 80 / 22%); }
-:root[data-experience="mola-world"] #toastRoot .toast.err { border-color: var(--mw-danger); }
-
 /* layar sempit: rel kiri jadi strip atas, pelampung pindah ke bawah */
 @media (max-width: 960px) {
   .mw-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 10px; }
@@ -164,3 +163,62 @@
   .mw-page-title { font-size: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .mw-shell *, .mw-shell *::before { animation: none !important; transition: none !important; } }
+
+/* ── palet laut untuk markup Original (theme.css tetap aktif; hanya variabel yang diganti) ── */
+:root[data-experience="mola-world"], :root[data-experience="mola-world"][data-theme] {
+  color-scheme: light;
+  --cream: #e6f5fb; --paper: #dcf0f9; --sand: #cfe8f4; --surface: #ffffff; --surface-2: #f3fbfe; --surface-hover: #e3f3fa; --surface-3: #d6ecf6;
+  --ink: #1d2f55; --muted: #4f6589; --text-2: #4f6589; --text-3: #4f6589; --line: #cde5f1; --line-2: #b2d3e6;
+  --coral: #c4521f; --coral-hover: #ab4619; --coral-ink: #a8431a; --coral-soft: rgba(232, 116, 74, .16); --on-coral: #ffffff;
+  --mint: #1f7a63; --mint-hover: #186650; --mint-soft: #dcf3ea; --yellow: #8a5a08; --yellow-soft: rgba(247, 184, 74, .22);
+  --red: #b83232; --red-soft: rgba(216, 72, 72, .10);
+  --chart-label: #4f6589; --chart-value: #3a4f74; --chart-grid: #cde5f1; --chart-ok: #2f9e72; --chart-warn: #e0a02e; --chart-info: #7a8fd6; --chart-bar: #4aa3d6; --chart-bar-soft: rgba(74, 163, 214, .4);
+  --font-body: "Mola DM Sans", "DM Sans", "Segoe UI", system-ui, sans-serif; --font-display: "Mola Outfit", "Outfit", "DM Sans", system-ui, sans-serif;
+  --radius: 16px; --radius-sm: 10px; --radius-lg: 22px;
+  --shadow: 0 2px 6px rgba(31, 80, 130, .10), 0 6px 18px rgba(31, 80, 130, .08); --shadow-lg: 0 8px 20px rgba(31, 80, 130, .16), 0 16px 40px rgba(31, 80, 130, .12);
+  --veil: rgba(14, 45, 80, .45);
+}
+.mw-sub-line { color: #245b8c; font-size: 13px; font-weight: 500; }
+.mw-head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mw-page-host[hidden] { display: none !important; }
+
+/* kulit kartu untuk halaman Original di panggung Mola */
+.mw-orig-host { color: var(--mw-ink); }
+.mw-orig-host .card, .mw-orig-host .panel { border: 1px solid rgb(255 255 255 / 85%); border-radius: 26px 26px 26px 10px; background: var(--mw-card); box-shadow: 0 10px 28px rgb(31 80 130 / 16%); backdrop-filter: blur(6px); animation: mw-in .55s cubic-bezier(.2, .8, .2, 1) both; transition: transform .25s, box-shadow .25s; }
+.mw-orig-host .card:nth-child(2) { animation-delay: .06s; } .mw-orig-host .card:nth-child(3) { animation-delay: .12s; } .mw-orig-host .card:nth-child(4) { animation-delay: .18s; } .mw-orig-host .card:nth-child(n+5) { animation-delay: .24s; }
+.mw-orig-host .card:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgb(31 80 130 / 22%); }
+.mw-orig-host h2, .mw-orig-host h3 { font-family: "Mola Outfit", sans-serif; letter-spacing: -.005em; }
+.mw-orig-host input:focus, .mw-orig-host select:focus, .mw-orig-host textarea:focus { border-color: var(--mw-sea); box-shadow: 0 0 0 3px rgb(74 163 214 / 28%); outline: none; }
+.mw-orig-host .tabs .btn.on, .mw-orig-host .tabs .btn[aria-selected="true"], .mw-orig-host .tabs .btn.active { background: var(--mw-deep); border-color: var(--mw-deep); color: #fff; }
+.mw-orig-host table { border-collapse: separate; border-spacing: 0 6px; }
+.mw-orig-host .progress i, .mw-orig-host .bar i { background: linear-gradient(90deg, var(--mw-sea), var(--mw-sun)); }
+.mw-shell .btn.ghost { background: transparent; }
+@keyframes mw-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.mw-home > * { animation: mw-in .6s cubic-bezier(.2, .8, .2, 1) both; } .mw-home > :nth-child(2) { animation-delay: .07s; } .mw-home > :nth-child(3) { animation-delay: .14s; } .mw-home > :nth-child(4) { animation-delay: .21s; }
+.mw-card:hover { box-shadow: 0 16px 36px rgb(31 80 130 / 24%); }
+.mw-buoy.is-current .mw-buoy-ico { animation: mw-bob 2.6s ease-in-out infinite; }
+@keyframes mw-bob { 50% { transform: translateY(-4px) rotate(5deg); } }
+
+/* animasi pemandangan hero */
+.mw-scene { display: block; width: 100%; height: auto; border-radius: 26px; }
+.mw-rays { transform-box: fill-box; transform-origin: center; animation: mw-spin 40s linear infinite; }
+@keyframes mw-spin { to { transform: rotate(360deg); } }
+.mw-cloud { animation: mw-drift 18s ease-in-out infinite alternate; } .mw-cloud.c2 { animation-duration: 24s; animation-direction: alternate-reverse; }
+@keyframes mw-drift { to { transform: translateX(26px); } }
+.mw-gull { animation: mw-glide 9s ease-in-out infinite alternate; } @keyframes mw-glide { to { transform: translate(22px, -6px); } }
+.mw-lamp { animation: mw-blink 2.4s ease-in-out infinite; } @keyframes mw-blink { 50% { opacity: .25; } }
+.mw-foam { animation: mw-sway2 6s ease-in-out infinite alternate; } .mw-swell { animation: mw-sway2 8s ease-in-out infinite alternate-reverse; }
+@keyframes mw-sway2 { to { transform: translateX(-24px); } }
+.mw-jelly { animation: mw-jbob 4.5s ease-in-out infinite; } @keyframes mw-jbob { 50% { transform: translate(48px, 118px); } }
+.mw-clown { animation: mw-swim 9s ease-in-out infinite alternate; } @keyframes mw-swim { to { transform: translate(60px, 216px); } }
+.mw-turtle { animation: mw-turtle 11s ease-in-out infinite alternate; } @keyframes mw-turtle { to { transform: translate(300px, 160px); } }
+.mw-claw { transform-box: fill-box; transform-origin: center bottom; animation: mw-claw 1.6s ease-in-out infinite; } .mw-claw.r { animation-delay: -.8s; }
+@keyframes mw-claw { 50% { transform: rotate(-16deg); } }
+.mw-weed { transform-box: fill-box; transform-origin: center bottom; animation: mw-weed 4s ease-in-out infinite alternate; } .mw-weed.w2 { animation-delay: -1.3s; } .mw-weed.w3 { animation-delay: -2.4s; }
+@keyframes mw-weed { to { transform: skewX(8deg); } }
+.mw-star { transform-box: fill-box; transform-origin: center; animation: mw-spin 14s linear infinite; }
+.mw-glit { transform-box: fill-box; transform-origin: center; animation: mw-twinkle 2.2s ease-in-out infinite; } @keyframes mw-twinkle { 50% { transform: scale(.3); opacity: .3; } }
+.mw-hero-mola-wrap { overflow: visible; } .mw-hero-mola-wrap .mw-body { animation: mw-mfloat 5s ease-in-out infinite; transform-origin: 100px 95px; }
+@keyframes mw-mfloat { 50% { transform: translateY(-6px) rotate(-1.4deg); } }
+.mw-b.b5 { animation-delay: -.5s; }
+.mw-hero { grid-template-columns: minmax(0, 1fr) minmax(260px, 430px); }

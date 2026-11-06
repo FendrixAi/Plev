@@ -35,10 +35,11 @@
           '<span class="mw-xp" role="progressbar" aria-label="XP menuju tahap berikutnya" aria-valuemin="0" aria-valuemax="100"><i></i></span></div>' +
         '<button class="mw-timer-pill" type="button" hidden aria-live="off"></button>' +
         '<div class="mw-music" hidden></div>' +
+        '<div class="mw-reef" role="group" aria-label="Teman laut"><button type="button" data-critter="crab" aria-label="Kepiting: tips halaman ini" title="Kepiting"></button><button type="button" data-critter="star" aria-label="Bintang laut: fakta singkat" title="Bintang laut"></button><button type="button" data-critter="jelly" aria-label="Ubur-ubur: tarik napas" title="Ubur-ubur"></button><p class="mw-talk" role="status" aria-live="polite"></p></div>' +
         '<button class="mw-mini" type="button" title="Buka kartu mini" aria-label="Buka kartu mini">▭ Kartu mini</button>' +
       '</aside>' +
       '<section class="mw-stage">' +
-        '<header class="mw-head"><span class="mw-date-line"></span><h1 class="mw-page-title"></h1></header>' +
+        '<header class="mw-head"><button class="mw-critter" type="button" hidden></button><div class="mw-head-text"><span class="mw-date-line"></span><h1 class="mw-page-title"></h1><span class="mw-sub-line"></span></div><div class="mw-head-actions"></div></header>' +
         '<main class="mw-content"></main>' +
       '</section>' +
       '<nav class="mw-buoys" aria-label="Navigasi produktivitas"></nav>' +
@@ -58,6 +59,7 @@
     shell.querySelector('.mw-mini').addEventListener('click', function () { if (root.desk && root.desk.mini) root.desk.mini(true); });
     shell.querySelector('.mw-timer-pill').addEventListener('click', function () { root.location.hash = '#beranda'; });
     content = shell.querySelector('.mw-content');
+    if (JF.molaFx) JF.molaFx.mount(shell);
     content.addEventListener('focusout', function () {
       setTimeout(function () { if (pendingRefresh && !editingInside()) { pendingRefresh = false; render(currentId); } }, 0);
     });
@@ -75,12 +77,12 @@
       app.classList.add('mola-world-active');
       document.documentElement.setAttribute('data-experience', 'mola-world');
       document.documentElement.setAttribute('data-theme', 'light');
-      var o = document.getElementById('original-theme');
-      if (o) o.disabled = true;
       makeShell();
       shell.hidden = false;
+      if (JF.molaFx) JF.molaFx.setActive(true);
     } else {
       active = false;
+      if (JF.molaFx) JF.molaFx.setActive(false);
       app.classList.remove('mola-world-active');
       if (shell) shell.hidden = true;
     }
@@ -188,6 +190,7 @@
     var changed = currentId !== id || !renderedOnce;
     renderedOnce = true; currentId = id;
     makeShell(); updateHeader(id); updatePet();
+    if (JF.molaFx) JF.molaFx.setPage(id);
     JF.molaPages.render(id, content);
     if (changed) content.scrollTop = 0;
     shell.hidden = false;
