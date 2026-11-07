@@ -14,6 +14,16 @@
     h.dataset.page = id; h.hidden = true;
     parent.appendChild(h);
     hosts[id] = h;
+    if (id === 'kalender') {
+      /* panel tanggal ada di bawah grid: setelah memilih hari, gulir supaya panelnya terlihat */
+      h.addEventListener('click', function (e) {
+        if (!e.target.closest || !e.target.closest('.cal-cell')) return;
+        setTimeout(function () {
+          var p = h.querySelector('.day-panel');
+          if (p && p.scrollIntoView) { try { p.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (err) { /* no-op */ } }
+        }, 80);
+      });
+    }
     return h;
   }
 

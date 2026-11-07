@@ -71,7 +71,7 @@
     if (!list) return;
     ui.clear(list); ui.clear(sum); ui.clear(more);
 
-    Array.prototype.forEach.call(document.querySelectorAll('#page-riwayat .tabs button'), function (b) {
+    Array.prototype.forEach.call(host.querySelectorAll('.tabs button'), function (b) {
       b.classList.toggle('on', b.dataset.f === filt);
     });
 

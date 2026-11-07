@@ -1,0 +1,743 @@
+/* Mola World, fase 1: kulit khusus halaman Tugas dan Kalender.
+   Hanya tampilan. Markup dan logika tetap dari Original (JF.pages), jadi fitur baru Original otomatis ikut.
+   Semua aturan dikunci ke .mw-shell .mw-orig-host[data-page="..."] dan hanya berlaku di Mola (mode siang). */
+
+/* ── bahan bersama: garis ombak dan gelembung ── */
+.mw-shell .mw-orig-host {
+  --mw-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8'%3E%3Cpath d='M0 4Q6 0 12 4T24 4' fill='none' stroke='white' stroke-width='2' stroke-opacity='.85'/%3E%3C/svg%3E");
+  --mw-wave-coral: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8'%3E%3Cpath d='M0 4Q6 0 12 4T24 4' fill='none' stroke='%23e8744a' stroke-width='2' stroke-opacity='.7'/%3E%3C/svg%3E");
+  --mw-bubble-bg: radial-gradient(circle at 32% 28%, #fff 0 13%, rgb(255 255 255 / 0%) 14%), radial-gradient(circle, rgb(143 211 232 / 60%), rgb(74 163 214 / 38%));
+}
+
+/* ════════════════ TUGAS ════════════════ */
+.mw-shell .mw-orig-host[data-page="tugas"] { display: grid; gap: 14px; align-content: start; }
+.mw-shell .mw-orig-host[data-page="tugas"] > .card + .card { margin-top: 0; }
+
+/* kartu tambah tugas: "botol pesan" */
+.mw-shell .mw-orig-host[data-page="tugas"] > .card:first-child {
+  border-radius: 36px 36px 36px 12px;
+  background: linear-gradient(135deg, rgb(255 255 255 / 95%), rgb(214 238 249 / 92%));
+}
+.mw-shell .mw-orig-host[data-page="tugas"] > .card:first-child h2::before { content: "🍾 "; }
+.mw-shell .mw-orig-host[data-page="tugas"] .add-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px;
+  border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-soft);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .add-form input {
+  min-height: 40px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--mw-line);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] #ta-title { flex: 1 1 220px; width: auto; min-width: 0; padding: 0 16px; }
+.mw-shell .mw-orig-host[data-page="tugas"] #ta-date { flex: 0 0 auto; width: auto; padding: 0 12px; }
+.mw-shell .mw-orig-host[data-page="tugas"] #ta-details {
+  padding: 14px 16px; border: 1px dashed var(--mw-line); border-radius: 26px; background: rgb(231 245 251 / 70%);
+}
+
+/* tab dan filter: pelampung */
+.mw-shell .mw-orig-host[data-page="tugas"] .ta-toolbar { margin: 4px 0 0; }
+.mw-shell .mw-orig-host[data-page="tugas"] .tabs {
+  gap: 4px; padding: 4px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 999px; background: rgb(255 255 255 / 70%);
+  box-shadow: 0 6px 16px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .tabs button {
+  min-height: 36px; padding: 6px 18px; border: 0; border-radius: 999px; background: transparent; color: var(--mw-muted);
+  font: 700 13px "Mola DM Sans", sans-serif;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] #tab-aktif::before { content: "🫧 "; }
+.mw-shell .mw-orig-host[data-page="tugas"] #tab-arsip::before { content: "🐚 "; }
+.mw-shell .mw-orig-host[data-page="tugas"] .tabs button.on,
+.mw-shell .mw-orig-host[data-page="tugas"] .tabs button[aria-selected="true"] {
+  background: var(--mw-deep); color: #fff; box-shadow: 0 4px 10px rgb(31 111 168 / 35%);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .ta-filter select {
+  min-height: 38px; padding: 4px 14px; border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-ink);
+  font: 700 13px "Mola DM Sans", sans-serif;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .sel-bar {
+  padding: 6px 16px; border: 1px solid var(--mw-line); border-radius: 999px; background: rgb(255 255 255 / 75%);
+}
+
+/* judul kelompok: garis ombak */
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label {
+  display: flex; align-items: center; gap: 10px; margin: 20px 4px 12px; color: #0f3a63;
+  font: 800 14px/1.2 "Mola Outfit", sans-serif; letter-spacing: .03em; text-transform: none;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label::before { content: "🌊"; font-size: 18px; }
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label::after {
+  content: ""; flex: 1; height: 8px; background: var(--mw-wave) repeat-x center;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label:has(~ .task-list > .task-row.overdue:first-child) { color: var(--mw-danger); }
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label:has(~ .task-list > .task-row.overdue:first-child)::before { content: "🌀"; }
+.mw-shell .mw-orig-host[data-page="tugas"] .section-label:has(~ .task-list > .task-row.overdue:first-child)::after { background-image: var(--mw-wave-coral); }
+
+/* daftar: gelembung tugas, dua kolom bila lebar */
+.mw-shell .mw-orig-host[data-page="tugas"] .task-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; align-items: start;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row {
+  position: relative; flex-direction: column; align-items: stretch; gap: 10px; overflow: hidden;
+  padding: 16px 18px 12px 62px; border: 1px solid #fff; border-radius: 32px 32px 32px 10px;
+  background: linear-gradient(160deg, #fff 0%, #e6f5fb 100%); box-shadow: 0 8px 22px rgb(31 80 130 / 16%);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgb(31 80 130 / 24%); background: linear-gradient(160deg, #fff 0%, #e6f5fb 100%); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row::before {
+  content: ""; position: absolute; left: 18px; top: 16px; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid rgb(74 163 214 / 75%); background: var(--mw-bubble-bg);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row:has(.sel-box)::before { display: none; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .sel-box { position: absolute; left: 22px; top: 20px; margin: 0; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .done-mark {
+  position: absolute; left: 18px; top: 16px; z-index: 1; width: 30px; height: 30px; border-radius: 50%; background: var(--mw-ok);
+  box-shadow: 0 0 0 3px rgb(47 158 114 / 25%);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .tt { font: 800 16px/1.3 "Mola Outfit", sans-serif; color: var(--mw-ink); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .desc { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .acts {
+  flex-wrap: wrap; justify-content: flex-start; padding-top: 10px; background: var(--mw-wave) repeat-x top left; background-size: 24px 8px;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .chip {
+  border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row .chip.warn { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+
+/* status: arus balik (terlambat), berjalan, selesai */
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.overdue {
+  border-color: #f0b3a8; background: linear-gradient(160deg, #fffaf7 0%, #ffe6de 100%);
+  box-shadow: 0 8px 22px rgb(232 116 74 / 20%), inset 0 -6px 0 rgb(232 116 74 / 28%);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.overdue::before { border-color: var(--mw-coral); background: radial-gradient(circle at 32% 28%, #fff 0 13%, rgb(255 255 255 / 0%) 14%), radial-gradient(circle, rgb(240 140 122 / 55%), rgb(232 116 74 / 35%)); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.overdue:hover { background: linear-gradient(160deg, #fffaf7 0%, #ffe6de 100%); }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.running { border-color: var(--mw-sun); animation: mw-ring 2.4s ease-in-out infinite; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.running::before { border-color: var(--mw-sun); background: radial-gradient(circle, #ffe3a1, #f7b84a); animation: mw-bob 2.6s ease-in-out infinite; }
+@keyframes mw-ring { 50% { box-shadow: 0 0 0 6px rgb(247 184 74 / 35%), 0 8px 22px rgb(31 80 130 / 16%); } }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.done { background: linear-gradient(160deg, #f6fdf9 0%, #dff4ea 100%); border-color: #bfe6d4; }
+.mw-shell .mw-orig-host[data-page="tugas"] .task-row.done .tt { color: var(--mw-muted); }
+
+/* kosong: kolam karang */
+.mw-shell .mw-orig-host[data-page="tugas"] .empty {
+  padding: 34px 20px; border: 2px dashed var(--mw-sea); border-radius: 34px; background: rgb(255 255 255 / 62%); color: var(--mw-muted);
+}
+.mw-shell .mw-orig-host[data-page="tugas"] .empty::before { content: "🐚"; display: block; margin-bottom: 4px; font-size: 40px; }
+.mw-shell .mw-orig-host[data-page="tugas"] .empty .big { color: var(--mw-ink); font: 800 17px "Mola Outfit", sans-serif; }
+
+/* ════════════════ KALENDER ════════════════ */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-head {
+  gap: 10px; margin-bottom: 20px; padding: 10px 16px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 999px;
+  background: rgb(255 255 255 / 78%); box-shadow: 0 8px 22px rgb(31 80 130 / 16%);
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-head .range { min-width: 0; color: var(--mw-navy); font: 800 20px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-head .range::before { content: "🧭 "; }
+.mw-shell .mw-orig-host[data-page="kalender"] .seg {
+  padding: 3px; border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-soft); overflow: hidden;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .seg button {
+  min-height: 34px; padding: 4px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--mw-muted);
+  font: 700 13px "Mola DM Sans", sans-serif;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .seg button + button { border-left: 0; }
+.mw-shell .mw-orig-host[data-page="kalender"] .seg button.on { background: var(--mw-deep); color: #fff; box-shadow: 0 4px 10px rgb(31 111 168 / 35%); }
+
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-grid { gap: 12px; padding-bottom: 22px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.month { gap: 8px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-dow {
+  padding: 5px 0; border-radius: 999px; background: var(--mw-deep); color: #fff; font-weight: 800; letter-spacing: .1em;
+  box-shadow: 0 4px 10px rgb(31 111 168 / 25%);
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell {
+  border: 1px solid #fff; border-radius: 28px 28px 28px 10px; box-shadow: 0 8px 20px rgb(31 80 130 / 14%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 94%) 0%, rgb(214 238 249 / 90%) 100%);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.week .cal-cell { min-height: 200px; padding: 14px 12px; border-radius: 36px 36px 36px 12px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.week .cal-cell:nth-child(2n + 9) { translate: 0 20px; }   /* ombak: kolom genap turun */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.month .cal-cell { min-height: 100px; padding: 8px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell:hover {
+  background: linear-gradient(180deg, #fff 0%, #d6eef9 100%); border-color: var(--mw-sea); transform: scale(1.03);
+  box-shadow: 0 14px 30px rgb(31 80 130 / 24%);
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell.out { opacity: .45; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .dnum > span:first-child {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--mw-soft);
+  color: var(--mw-ink); font: 800 14px "Mola Outfit", sans-serif;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell.today {
+  border: 2px solid var(--mw-sun);
+  background: radial-gradient(circle at 88% 8%, #ffe3a1 0 20%, rgb(255 227 161 / 0%) 21%), linear-gradient(180deg, #fffaf0 0%, #d6eef9 100%);
+  box-shadow: 0 0 0 4px rgb(247 184 74 / 30%), 0 10px 24px rgb(31 80 130 / 18%);
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell.today .dnum > span:first-child { background: var(--mw-sun); color: #4a2b00; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .dnum .tmark {
+  padding: 1px 8px; border-radius: 999px; background: #fff1d6; color: #7a4a08; letter-spacing: .04em;
+}
+
+/* sel sempit (panel terbuka atau tampilan bulanan): nama tugas tetap tampil, hanya lebih kecil */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-cell { container: cal / inline-size; }
+@container cal (max-width: 130px) {
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .dnum .tmark { display: none; }
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .cal-chip { padding: 2px 7px; border-radius: 12px; font-size: 11px; line-height: 1.2; }
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .cal-chip::before { display: none; }
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .cal-chip .cm { display: none; }
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-cell .cal-more { font-size: 10px; padding: 1px 6px; }
+}
+
+/* penanda tugas: gelembung kecil */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip {
+  gap: 6px; padding: 4px 10px 4px 8px; border: 1px solid var(--mw-line); border-left-width: 1px; border-radius: 999px;
+  background: #fff; color: var(--mw-ink); font-weight: 600;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip::before {
+  content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--mw-sea); box-shadow: inset 0 0 0 2px rgb(255 255 255 / 55%);
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip { white-space: normal; border-radius: 16px; align-items: flex-start; line-height: 1.25; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip::before { margin-top: 3px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip .cn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip.target { background: #fff3ec; border-color: #f4c3ad; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip.target::before { background: var(--mw-coral); }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip.completed { background: #e4f6ee; border-color: #a9dcc5; color: #3c6b58; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip.completed::before { background: var(--mw-ok); }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-chip .cm { color: var(--mw-ok); }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-more {
+  align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: var(--mw-soft); color: var(--mw-deep); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-more:hover { background: #fff1d6; color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-focus { border-top: 2px dotted var(--mw-line); color: var(--mw-deep); font-weight: 700; }
+
+/* keterangan */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-legend {
+  display: inline-flex; gap: 16px; margin-top: 6px; padding: 8px 18px; border-radius: 999px; background: rgb(255 255 255 / 72%);
+  border: 1px solid rgb(255 255 255 / 90%); color: var(--mw-muted); font-weight: 600;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-legend i { border-radius: 50%; }
+
+/* panel tanggal: "gua laut" */
+/* panel tanggal selalu di bawah grid supaya kolom hari tetap lebar dan nama tugas terbaca */
+.mw-shell .mw-orig-host[data-page="kalender"] .cal-layout.with-panel { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.mw-shell .mw-orig-host[data-page="kalender"] .day-panel {
+  border-radius: 36px 36px 36px 12px; background: linear-gradient(180deg, #fff 0%, #dff1fa 100%); position: static; max-height: none; scroll-margin-top: 12px;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .day-panel .dp-head h2 { font: 800 19px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="kalender"] .day-panel .dp-head h2::before { content: "🏝️ "; }
+.mw-shell .mw-orig-host[data-page="kalender"] .dp-sec h3 {
+  display: inline-block; padding: 3px 14px; border-radius: 999px; background: var(--mw-soft); border: 1px solid var(--mw-line);
+  color: var(--mw-deep); font: 800 12px/1.4 "Mola Outfit", sans-serif; letter-spacing: .02em; text-transform: none;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .dp-item {
+  flex-wrap: wrap; margin-bottom: 6px; padding: 8px 12px; border: 1px solid var(--mw-line); border-radius: 18px; background: #fff;
+}
+.mw-shell .mw-orig-host[data-page="kalender"] .dp-item .di-name { flex: 1 1 100%; font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="kalender"] .dp-item:last-child { border-bottom: 1px solid var(--mw-line); }
+:root[data-experience="mola-world"] .mw-shell .mw-orig-host[data-page="kalender"] .cal-link-box { border-radius: 999px; }
+:root[data-experience="mola-world"] .mw-shell .mw-orig-host[data-page="kalender"] .cal-link-box.journal { background: #fdf0cf; border-color: #f0d28a; color: #7a4a08; }
+:root[data-experience="mola-world"] .mw-shell .mw-orig-host[data-page="kalender"] .cal-link-box.library { background: #dcf0fa; border-color: #9ccbe6; color: #165a85; }
+
+/* layar sempit: ombak dimatikan supaya grid tidak sesak */
+@media (max-width: 960px) {
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.week .cal-cell:nth-child(2n + 9) { translate: none; }
+  .mw-shell .mw-orig-host[data-page="kalender"] .cal-grid.week .cal-cell { min-height: 150px; padding: 10px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mw-shell .mw-orig-host .task-row, .mw-shell .mw-orig-host .cal-cell { transition: none; animation: none; }
+}
+
+/* ════════════════ FASE 2: RIWAYAT FOKUS dan LAPORAN HARIAN ════════════════ */
+.mw-shell .mw-orig-host {
+  --mw-wave-blue: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8'%3E%3Cpath d='M0 4Q6 0 12 4T24 4' fill='none' stroke='%234aa3d6' stroke-width='2' stroke-opacity='.55'/%3E%3C/svg%3E");
+  --mw-paper: linear-gradient(170deg, #fffdf5 0%, #fdf1d3 100%);
+}
+.mw-shell .mw-orig-host:is([data-page="riwayat"], [data-page="laporan"]) { display: grid; gap: 12px; align-content: start; }
+
+/* catatan pengantar: gulungan pesan */
+.mw-shell .mw-orig-host:is([data-page="riwayat"], [data-page="laporan"]) > .hint {
+  position: relative; margin: 0; padding: 12px 18px 12px 52px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 26px 26px 26px 8px;
+  background: rgb(255 255 255 / 72%); color: var(--mw-muted); line-height: 1.5;
+}
+.mw-shell .mw-orig-host:is([data-page="riwayat"], [data-page="laporan"]) > .hint::before { content: "📜"; position: absolute; left: 18px; top: 10px; font-size: 22px; }
+
+/* tombol segmen dan ringkasan di atas Riwayat */
+.mw-shell .mw-orig-host[data-page="riwayat"] > div:first-child { margin-bottom: 0 !important; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .tabs {
+  gap: 4px; padding: 4px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 999px; background: rgb(255 255 255 / 70%); box-shadow: 0 6px 16px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .tabs button {
+  min-height: 36px; padding: 6px 18px; border: 0; border-radius: 999px; background: transparent; color: var(--mw-muted); font: 700 13px "Mola DM Sans", sans-serif;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .tabs button.on { background: var(--mw-deep); color: #fff; box-shadow: 0 4px 10px rgb(31 111 168 / 35%); }
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-sum .chip {
+  padding: 6px 14px; border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-ink); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-sum .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-sum .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-sum .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+
+/* jejak renang: garis putus-putus dengan titik gelembung di tiap sesi */
+.mw-shell .mw-orig-host[data-page="riwayat"] .day-head {
+  position: relative; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; width: fit-content; max-width: 100%;
+  margin: 22px 0 10px; padding: 8px 18px 8px 14px; border: 1px solid #fff; border-radius: 999px;
+  background: linear-gradient(135deg, #fff, #d6eef9); box-shadow: 0 8px 20px rgb(31 80 130 / 16%);
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .day-head:first-child { margin-top: 8px; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .day-head::before { content: "🏝️"; font-size: 22px; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .day-head h3 { margin: 0; color: var(--mw-navy); font: 800 16px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .day-head .ds {
+  padding: 2px 12px; border-radius: 999px; background: #fff1d6; color: #7a4a08; font-weight: 700; font-size: 12px;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-list > div:not(.day-head):not(.empty) {
+  margin-left: 22px; padding: 4px 0 4px 30px; border-left: 3px dotted rgb(255 255 255 / 90%);
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row {
+  position: relative; gap: 16px; margin-bottom: 12px; padding: 14px 18px; border: 1px solid #fff; border-radius: 30px 30px 30px 10px;
+  background: linear-gradient(160deg, #fff 0%, #e6f5fb 100%); box-shadow: 0 8px 22px rgb(31 80 130 / 14%);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row:hover { transform: translateX(4px); box-shadow: 0 14px 30px rgb(31 80 130 / 22%); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row::before {
+  content: ""; position: absolute; left: -43px; top: 20px; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--mw-sea); background: radial-gradient(circle at 32% 28%, #fff 0 14%, rgb(255 255 255 / 0%) 15%), rgb(143 211 232 / 85%);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 55%);
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row:has(.chip.ok)::before { border-color: var(--mw-ok); background: radial-gradient(circle at 32% 28%, #fff 0 14%, rgb(255 255 255 / 0%) 15%), rgb(120 210 170 / 85%); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row:has(.chip.danger)::before { border-color: var(--mw-coral); background: radial-gradient(circle at 32% 28%, #fff 0 14%, rgb(255 255 255 / 0%) 15%), rgb(240 140 122 / 85%); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row:has(.chip.danger) { background: linear-gradient(160deg, #fffaf7 0%, #ffe9e2 100%); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hname .hn { font: 800 16px/1.3 "Mola Outfit", sans-serif; color: var(--mw-ink); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hname .ht { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hnums { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hn2:not(:last-child) {
+  min-width: 74px; padding: 6px 12px; border: 1px solid var(--mw-line); border-radius: 18px; background: var(--mw-soft); text-align: center;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hn2 .k { color: var(--mw-muted); letter-spacing: .06em; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hn2 .v { font-family: "Mola Outfit", sans-serif; font-weight: 800; color: var(--mw-ink); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hn2 .v.ok { color: var(--mw-ok); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hn2 .v.muted { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .chip {
+  border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+.mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .chip.warn, .mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .empty {
+  padding: 34px 20px; border: 2px dashed var(--mw-sea); border-radius: 34px; background: rgb(255 255 255 / 62%); color: var(--mw-muted);
+}
+.mw-shell .mw-orig-host[data-page="riwayat"] .empty::before { content: "🧭"; display: block; margin-bottom: 4px; font-size: 40px; }
+.mw-shell .mw-orig-host[data-page="riwayat"] .empty .big { color: var(--mw-ink); font: 800 17px "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="riwayat"] #rh-more .btn { border-radius: 999px; }
+
+/* Laporan harian: gulungan pesan dalam botol, dua kolom */
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 16px; align-items: start;
+}
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list > .report:first-child,
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list > .section-label,
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list > .empty { grid-column: 1 / -1; }
+.mw-shell .mw-orig-host[data-page="laporan"] .section-label {
+  display: flex; align-items: center; gap: 10px; margin: 8px 4px 0; color: #0f3a63; font: 800 14px/1.2 "Mola Outfit", sans-serif; letter-spacing: .03em; text-transform: none;
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .section-label::before { content: "🍾"; font-size: 18px; }
+.mw-shell .mw-orig-host[data-page="laporan"] .section-label::after { content: ""; flex: 1; height: 8px; background: var(--mw-wave) repeat-x center; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report {
+  position: relative; margin: 0; padding: 26px 22px 16px; overflow: hidden; border: 1px solid #fff; border-radius: 34px 34px 34px 12px;
+  background: var(--mw-paper); box-shadow: 0 10px 26px rgb(31 80 130 / 18%);
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .report::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 8px; background: var(--mw-wave-blue) repeat-x center; pointer-events: none;
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rh .rd { color: var(--mw-navy); font: 800 18px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rh .rd::before { content: "📜 "; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .chip { border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .chip.warn, .mw-shell .mw-orig-host[data-page="laporan"] .report .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rgrid { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin-top: 12px; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rgrid .kv {
+  padding: 10px 12px; border: 1px solid rgb(74 163 214 / 28%); border-radius: 20px; background: rgb(255 255 255 / 75%);
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rgrid .kv .k { color: var(--mw-muted); letter-spacing: .05em; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rgrid .kv .v { color: var(--mw-deep); font: 800 22px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rgrid .kv .v.muted { color: var(--mw-muted); font-size: 16px; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rep-toggle {
+  margin-top: 12px; padding: 6px 14px; border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-deep); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rep-toggle:hover { background: var(--mw-soft); color: var(--mw-navy); }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rep-detail { padding: 8px 14px 10px; border: 1px dashed var(--mw-line); border-radius: 22px; background: rgb(255 255 255 / 70%); }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rep-sub { color: var(--mw-deep); font-weight: 800; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .rep-item { border-top: 1px dotted var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .corrections {
+  margin-top: 12px; padding: 10px 14px; border: 1px solid var(--mw-sun); border-radius: 20px; background: #fff7e0;
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .report .corrections .ch { color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .orig { margin-top: 10px; color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="laporan"] .report .orig::before { content: "🔒 "; font-style: normal; }
+/* kartu hari ini: bermatahari, selebar penuh */
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list > .report:first-child {
+  border: 2px solid var(--mw-sun);
+  background: radial-gradient(circle at 94% 0%, #ffe3a1 0 14%, rgb(255 227 161 / 0%) 15%), linear-gradient(170deg, #fffdf5 0%, #d6eef9 100%);
+  box-shadow: 0 0 0 4px rgb(247 184 74 / 25%), 0 10px 26px rgb(31 80 130 / 18%);
+}
+.mw-shell .mw-orig-host[data-page="laporan"] #lp-list > .report:first-child .rh .rd::before { content: "☀️ "; }
+.mw-shell .mw-orig-host[data-page="laporan"] .empty {
+  padding: 34px 20px; border: 2px dashed var(--mw-sea); border-radius: 34px; background: rgb(255 255 255 / 62%); color: var(--mw-muted);
+}
+.mw-shell .mw-orig-host[data-page="laporan"] .empty::before { content: "🍾"; display: block; margin-bottom: 4px; font-size: 40px; }
+.mw-shell .mw-orig-host[data-page="laporan"] .empty .big { color: var(--mw-ink); font: 800 17px "Mola Outfit", sans-serif; }
+
+@media (max-width: 720px) {
+  .mw-shell .mw-orig-host[data-page="riwayat"] .hist-row { flex-wrap: wrap; }
+  .mw-shell .mw-orig-host[data-page="riwayat"] .hist-row .hnums { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mw-shell .mw-orig-host[data-page="riwayat"] .hist-row { transition: none; }
+}
+
+/* ════════════════ FASE 3 dan 4: ANALITIK, GOALS, JURNAL ════════════════ */
+/* bahan bersama untuk tiga halaman ini: tombol segmen, chip, kolom kosong */
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .seg,
+.mw-shell .mw-orig-host:is([data-page="goals"]) .tabs {
+  display: inline-flex; gap: 4px; padding: 4px; border: 1px solid rgb(255 255 255 / 90%); border-radius: 999px;
+  background: rgb(255 255 255 / 72%); box-shadow: 0 6px 16px rgb(31 80 130 / 14%); overflow: hidden;
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .seg button,
+.mw-shell .mw-orig-host:is([data-page="goals"]) .tabs button {
+  min-height: 34px; padding: 5px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--mw-muted); font: 700 13px "Mola DM Sans", sans-serif;
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .seg button + button { border-left: 0; }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .seg button.on,
+.mw-shell .mw-orig-host:is([data-page="goals"]) .tabs button.on {
+  background: var(--mw-deep); color: #fff; box-shadow: 0 4px 10px rgb(31 111 168 / 35%);
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip {
+  border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700;
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip.warn,
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .chip.lilac { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .empty {
+  padding: 30px 20px; border: 2px dashed var(--mw-sea); border-radius: 34px; background: rgb(255 255 255 / 62%); color: var(--mw-muted);
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"], [data-page="jurnal"]) .empty .big { color: var(--mw-ink); font: 800 17px "Mola Outfit", sans-serif; }
+/* garis ombak di bagian atas kartu besar */
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"]) :is(.chart-card, .gl-progress-card, .gl-ms-card, .gl-tasks-card, .gl-next-card, .an-wide, .an-defs) { position: relative; overflow: hidden; }
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"]) :is(.chart-card, .gl-progress-card, .gl-ms-card, .gl-tasks-card)::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 8px; background: var(--mw-wave-blue) repeat-x center; pointer-events: none;
+}
+.mw-shell .mw-orig-host:is([data-page="analitik"], [data-page="goals"]) :is(.chart-card, .gl-progress-card, .gl-ms-card, .gl-tasks-card) { padding-top: 26px; }
+
+/* ── ANALITIK: peta sonar ── */
+.mw-shell .mw-orig-host[data-page="analitik"] .an-toolbar {
+  gap: 12px; padding: 14px 20px; border: 1px solid #fff; border-radius: 36px 36px 36px 12px;
+  background: linear-gradient(135deg, rgb(255 255 255 / 92%), rgb(214 238 249 / 88%)); box-shadow: 0 10px 26px rgb(31 80 130 / 16%);
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-nav .btn { min-width: 36px; padding: 6px 12px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-label { margin: 0; color: var(--mw-navy); font: 800 20px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-label::before { content: "📡 "; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-filters label { color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-filters select {
+  min-height: 36px; padding: 4px 14px; border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-ink); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpis { gap: 14px; margin-bottom: 18px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi {
+  position: relative; overflow: hidden; padding: 18px 20px 16px; border: 1px solid #fff; border-radius: 36px 36px 36px 12px;
+  background: linear-gradient(160deg, #fff 0%, #e3f4fb 100%); box-shadow: 0 10px 24px rgb(31 80 130 / 16%);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgb(31 80 130 / 24%); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi::before {
+  content: ""; position: absolute; left: 20px; right: 20px; top: 0; height: 5px; border-radius: 0 0 8px 8px; background: var(--mw-sea);
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi::after { position: absolute; right: 16px; top: 12px; font-size: 24px; opacity: .85; pointer-events: none; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(1)::after { content: "🐟"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(2)::after { content: "🐠"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(3)::after { content: "🐡"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(4)::after { content: "🦀"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(5)::after { content: "🪸"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(6)::after { content: "🐚"; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(2)::before { background: var(--mw-sun); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(3)::before { background: var(--mw-coral); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(4)::before { background: var(--mw-ok); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(5)::before { background: var(--mw-deep); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi:nth-child(6)::before { background: #8fd3e8; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi .k { padding-right: 34px; color: var(--mw-muted); font-weight: 800; letter-spacing: .06em; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi .v { color: var(--mw-deep); font: 800 30px/1.15 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-kpi .u { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-body > .card:first-of-type h2::before,
+.mw-shell .mw-orig-host[data-page="analitik"] #an-ins-h::before { content: "🔭 "; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-insights { gap: 10px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-ins {
+  padding: 12px 16px; border: 1px solid var(--mw-line); border-radius: 26px 26px 26px 8px; background: rgb(255 255 255 / 82%);
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-ins i { width: 14px; height: 14px; margin-top: 4px; border: 2px solid var(--mw-sea); background: rgb(143 211 232 / 80%); box-shadow: 0 0 0 3px rgb(255 255 255 / 70%); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-ins.up i { border-color: var(--mw-ok); background: rgb(120 210 170 / 85%); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-ins.down i, .mw-shell .mw-orig-host[data-page="analitik"] .an-ins.warn i { border-color: var(--mw-sun); background: #ffe3a1; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-grid { gap: 18px; margin-top: 18px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-grid > .card { border-radius: 38px 38px 38px 12px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .chart-card h2::before { content: "🌊 "; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-table { border-spacing: 0 4px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-table th {
+  padding: 6px 10px; background: var(--mw-soft); color: var(--mw-deep); font: 800 12px "Mola Outfit", sans-serif; letter-spacing: .03em; text-transform: none;
+}
+.mw-shell .mw-orig-host[data-page="analitik"] .an-table th:first-child { border-radius: 14px 0 0 14px; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-table th:last-child { border-radius: 0 14px 14px 0; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-table td { border-bottom: 1px dotted var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-defs summary { cursor: pointer; font: 800 15px "Mola Outfit", sans-serif; color: var(--mw-deep); }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-defs summary::before { content: "📖 "; }
+.mw-shell .mw-orig-host[data-page="analitik"] .an-link { color: var(--mw-deep); font-weight: 700; }
+
+/* ── GOALS: peta pelayaran ── */
+.mw-shell .mw-orig-host[data-page="goals"] .gl-metrics { gap: 14px; margin-bottom: 16px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat {
+  position: relative; overflow: hidden; padding: 16px 18px 14px; border: 1px solid #fff; border-radius: 999px 999px 999px 999px / 46px 46px 46px 46px;
+  background: linear-gradient(160deg, #fff, #dff1fa); box-shadow: 0 8px 22px rgb(31 80 130 / 16%);
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat { border-radius: 40px 40px 40px 12px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat::after { position: absolute; right: 16px; top: 10px; font-size: 26px; opacity: .9; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat:nth-child(1)::after { content: "⚓"; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat:nth-child(2)::after { content: "🏝️"; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat:nth-child(3)::after { content: "🚩"; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat:nth-child(4)::after { content: "🧭"; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat .k { padding-right: 34px; color: var(--mw-muted); font-weight: 800; letter-spacing: .06em; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-stat .v { color: var(--mw-deep); font: 800 28px/1.15 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="goals"] .section-label {
+  display: flex; align-items: center; gap: 10px; margin: 18px 4px 12px; color: #0f3a63; font: 800 14px/1.2 "Mola Outfit", sans-serif; letter-spacing: .03em; text-transform: none;
+}
+.mw-shell .mw-orig-host[data-page="goals"] .section-label::before { content: "🧭"; font-size: 18px; }
+.mw-shell .mw-orig-host[data-page="goals"] .section-label::after { content: ""; flex: 1; height: 8px; background: var(--mw-wave) repeat-x center; }
+
+/* kartu goal = pulau, progres = rute kapal layar */
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card {
+  position: relative; overflow: hidden; padding: 20px 20px 16px; border: 1px solid #fff; border-radius: 42px 42px 42px 14px;
+  background: linear-gradient(170deg, #fff 0%, #e1f3fb 100%); box-shadow: 0 10px 26px rgb(31 80 130 / 18%); transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card:hover { transform: translateY(-4px); box-shadow: 0 18px 36px rgb(31 80 130 / 26%); border-color: #fff; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; pointer-events: none;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0%), rgb(143 211 232 / 28%));
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-cat { display: inline-block; padding: 1px 12px; border-radius: 999px; background: #fff1d6; color: #7a4a08; font-weight: 800; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card-title { color: var(--mw-ink); font: 800 18px/1.25 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-pct, .mw-shell .mw-orig-host[data-page="goals"] .gl-pct-big { color: var(--mw-deep); font-family: "Mola Outfit", sans-serif; font-weight: 800; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-bar {
+  position: relative; height: 12px; margin-top: 14px; overflow: visible; border: 1px dashed var(--mw-line); border-radius: 999px; background: rgb(255 255 255 / 75%);
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-bar i {
+  position: relative; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--mw-sea), var(--mw-sun));
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-bar i::after { content: "⛵"; position: absolute; right: -12px; top: -17px; font-size: 20px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-bar.ok i { background: linear-gradient(90deg, var(--mw-sea), var(--mw-ok)); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-bar.ok i::after { content: "🏝️"; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card-foot { border-top: 2px dotted var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-card-foot, .mw-shell .mw-orig-host[data-page="goals"] .gl-card-foot .btn { position: relative; z-index: 1; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-next-k { color: var(--mw-muted); font-weight: 800; }
+
+/* detail goal: papan kapten */
+.mw-shell .mw-orig-host[data-page="goals"] .gl-hero {
+  position: relative; overflow: hidden; padding: 24px 28px; border: 1px solid #fff; border-radius: 44px 44px 44px 14px;
+  background: radial-gradient(circle at 96% 10%, #ffe3a1 0 9%, rgb(255 227 161 / 0%) 10%), linear-gradient(135deg, #fff 0%, #cfeaf7 100%);
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-hero::after { content: "⚓"; position: absolute; right: 30px; bottom: 6px; font-size: 76px; opacity: .14; pointer-events: none; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-hero-title { color: var(--mw-navy); font: 800 32px/1.15 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-detail { gap: 18px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-detail .card { border-radius: 38px 38px 38px 12px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-detail .card h2, .mw-shell .mw-orig-host[data-page="goals"] .gl-card-title { font-family: "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-prog-big, .mw-shell .mw-orig-host[data-page="goals"] .gl-pct-big { color: var(--mw-deep); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms-list { position: relative; gap: 10px; padding-left: 16px; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms-list::before { content: ""; position: absolute; left: 2px; top: 10px; bottom: 10px; border-left: 3px dotted rgb(74 163 214 / 55%); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms {
+  position: relative; padding: 12px 14px; border: 1px solid var(--mw-line); border-radius: 26px 26px 26px 8px; background: #fff;
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms::before {
+  content: ""; position: absolute; left: -22px; top: 18px; width: 14px; height: 14px; border: 2px solid var(--mw-sea); border-radius: 50%; background: #d6eef9; box-shadow: 0 0 0 3px rgb(255 255 255 / 70%);
+}
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms.next { border-color: var(--mw-sun); background: #fffaf0; box-shadow: 0 0 0 4px rgb(247 184 74 / 28%); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms.next::before { border-color: var(--mw-sun); background: #ffe3a1; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms.done { background: #f1fbf6; border-color: #bfe6d4; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms.done::before { border-color: var(--mw-ok); background: rgb(120 210 170 / 90%); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms .tick, .mw-shell .mw-orig-host[data-page="goals"] .gl-task .tick { border-radius: 50%; border-color: var(--mw-sea); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-ms-num { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 999px; background: #fff1d6; color: #7a4a08; font-family: "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-task { border: 1px solid var(--mw-line); border-radius: 22px; background: #fff; }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-dl { border-bottom: 1px dotted var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="goals"] .gl-next-card { background: linear-gradient(160deg, #fffaf0, #d9f0fb); border: 2px solid var(--mw-sun); }
+
+/* ── JURNAL: buku catatan pantai ── */
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-head {
+  gap: 14px; margin-bottom: 14px; padding: 18px 24px; border: 1px solid #fff; border-bottom: 1px solid #fff; border-radius: 44px 44px 44px 14px;
+  background: var(--mw-paper); box-shadow: 0 10px 26px rgb(31 80 130 / 16%);
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-kicker { color: #a8431a; font-weight: 800; letter-spacing: .12em; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-kicker::before { content: "🐚 "; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-date { color: var(--mw-navy); font: 800 30px/1.15 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-tools .btn, .mw-shell .mw-orig-host[data-page="jurnal"] .jr-date-input {
+  border: 1px solid var(--mw-line); border-radius: 999px; background: #fff;
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-summary-wrap { margin-bottom: 14px; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stats { gap: 14px; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat {
+  position: relative; overflow: hidden; padding: 14px 18px; border: 1px solid #fff; border-radius: 34px 34px 34px 10px; background: linear-gradient(160deg, #fff, #e1f3fb);
+  box-shadow: 0 8px 22px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat::after { position: absolute; right: 16px; top: 10px; font-size: 24px; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat:nth-child(1)::after { content: "🌟"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat:nth-child(2)::after { content: "⏳"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat:nth-child(3)::after { content: "🐠"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat .k { color: var(--mw-muted); font-weight: 800; letter-spacing: .06em; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-stat .v { color: var(--mw-deep); font: 800 26px/1.15 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-editor {
+  padding: 24px; border: 1px solid #fff; border-radius: 44px 44px 44px 14px; background: var(--mw-paper);
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-editor-title h2 { font: 800 22px/1.2 "Mola Outfit", sans-serif; color: var(--mw-navy); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-save { padding: 4px 12px; border-radius: 999px; background: #dcf3ea; color: #185f44; font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-grid { gap: 16px; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block {
+  position: relative; padding: 16px 18px 14px; border: 1px solid rgb(74 163 214 / 30%); border-top: 6px solid var(--mw-sun); border-radius: 28px 28px 28px 10px; background: rgb(255 255 255 / 78%);
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(2) { border-top-color: var(--mw-coral); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(3) { border-top-color: var(--mw-sea); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(4) { border-top-color: var(--mw-ok); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:focus-within { border-color: var(--mw-sea); box-shadow: 0 0 0 4px rgb(74 163 214 / 22%); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block-head { align-items: center; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block-head::after { margin-left: auto; font-size: 20px; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(1) .jr-block-head::after { content: "🌅"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(2) .jr-block-head::after { content: "🌊"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(3) .jr-block-head::after { content: "🐚"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-block:nth-child(4) .jr-block-head::after { content: "🧭"; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-num { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 50%; background: #fff1d6; color: #7a4a08; font-family: "Mola Outfit", sans-serif; font-weight: 800; }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-textarea {
+  border: 0; border-radius: 12px; background: repeating-linear-gradient(transparent 0 27px, rgb(74 163 214 / 28%) 27px 28px) 0 4px / 100% 28px, transparent;
+  line-height: 28px; color: var(--mw-ink);
+}
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-prompt { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-goal-link { margin-top: 14px; padding: 10px 16px; border: 1px dashed var(--mw-line); border-radius: 26px; background: rgb(231 245 251 / 70%); }
+.mw-shell .mw-orig-host[data-page="jurnal"] .jr-goal-select { border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; }
+
+@media (max-width: 960px) {
+  .mw-shell .mw-orig-host[data-page="analitik"] .an-kpis, .mw-shell .mw-orig-host[data-page="jurnal"] .jr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mw-shell .mw-orig-host .an-kpi, .mw-shell .mw-orig-host .gl-card { transition: none; }
+}
+
+/* ════════════════ FASE 5: LIBRARY dan PENGATURAN ════════════════ */
+/* ── LIBRARY: rak peta harta karun ── */
+.mw-shell .mw-orig-host[data-page="library"] { display: grid; gap: 14px; align-content: start; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-head {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 0; padding: 14px 20px; border: 1px solid #fff; border-radius: 34px 34px 34px 10px;
+  background: var(--mw-paper); box-shadow: 0 8px 22px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-head .hint { flex: 1 1 280px; margin: 0; color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-head .hint::before { content: "🧰 "; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-overview { display: flex; gap: 12px; flex-wrap: wrap; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-stat {
+  position: relative; align-items: center; min-width: 104px; padding: 12px 20px; border: 1px solid #fff; border-radius: 999px;
+  background: linear-gradient(160deg, #fff, #dff1fa); box-shadow: 0 8px 20px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-stat strong { color: var(--mw-deep); font: 800 24px/1.1 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-stat span { color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-stat.bad { border-color: #f0b3a8; background: linear-gradient(160deg, #fff, #ffe6de); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-filters {
+  gap: 8px; margin: 0; padding: 8px; border: 1px solid #fff; border-radius: 999px; background: rgb(255 255 255 / 72%); box-shadow: 0 6px 16px rgb(31 80 130 / 12%);
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-filters input, .mw-shell .mw-orig-host[data-page="library"] .lib-filters select {
+  min-height: 38px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--mw-line); color: var(--mw-ink); font-weight: 600;
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-filters input[type="search"] { padding: 0 16px; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-split { gap: 18px; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-list { display: flex; flex-direction: column; gap: 10px; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-row {
+  gap: 14px; padding: 12px 18px 12px 12px; border: 1px solid #fff; border-radius: 999px 34px 34px 999px; background: linear-gradient(160deg, #fff 0%, #e6f5fb 100%);
+  box-shadow: 0 8px 20px rgb(31 80 130 / 14%); text-align: left; transition: transform .2s ease, box-shadow .2s ease;
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-row:hover { transform: translateX(4px); border-color: #fff; box-shadow: 0 14px 28px rgb(31 80 130 / 22%); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-row.on { border-color: var(--mw-sun); background: linear-gradient(160deg, #fffaf0, #e6f5fb); box-shadow: 0 0 0 4px rgb(247 184 74 / 28%), 0 10px 24px rgb(31 80 130 / 16%); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-ico {
+  width: 46px; height: 46px; border-radius: 50%; background: #dff1fa; color: var(--mw-deep); font: 800 12px "Mola Outfit", sans-serif;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 80%), 0 0 0 2px rgb(74 163 214 / 30%);
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-ico.t-note { background: #fff1d6; color: #7a4a08; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 80%), 0 0 0 2px rgb(247 184 74 / 45%); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-ico.t-pdf { background: #ffe9e4; color: var(--mw-danger); box-shadow: inset 0 0 0 2px rgb(255 255 255 / 80%), 0 0 0 2px rgb(232 116 74 / 40%); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-ico.t-spreadsheet { background: #dcf3ea; color: #185f44; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 80%), 0 0 0 2px rgb(47 158 114 / 40%); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-ico.t-presentation { background: #ffe3a1; color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-title { color: var(--mw-ink); font: 800 15px/1.3 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-ctx { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-date { color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-side .chip, .mw-shell .mw-orig-host[data-page="library"] .lib-detail .chip {
+  border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700;
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail .chip.warn { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail {
+  position: sticky; top: 0; padding: 22px 22px 18px; overflow: hidden; border: 1px solid #fff; border-radius: 40px 40px 40px 12px; background: var(--mw-paper); box-shadow: 0 10px 26px rgb(31 80 130 / 18%);
+}
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 8px; background: var(--mw-wave-blue) repeat-x center; pointer-events: none; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail > .hint:only-child { padding: 18px 8px; text-align: center; color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail > .hint:only-child::before { content: "🗝️"; display: block; font-size: 36px; margin-bottom: 4px; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-detail h3 { color: var(--mw-navy); font: 800 20px/1.25 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-kv { padding: 6px 0; border-bottom: 1px dotted var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="library"] .lib-kv span { font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="library"] .lib-note { padding: 10px 14px; border-radius: 20px; background: rgb(255 255 255 / 75%); border: 1px dashed var(--mw-line); }
+.mw-shell .mw-orig-host[data-page="library"] .empty {
+  padding: 34px 20px; border: 2px dashed var(--mw-sea); border-radius: 34px; background: rgb(255 255 255 / 62%); color: var(--mw-muted);
+}
+.mw-shell .mw-orig-host[data-page="library"] .empty::before { content: "🗝️"; display: block; margin-bottom: 4px; font-size: 40px; }
+.mw-shell .mw-orig-host[data-page="library"] .empty .big { color: var(--mw-ink); font: 800 17px "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="library"] .gl-out-warn { border-radius: 22px; }
+
+/* ── PENGATURAN: ruang kendali kapal ── */
+.mw-shell .mw-orig-host[data-page="pengaturan"] {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 18px; align-content: start; align-items: start;
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card {
+  position: relative; margin: 0; padding: 28px 24px 20px; overflow: hidden; border: 1px solid #fff; border-radius: 40px 40px 40px 12px;
+  background: linear-gradient(170deg, #fff 0%, #e3f4fb 100%); box-shadow: 0 10px 26px rgb(31 80 130 / 18%);
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 8px; background: var(--mw-wave-blue) repeat-x center; pointer-events: none;
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:first-child { grid-column: 1 / -1; background: radial-gradient(circle at 96% 0%, #ffe3a1 0 8%, rgb(255 227 161 / 0%) 9%), linear-gradient(135deg, #fff 0%, #cfeaf7 100%); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card > h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 2px; color: var(--mw-navy); font: 800 20px/1.2 "Mola Outfit", sans-serif; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card > h2::before {
+  content: "⚙️"; display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: #fff; font-size: 20px;
+  box-shadow: inset 0 0 0 2px rgb(74 163 214 / 30%), 0 4px 10px rgb(31 80 130 / 14%);
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(1) > h2::before { content: "🧭"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(2) > h2::before { content: "⏳"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(3) > h2::before { content: "🎯"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(4) > h2::before { content: "🍅"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(5) > h2::before { content: "🎵"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(6) > h2::before { content: "🪟"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(7) > h2::before { content: "🛟"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card:nth-child(8) > h2::before { content: "📦"; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] > .card > .sub { margin: 2px 0 14px 52px; color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .field { color: var(--mw-ink); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+  min-height: 40px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--mw-line); color: var(--mw-ink); font-weight: 600;
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] :is(input:not([type="checkbox"]):not([type="radio"]), select):focus { box-shadow: inset 0 0 0 2px var(--mw-sea), 0 0 0 4px rgb(74 163 214 / 22%); outline: none; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] label.row {
+  display: flex; align-items: center; gap: 10px; margin: 6px 0; padding: 10px 14px; border: 1px solid var(--mw-line); border-radius: 22px; background: rgb(255 255 255 / 72%); font-weight: 700; cursor: pointer;
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] input[type="checkbox"], .mw-shell .mw-orig-host[data-page="pengaturan"] input[type="radio"] { accent-color: var(--mw-deep); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .hint { color: var(--mw-muted); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .hint.warn { padding: 10px 14px; border: 1px solid var(--mw-sun); border-radius: 20px; background: #fff7e0; color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .seg { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--mw-line); border-radius: 999px; background: var(--mw-soft); overflow: hidden; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .seg button { min-height: 34px; padding: 4px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .seg button + button { border-left: 0; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .seg button.on { background: var(--mw-deep); color: #fff; box-shadow: 0 4px 10px rgb(31 111 168 / 35%); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .section-label { color: var(--mw-deep); font: 800 13px "Mola Outfit", sans-serif; text-transform: none; letter-spacing: .03em; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .chip { border: 1px solid var(--mw-line); border-radius: 999px; background: #fff; color: var(--mw-muted); font-weight: 700; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .chip.ok { background: #dcf3ea; border-color: #9bd8bf; color: #185f44; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .chip.accent { background: #fff1d6; border-color: var(--mw-sun); color: #7a4a08; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .chip.danger { background: #ffe9e4; border-color: #f0b3a8; color: var(--mw-danger); }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .pl-item, .mw-shell .mw-orig-host[data-page="pengaturan"] .mini-task {
+  padding: 8px 12px; border: 1px solid var(--mw-line); border-radius: 22px; background: #fff;
+}
+.mw-shell .mw-orig-host[data-page="pengaturan"] .pl-no { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 50%; background: #fff1d6; color: #7a4a08; font-weight: 800; }
+.mw-shell .mw-orig-host[data-page="pengaturan"] .pl-name { color: var(--mw-ink); font-weight: 800; }
+
+@media (max-width: 960px) {
+  .mw-shell .mw-orig-host[data-page="library"] .lib-filters { border-radius: 30px; }
+  .mw-shell .mw-orig-host[data-page="library"] .lib-detail { position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mw-shell .mw-orig-host[data-page="library"] .lib-row { transition: none; }
+}

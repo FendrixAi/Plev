@@ -1,5 +1,34 @@
 # Catatan perubahan
 
+## Perbaikan Kalender Mola: nama tugas tidak tampil
+- Penyebab: panel tanggal di samping grid membuat kolom hari hanya ±30–70px, dan aturan sel sempit (fase 1) mengubah penanda tugas jadi titik.
+- Perbaikan: panel tanggal kini selalu di bawah grid (kolom hari tetap lebar), nama tugas selalu tampil (maks. 2 baris, font kecil di sel sempit), dan setelah memilih hari halaman otomatis menggulir ke panelnya (`mola-world/pages.js`).
+
+## Mola World fase 5: Library dan Pengaturan (rencana selesai)
+- Gaya baru ada di `renderer/experiences/mola-world/pages.css` (bagian "FASE 5"). Hanya tampilan; markup dan logika tetap dari Original.
+- **Library**: kepala berkertas dengan tombol kapsul; statistik berbentuk mutiara; bilah filter satu kapsul panjang; tiap dokumen jadi baris "botol" dengan lencana bulat berwarna per jenis (tautan, catatan, PDF, spreadsheet); panel detail berupa peti kertas bergaris ombak dan menempel saat digulir.
+- **Pengaturan**: kartu tersusun dua kolom (Experience selebar penuh bermatahari), tiap kartu punya ikon bulat (kompas, jam pasir, target, tomat, musik, jendela, pelampung, kotak), input berbentuk kapsul, opsi centang berupa pil, peringatan berupa catatan kuning.
+- Dengan ini semua halaman Mola (Beranda sampai Pengaturan) sudah punya tampilan sendiri. Modal (edit tugas, tambah banyak, dll.) masih memakai tampilan Original.
+
+## Mola World fase 3 dan 4: Analitik, Goals, Jurnal
+- Gaya baru ada di `renderer/experiences/mola-world/pages.css` (bagian "FASE 3 dan 4"). Hanya tampilan; markup dan logika tetap dari Original.
+- **Analitik**: toolbar jadi panel "sonar" dengan tombol segmen kapsul; enam kartu KPI berbentuk gelembung dengan aksen warna dan hewan laut berbeda; pengamatan jadi balon bicara; kartu grafik berhias garis ombak; tabel berkepala kapsul.
+- **Goals**: statistik berbentuk pulau kecil dengan ikon (jangkar, pulau, bendera, kompas); kartu goal jadi "pulau"; bar progres jadi rute kapal layar (berubah jadi pulau saat selesai); detail goal berpapan kapten dengan jangkar dan matahari; milestone berupa titik-titik rute bergelembung, milestone berikutnya menyala kuning.
+- **Jurnal**: kepala halaman dan editor berkertas hangat; empat blok punya aksen warna dan ikon (matahari terbit, ombak, kerang, kompas); kolom tulis bergaris seperti buku catatan; statistik harian berikon.
+- Sisa: fase 5 (Library dan Pengaturan).
+
+## Mola World fase 2: Riwayat fokus dan Laporan harian
+- Gaya baru ada di `renderer/experiences/mola-world/pages.css` (bagian "FASE 2"). Hanya tampilan; logika tetap dari Original.
+- **Riwayat**: sesi tampil sebagai "jejak renang": tiap hari berupa pulau berbentuk kapsul, garis putus-putus vertikal dengan titik gelembung per sesi (hijau = terhitung, koral = terputus), angka Fokus/Jeda/Target berupa kapsul kecil, catatan pengantar berupa gulungan pesan.
+- **Laporan**: kartu jadi "gulungan dalam botol" berhias garis ombak, dua kolom di layar lebar, kartu hari ini bermatahari dan selebar penuh, angka ringkasan berupa kapsul, "Lihat selengkapnya" berupa tombol kapsul, koreksi berupa catatan kuning, label "Catatan asli" bergembok.
+- **Perbaikan kecil di Original** (`pages/riwayat.js`): penanda tab aktif kini dicari di dalam halaman itu sendiri (`host.querySelectorAll`), bukan lewat `#page-riwayat`. Sebelumnya tab aktif tidak tersorot di Mola karena host Mola tidak memakai id itu. Perilaku di Original tidak berubah.
+
+## Mola World fase 1: Tugas dan Kalender punya tampilan sendiri
+- Berkas baru `renderer/experiences/mola-world/pages.css` (dipasang di `index.html` setelah `fx.css`). Hanya tampilan: markup dan logika tetap dari Original, jadi fitur baru Original otomatis ikut dan tidak ada yang disalin dari Capybara World.
+- **Tugas**: kartu tambah jadi "botol pesan" (form kapsul), tab Aktif/Arsip jadi pelampung, judul kelompok bergaris ombak (Terlambat = pusaran koral), daftar jadi dua kolom gelembung tugas dengan tombol di bawah, status terlambat/berjalan/selesai punya gaya sendiri, kondisi kosong jadi kolam karang.
+- **Kalender**: header kapsul, hari berupa pelampung, sel mingguan membentuk ombak (kolom genap turun), hari ini bermatahari, penanda tugas berupa gelembung (jadi titik di sel sempit lewat container query), panel tanggal jadi "gua laut". Layar sempit: efek ombak dimatikan.
+- Fase berikutnya: Riwayat + Laporan, Analitik, Goals + Jurnal, Library + Pengaturan.
+
 ## Mola World: tampilan penuh ketiga (baru)
 - **Aturan:** fitur dan fungsi mengikuti Original. Tampilan dan animasi bebas per tema.
 - **Tema ikan mola-mola (sunfish), hanya mode siang.** Tidak ada mode malam: `data-theme` dikunci `light` selama Mola aktif (juga saat sistem gelap atau `JF.theme.set('dark')`).
