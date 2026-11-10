@@ -142,6 +142,9 @@
     var root = $('modalRoot');
     var trigger = document.activeElement;
     var dismissible = opts.dismiss !== false;
+    /* X dan Escape tetap boleh menutup; backdrop bisa dimatikan terpisah agar
+       klik tidak sengaja di latar tidak membuang pilihan yang wajib diambil. */
+    var backdropDismiss = dismissible && opts.backdropDismiss !== false;
     var veil = el('div.modal-veil');
     var box = el('div.modal' + (opts.wide ? '.wide' : ''), { role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.title || 'Dialog' });
     var head = el('div.m-head', el('h2', opts.title || ''));
@@ -205,7 +208,7 @@
       }
       if (opts.onClose) opts.onClose(!!confirmed, value);
     }
-    veil.addEventListener('mousedown', function (e) { if (e.target === veil && dismissible) close(false); });
+    veil.addEventListener('mousedown', function (e) { if (e.target === veil && backdropDismiss) close(false); });
 
     var api = {
       close: close, body: body, box: box,

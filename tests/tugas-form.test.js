@@ -26,9 +26,9 @@ test('toggle detail mempertahankan nilai dan memperbarui label/aria', () => {
 });
 
 test('submit membaca seluruh field detail dan memetakan durasi ke detik', () => {
-  assert.match(src, /getElementById\('ta-desc'\)/);
-  assert.match(src, /getElementById\('ta-pri'\)/);
-  assert.match(src, /getElementById\('ta-min'\)/);
+  assert.match(src, /byId\('ta-desc'\)/);
+  assert.match(src, /byId\('ta-pri'\)/);
+  assert.match(src, /byId\('ta-min'\)/);
   assert.match(src, /durationSec: formState\.min > 0 \? formState\.min \* 60 : null/);
 });
 

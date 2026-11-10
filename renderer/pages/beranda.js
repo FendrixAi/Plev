@@ -223,10 +223,13 @@
       t ? 'Target tugas ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')
         : 'Sesi tanpa tugas · ' + ui.fmt.dur(app.rawState().settings.defaultFocusSec)));
 
+    /* Sisa waktu 0 = target sesi sudah habis. Tombol berikutnya melanjutkan
+       sebagai waktu bebas (hitung maju), sama seperti "Lanjut fokus" di dialog. */
+    var canContinue = !!(t && t.left === 0);
     var c3 = ui.el('div.session-controls');
-    c3.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa tugas', function () {
+    c3.appendChild(ui.btn(t ? (canContinue ? 'Lanjut fokus' : 'Mulai fokus') : 'Mulai fokus tanpa tugas', function () {
       var sid = selected; pickNone = false;
-      app.startTask(sid, { standalone: !sid });
+      app.startTask(sid, { standalone: !sid, open: canContinue });
     }, { primary: true }));
     if (t && JF.completion) c3.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { ghost: true }));
     card.appendChild(c3);

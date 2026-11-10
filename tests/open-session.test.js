@@ -101,6 +101,23 @@ test('wiring: Lanjut fokus = waktu bebas (Original + Capybara), Selesai sesi, pe
   assert.match(read('main.js'), /s\.mode === 'run' && s\.open/);
 });
 
+test('Beranda: setelah target sesi habis, tombol mulai menjadi "Lanjut fokus" (waktu bebas)', () => {
+  const ber = read('renderer', 'pages', 'beranda.js');
+  assert.match(ber, /var canContinue = !!\(t && t\.left === 0\)/);
+  assert.match(ber, /canContinue \? 'Lanjut fokus' : 'Mulai fokus'/);
+  assert.match(ber, /open: canContinue/);
+
+  const cw = read('renderer', 'experiences', 'capybara-world', 'beranda.js');
+  assert.match(cw, /var canContinue = !!\(selectedTask && selectedTask\.left === 0\)/);
+  assert.match(cw, /canContinue \? 'Lanjut fokus' : 'Mulai fokus'/);
+  assert.match(cw, /open: canContinue/);
+
+  const mola = read('renderer', 'experiences', 'mola-world', 'beranda.js');
+  assert.match(mola, /var canContinue = !!\(t && t\.left === 0\)/);
+  assert.match(mola, /canContinue \? 'Lanjut fokus' : 'Mulai fokus'/);
+  assert.match(mola, /open: canContinue/);
+});
+
 test('Selesai sesi lalu Lanjut fokus: sesi yang sama dilanjutkan, hitungan tidak kembali ke nol', () => {
   const st = fresh();
   const s = sess.createSession(st, { taskId: 't', taskName: 'A', plannedSec: 1, openEnded: true }, 0);

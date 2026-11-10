@@ -12,6 +12,10 @@
   var sel = {};             // id tugas yang dipilih (aksi massal)
   var formState = { title: '', date: '', desc: '', priority: 'normal', min: null };
 
+  /* Cari field halaman di wadah yang sedang render (Original atau Mola).
+     Field modal (ed-*, rs-*) tetap dicari global karena modal ada di root. */
+  function byId(id) { return host ? host.querySelector('#' + id) : null; }
+
   function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
 
@@ -84,11 +88,12 @@
 
   function submitQuick(e) {
     e.preventDefault();
-    var title = (document.getElementById('ta-title').value || '').trim();
-    var date = document.getElementById('ta-date').value;
-    var descEl = document.getElementById('ta-desc');
-    var priEl = document.getElementById('ta-pri');
-    var minEl = document.getElementById('ta-min');
+    var titleEl = byId('ta-title'), dateEl = byId('ta-date');
+    var title = (titleEl && titleEl.value || '').trim();
+    var date = dateEl ? dateEl.value : '';
+    var descEl = byId('ta-desc');
+    var priEl = byId('ta-pri');
+    var minEl = byId('ta-min');
     formState.title = title; formState.date = date;
     formState.desc = descEl ? descEl.value : '';
     formState.priority = priEl ? priEl.value : 'normal';
@@ -105,7 +110,7 @@
     app.save();
     ui.toast('Tugas ditambahkan: ' + t.title, { kind: 'ok' });
     ui.clear(host); mount(host); render();
-    var t3 = document.getElementById('ta-title'); if (t3) t3.focus();
+    var t3 = byId('ta-title'); if (t3) t3.focus();
     return false;
   }
 
@@ -276,7 +281,7 @@
   }
 
   function openBulkModal() {
-    var defaultDate = (document.getElementById('ta-date') && document.getElementById('ta-date').value) || app.today();
+    var defaultDate = (byId('ta-date') && byId('ta-date').value) || app.today();
     var isSubmitting = false;
 
     var body = ui.el('div.form-grid.bulk-modal-body');
@@ -655,7 +660,7 @@
   }
 
   function renderFilter() {
-    var box = ui.$('ta-filter');
+    var box = byId('ta-filter');
     if (!box) return;
     ui.clear(box);
     if (tab === 'arsip') { box.hidden = true; return; }
@@ -680,7 +685,7 @@
     fs.addEventListener('change', function () {
       dateFilter = fs.value; if (dateFilter !== 'date') pickedDate = '';
       sel = {}; render();
-      if (dateFilter === 'date') { var di = ui.$('ta-fdate'); if (di) di.focus(); }
+      if (dateFilter === 'date') { var di = byId('ta-fdate'); if (di) di.focus(); }
     });
     box.appendChild(fs);
     if (dateFilter === 'date') {
@@ -730,14 +735,16 @@
     return (a.createdAt || 0) - (b.createdAt || 0);
   }
 
-  function render() {
+  function render(container) {
+    if (container) host = container;
     if (!host) return;
-    var list = ui.$('ta-list');
+    var list = byId('ta-list');
     if (!list) return;
     ui.clear(list);
     renderFilter();
-    document.getElementById('tab-aktif').className = tab === 'aktif' ? 'on' : '';
-    document.getElementById('tab-arsip').className = tab === 'arsip' ? 'on' : '';
+    var tabAktif = byId('tab-aktif'), tabArsip = byId('tab-arsip');
+    if (tabAktif) tabAktif.className = tab === 'aktif' ? 'on' : '';
+    if (tabArsip) tabArsip.className = tab === 'arsip' ? 'on' : '';
     var state = app.rawState(), d = app.today();
 
     if (tab === 'arsip') {
@@ -851,7 +858,7 @@
       if (JF.dates.isDayKey(date)) formState.date = date;
       if (location.hash !== '#tugas') location.hash = '#tugas';
       else render();
-      setTimeout(function () { var i = document.getElementById('ta-title'); i && i.focus(); }, 120);
+      setTimeout(function () { var i = byId('ta-title'); i && i.focus(); }, 120);
     }
   };
 })(typeof self !== 'undefined' ? self : this);

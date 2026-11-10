@@ -182,9 +182,11 @@
     card.appendChild(ui.el('p.mw-note', t
       ? 'Target tugas ' + ui.fmt.dur(t.durationSec) + (t.left < t.durationSec ? ' · sisa ' + ui.fmt.mmss(t.left) : '')
       : 'Sesi tanpa tugas · ' + ui.fmt.dur(st.settings.defaultFocusSec)));
+    /* Target sesi sudah habis: lanjutkan sebagai waktu bebas (hitung maju). */
+    var canContinue = !!(t && t.left === 0);
     var ctl = ui.el('div.mw-actions');
-    ctl.appendChild(ui.btn(t ? 'Mulai fokus' : 'Mulai fokus tanpa tugas', function () {
-      var id = selectedTaskId; pickNone = false; app.startTask(id, { standalone: !id });
+    ctl.appendChild(ui.btn(t ? (canContinue ? 'Lanjut fokus' : 'Mulai fokus') : 'Mulai fokus tanpa tugas', function () {
+      var id = selectedTaskId; pickNone = false; app.startTask(id, { standalone: !id, open: canContinue });
     }, { primary: true }));
     if (t && JF.completion) ctl.appendChild(ui.btn('Selesai + ringkasan', function () { JF.completion.start(t.id); }, { ghost: true }));
     card.appendChild(ctl);

@@ -9,6 +9,10 @@
   var anchor = null;            // any day inside the displayed period
   var selected = null;          // day opened in the detail panel
 
+  /* Halaman ini bisa dipasang di lebih dari satu wadah (Original dan Mola).
+     Cari elemen di wadah yang sedang render, jangan lewat id global. */
+  function byId(id) { return host ? host.querySelector('#' + id) : null; }
+
   function mount(container) {
     ui = JF.ui; app = JF.app;
     host = container;
@@ -220,7 +224,7 @@
 
   /* ── header & grid ────────────────────────────────────────────────── */
   function renderHead() {
-    var head = ui.clear(ui.$('cal-head'));
+    var head = ui.clear(byId('cal-head'));
     var label;
     if (view === 'minggu') {
       var s = startOfWeek(anchor), e = JF.dates.addDays(s, 6);
@@ -249,7 +253,7 @@
   }
 
   function renderGrid() {
-    var wrap = ui.clear(ui.$('cal-gridwrap'));
+    var wrap = ui.clear(byId('cal-gridwrap'));
     var grid = ui.el('div.cal-grid' + (view === 'bulan' ? '.month' : '.week'));
     ui.DOW_SHORT.forEach(function (d) { grid.appendChild(ui.el('div.cal-dow', d)); });
 
@@ -272,13 +276,14 @@
   }
 
   function renderPanel() {
-    var slot = ui.clear(ui.$('cal-panel'));
+    var slot = ui.clear(byId('cal-panel'));
     if (selected) slot.appendChild(panel(selected));
-    var layout = ui.$('cal-layout');
+    var layout = byId('cal-layout');
     if (layout) layout.classList.toggle('with-panel', !!selected);
   }
 
-  function render() {
+  function render(container) {
+    if (container) host = container;
     if (!host) return;
     renderHead();
     renderGrid();

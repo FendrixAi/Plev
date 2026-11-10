@@ -337,9 +337,11 @@
     card.appendChild(ui.el('p.cw-timer-note', selectedTask
       ? 'Target tugas ' + ui.fmt.dur(selectedTask.durationSec) + (selectedTask.left < selectedTask.durationSec ? ' · sisa ' + ui.fmt.mmss(selectedTask.left) : '')
       : 'Sesi fokus mandiri · ' + ui.fmt.dur(state.settings.defaultFocusSec)));
-    card.appendChild(ui.btn(selectedTask ? 'Mulai fokus' : 'Mulai fokus mandiri', function () {
+    /* Target sesi sudah habis: lanjutkan sebagai waktu bebas (hitung maju). */
+    var canContinue = !!(selectedTask && selectedTask.left === 0);
+    card.appendChild(ui.btn(selectedTask ? (canContinue ? 'Lanjut fokus' : 'Mulai fokus') : 'Mulai fokus mandiri', function () {
       var sid = selectedTaskId; pickNone = false;
-      app.startTask(sid, { standalone: !sid });
+      app.startTask(sid, { standalone: !sid, open: canContinue });
     }, { primary: true, block: true }));
   }
 

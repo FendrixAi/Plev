@@ -770,6 +770,9 @@
     completionCtx = ctx;
     completionDialog = JF.ui.modal({
       title: 'Sesi fokus selesai',
+      /* Klik latar tidak boleh menutup kartu ini. Pengguna harus memilih
+         langkah berikutnya, atau menutupnya dengan sengaja lewat tombol X. */
+      backdropDismiss: false,
       body: [
         JF.ui.el('div', JF.ui.el('strong', s.taskName)),
         JF.ui.el('div.hint', { style: { marginTop: '4px' } },

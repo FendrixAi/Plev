@@ -8,6 +8,9 @@
   var filt = 'semua';
   var limit = 120;
 
+  /* Cari elemen di wadah halaman yang sedang render (Original atau Mola). */
+  function byId(id) { return host ? host.querySelector('#' + id) : null; }
+
   function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
 
@@ -65,9 +68,10 @@
     return r;
   }
 
-  function render() {
+  function render(container) {
+    if (container) host = container;
     if (!host) return;
-    var list = ui.$('rh-list'), sum = ui.$('rh-sum'), more = ui.$('rh-more');
+    var list = byId('rh-list'), sum = byId('rh-sum'), more = byId('rh-more');
     if (!list) return;
     ui.clear(list); ui.clear(sum); ui.clear(more);
 

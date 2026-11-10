@@ -6,6 +6,9 @@
   var ui, app, host;
   var limit = 40;
 
+  /* Cari elemen di wadah halaman yang sedang render (Original atau Mola). */
+  function byId(id) { return host ? host.querySelector('#' + id) : null; }
+
   function mount(container) {
     ui = JF.ui; app = JF.app; host = container;
     container.appendChild(ui.el('div.hint', { style: { marginBottom: '14px' } },
@@ -141,9 +144,10 @@
     return c;
   }
 
-  function render() {
+  function render(container) {
+    if (container) host = container;
     if (!host) return;
-    var list = ui.$('lp-list'), more = ui.$('lp-more');
+    var list = byId('lp-list'), more = byId('lp-more');
     if (!list) return;
     ui.clear(list); ui.clear(more);
 
