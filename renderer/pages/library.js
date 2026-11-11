@@ -154,6 +154,13 @@
   /* ── details ─────────────────────────────────────────────────────── */
   function kv(box, k, v) { if (v) box.appendChild(ui.el('div.lib-kv', ui.el('span', k), ui.el('b', v))); }
 
+  function copyId(it) {
+    ui.copyText(it.id).then(function (ok) {
+      if (!ok) { ui.toast('Gagal menyalin ID.', { kind: 'err' }); return; }
+      ui.toast(it.type === 'file' ? 'ID disalin. Cari ID ini di folder lokal untuk menemukan file.' : 'ID disalin.', { kind: 'ok' });
+    });
+  }
+
   function revealPath(p) {
     if (p.goal) { location.hash = '#goals?id=' + encodeURIComponent(p.goal.id); }
   }
@@ -186,7 +193,13 @@
     if (it.type === 'file') { kv(info, 'Nama asli', it.originalName); kv(info, 'Ukuran', D().fmtSize(it.size)); }
     if (it.type === 'link') kv(info, 'URL', it.url);
     kv(info, 'Ditambahkan', ui.fmt.dateTime(it.createdAt));
-    kv(info, 'ID', it.id);
+    var idVal = ui.el('div.lib-id-val',
+      ui.el('b', { title: it.id }, it.id),
+      ui.el('button.icb.lib-copy', {
+        type: 'button', title: 'Salin ID', 'aria-label': 'Salin ID',
+        onclick: function () { copyId(it); }
+      }, ui.svg(ui.ICON.copy, 14)));
+    info.appendChild(ui.el('div.lib-kv.lib-kv-id', ui.el('span', 'ID'), idVal));
     detailBox.appendChild(info);
     if (it.description) detailBox.appendChild(ui.el('div.hint', it.description));
     if (it.type === 'note' && it.noteText) detailBox.appendChild(ui.el('div.lib-note', it.noteText));

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { initUpdater } = require('./updater');
@@ -298,6 +298,10 @@ if (!app.requestSingleInstanceLock()) {
   handleTrusted('library:cleanup-pending', (e, req) => libSvc.cleanupPending(req));
   handleTrusted('library:recover-deletions', () => libSvc.recoverPending());
   handleTrusted('library:check-files', (e, req) => libSvc.checkFiles(req));
+  handleTrusted('clipboard:write', (e, text) => {
+    if (typeof text !== 'string' || !text || text.length > 500) return false;
+    try { clipboard.writeText(text); return true; } catch (err) { return false; }
+  });
   app.whenReady().then(() => { try { libSvc.recoverPending(); } catch (e) {} });
   app.on('before-quit', () => { quitting = true; });
   // Sengaja TIDAK keluar otomatis saat semua jendela tertutup: aplikasi tetap

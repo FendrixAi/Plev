@@ -58,6 +58,43 @@
     return n;
   }
 
+  /* Clipboard: Electron's main process is preferred; navigator/textarea is a
+     fallback for tests and non-Electron previews. Returns Promise<boolean>. */
+  function legacyCopy(text) {
+    try {
+      var box = document.createElement('textarea');
+      box.value = text;
+      box.setAttribute('readonly', '');
+      box.style.position = 'fixed';
+      box.style.top = '-1000px';
+      box.style.opacity = '0';
+      document.body.appendChild(box);
+      box.select();
+      var ok = document.execCommand('copy');
+      box.remove();
+      return !!ok;
+    } catch (e) { return false; }
+  }
+  function copyText(text) {
+    text = String(text == null ? '' : text);
+    if (!text) return Promise.resolve(false);
+    var desk = root.desk;
+    if (desk && typeof desk.copyText === 'function') {
+      try {
+        return Promise.resolve(desk.copyText(text)).then(function (ok) {
+          return ok === true ? true : legacyCopy(text);
+        }, function () { return legacyCopy(text); });
+      } catch (e) { /* fall through */ }
+    }
+    var nav = root.navigator;
+    if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
+      try {
+        return nav.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
+      } catch (e) { /* fall through */ }
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
   /* ── Formatters (Indonesian) ─────────────────────────────────────── */
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -273,7 +310,7 @@
   };
 
   JF.ui = {
-    $: $, el: el, btn: btn, clear: clear, append: append, svg: svg,
+    $: $, el: el, btn: btn, clear: clear, append: append, svg: svg, copyText: copyText,
     fmt: fmt, DOW: DOW, DOW_SHORT: DOW_SHORT, MON: MON, MON_SHORT: MON_SHORT,
     dowIndex: dowIndex, monthLabel: monthLabel, dayRel: dayRel,
     modal: modal, confirm: confirm, toast: toast,
@@ -294,7 +331,8 @@
       trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
       undo: '<path d="M9 5L4 10l5 5M4 10h9a6 6 0 1 1 0 12h-3"/>',
       info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
-      down: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>'
+      down: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+      copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
     }
   };
 })(typeof self !== 'undefined' ? self : this);

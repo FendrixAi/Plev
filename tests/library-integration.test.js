@@ -181,6 +181,26 @@ test('legacy items without source/hash load as direct imports and stay usable', 
   assert.ok(Array.isArray(library.contextPaths({ tasks: [], goals: [] }, s.library[0])));
 });
 
+test('file document id is the managed file prefix, so the copied id finds the file on disk', () => {
+  const s = store.createState();
+  const fileName = 'libfile_0123456789abcdef_Laporan.xlsx';
+  const it = library.registerFile(s, {
+    fileName, originalName: 'Laporan.xlsx', contentHash: HASH_A, source: { module: 'library' }
+  }, 1).item;
+  assert.equal(it.id, 'libfile_0123456789abcdef');
+  assert.equal(it.fileName.slice(0, it.id.length + 1), it.id + '_');
+  assert.equal(library.findByFileName(s, fileName).id, it.id);
+
+  // Data lama dengan id lib_* tetap bisa dicari setelah id diselaraskan.
+  const old = { library: [{
+    id: 'lib_lama', type: 'file', title: 'Lama', fileName: 'libfile_fedcba9876543210_Lama.pdf',
+    createdAt: 1, updatedAt: 1, taskIds: [], goalIds: [], milestoneRefs: []
+  }] };
+  library.normalize(old, 2);
+  assert.equal(old.library[0].id, 'libfile_fedcba9876543210');
+  assert.equal(old.library[0].fileName.slice(0, old.library[0].id.length + 1), old.library[0].id + '_');
+});
+
 test('registerFile rejects traversal names and bad input', () => {
   const s = store.createState();
   assert.equal(library.registerFile(s, { fileName: '../evil.txt' }, 1).ok, false);
@@ -310,12 +330,29 @@ test('wiring: IPC channels are trusted-only, exposed via preload, and the build 
   assert.doesNotMatch(docs, /ipcRenderer|require\(|localStorage/);
 });
 
-test('wiring: Goals task rows expose Output, Library has no manual id entry, Analitik export registers a document', () => {
+test('wiring: Goals task rows expose Output, Library has no manual id entry, Analitik export never fills Library', () => {
   const g = fs.readFileSync(path.join(root, 'renderer', 'pages', 'goals.js'), 'utf8');
   const l = fs.readFileSync(path.join(root, 'renderer', 'pages', 'library.js'), 'utf8');
   const a = fs.readFileSync(path.join(root, 'renderer', 'pages', 'analitik.js'), 'utf8');
+  const cw = fs.readFileSync(path.join(root, 'renderer', 'experiences', 'capybara-world', 'pages.js'), 'utf8');
   assert.match(g, /attachToTask\(t\.id\)/);
   assert.match(g, /setRequiresOutput/);
   assert.doesNotMatch(l, /ID tugas|ID goal|taskIds: parseIds/);
-  assert.match(a, /registerGenerated\(\{\s*module: 'analitik'/);
+  assert.doesNotMatch(a, /registerGenerated/, 'unduhan Excel tidak boleh masuk Library');
+  assert.doesNotMatch(cw, /registerGenerated\(\{\s*module: 'analitik'/, 'unduhan Excel Capybara tidak boleh masuk Library');
+});
+
+test('wiring: Library detail copies the document id with the standard copy icon', () => {
+  const l = fs.readFileSync(path.join(root, 'renderer', 'pages', 'library.js'), 'utf8');
+  const ui = fs.readFileSync(path.join(root, 'renderer', 'ui.js'), 'utf8');
+  const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+  const preload = fs.readFileSync(path.join(root, 'preload.js'), 'utf8');
+  const cw = fs.readFileSync(path.join(root, 'renderer', 'experiences', 'capybara-world', 'pages.js'), 'utf8');
+  assert.match(l, /Salin ID/);
+  assert.match(l, /ui\.svg\(ui\.ICON\.copy/);
+  assert.match(ui, /copy:\s*'<rect/);
+  assert.match(ui, /copyText: copyText/);
+  assert.match(cw, /cw-copy-id/);
+  assert.match(preload, /copyText: \(text\) => ipcRenderer\.invoke\('clipboard:write'/);
+  assert.match(main, /handleTrusted\('clipboard:write'/);
 });

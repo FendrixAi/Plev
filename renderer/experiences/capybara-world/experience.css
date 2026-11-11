@@ -433,6 +433,8 @@ textarea.cw-input { min-height: 78px; resize: vertical; }
 .cw-library-row > .cw-inline-actions { grid-column: 2; }
 .cw-library-row.is-selected { background: color-mix(in srgb, var(--cw-soft) 42%, transparent); }
 .cw-library-context { grid-column: 2; margin: 0; color: var(--cw-muted); font-size: 11px; overflow-wrap: anywhere; }
+.cw-library-id { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cw-copy-id { min-height: 0; padding: 4px 6px; }
 
 /* Shared singletons (#modalRoot, #toastRoot) exist in BOTH experiences, so these
    overrides must stay scoped to Capybara World. Without the scope they leak into

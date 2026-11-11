@@ -375,7 +375,8 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
         ui.toast('Laporan Excel diunduh.', { kind: 'ok' });
-        if (D) D.registerGenerated({ module: 'analitik', name: name, bytes: bytes, title: 'Laporan Analitik ' + res.period.from + ' s/d ' + res.period.to });
+        // Laporan Excel sengaja TIDAK didaftarkan ke Library: file unduhan
+        // bersifat sementara dan tidak boleh menumpuk lampiran dokumen.
       } catch (e) { ui.toast('Gagal membuat laporan: ' + e.message, { kind: 'err' }); }
     });
   }

@@ -57,7 +57,7 @@
   /* ── register one imported file (shared by every entry point) ───── */
   function registerImported(imp, source, taskId) {
     var r = JF.library.registerFile(st(), {
-      fileName: imp.fileName, originalName: imp.originalName, size: imp.size, mimeType: imp.mimeType,
+      id: imp.id, fileName: imp.fileName, originalName: imp.originalName, size: imp.size, mimeType: imp.mimeType,
       contentHash: imp.hash, source: source, taskId: taskId
     }, Date.now());
     if (r.ok) status[imp.fileName] = { exists: true, regular: true };
@@ -120,7 +120,7 @@
     return desk().libraryStoreGenerated({ name: opts.name, text: opts.text, bytes: opts.bytes, reuse: reuseHints() }).then(function (imp) {
       if (!imp || !imp.ok) return { ok: false, reason: imp && imp.reason || 'copy-failed' };
       var r = JF.library.registerFile(st(), {
-        fileName: imp.fileName, originalName: imp.originalName, size: imp.size, mimeType: imp.mimeType, contentHash: imp.hash,
+        id: imp.id, fileName: imp.fileName, originalName: imp.originalName, size: imp.size, mimeType: imp.mimeType, contentHash: imp.hash,
         source: { module: opts.module, entityId: opts.entityId || null }, taskId: opts.taskId, title: opts.title, description: opts.description
       }, Date.now());
       if (!r.ok) return discardUnregistered(imp).then(function () { return { ok: false, reason: r.reason }; });

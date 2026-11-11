@@ -27,5 +27,6 @@ contextBridge.exposeInMainWorld('desk', {
   libraryDeleteFile: (req) => ipcRenderer.invoke('library:delete-file', req),
   libraryCleanupPending: (req) => ipcRenderer.invoke('library:cleanup-pending', req),
   libraryRecoverDeletions: () => ipcRenderer.invoke('library:recover-deletions'),
-  libraryCheckFiles: (req) => ipcRenderer.invoke('library:check-files', req)
+  libraryCheckFiles: (req) => ipcRenderer.invoke('library:check-files', req),
+  copyText: (text) => ipcRenderer.invoke('clipboard:write', text)
 });

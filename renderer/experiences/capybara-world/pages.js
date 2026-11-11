@@ -522,7 +522,8 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
         ui.toast('Laporan Excel diunduh.', { kind: 'ok' });
-        if (D && D.registerGenerated) D.registerGenerated({ module: 'analitik', name: name, bytes: bytes, title: 'Laporan Analitik ' + res.period.from + ' s/d ' + res.period.to });
+        // Laporan Excel sengaja TIDAK didaftarkan ke Library: file unduhan
+        // bersifat sementara dan tidak boleh menumpuk lampiran dokumen.
       } catch (e) { ui.toast('Gagal membuat laporan: ' + e.message, { kind: 'err' }); }
     });
   }
@@ -1676,6 +1677,13 @@
   var libraryType = 'all';
   var LIB_KIND = { file: ['📄', 'File'], link: ['🔗', 'Tautan'], note: ['📝', 'Catatan'] };
 
+  function copyLibraryId(item) {
+    ui.copyText(item.id).then(function (ok) {
+      if (!ok) { ui.toast('Gagal menyalin ID.', { kind: 'err' }); return; }
+      ui.toast(item.type === 'file' ? 'ID disalin. Cari ID ini di folder lokal untuk menemukan file.' : 'ID disalin.', { kind: 'ok' });
+    });
+  }
+
   function libraryCard(item, host, listRefresh) {
     var kind = LIB_KIND[item.type] || ['📄', 'Item'];
     var selected = selectedLibraryId === item.id;
@@ -1703,6 +1711,12 @@
     if (selected) {
       var paths = JF.library.contextPaths(state(), item);
       body.appendChild(C.el('p.cw-library-context', paths.length ? 'Konteks: ' + paths.map(function (path) { return path.label; }).join(' · ') : 'Dokumen mandiri'));
+      body.appendChild(C.el('p.cw-library-context.cw-library-id',
+        C.el('span', 'ID: ' + item.id),
+        C.el('button.cw-button.cw-quiet.cw-copy-id', {
+          type: 'button', title: 'Salin ID', 'aria-label': 'Salin ID',
+          onclick: function () { copyLibraryId(item); }
+        }, ui.svg(ui.ICON.copy, 13))));
       if (item.type === 'note' && item.noteText) body.appendChild(C.el('p.cw-library-context', item.noteText));
     }
     card.appendChild(body);

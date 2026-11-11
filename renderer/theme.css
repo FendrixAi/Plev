@@ -2079,6 +2079,10 @@ button.lib-stat { cursor: pointer; }
 .lib-kv { display: flex; justify-content: space-between; gap: 10px; font-size: var(--fs-sm); }
 .lib-kv span { color: var(--muted); }
 .lib-kv b { font-weight: 600; overflow-wrap: anywhere; text-align: right; }
+.lib-kv-id { align-items: flex-start; }
+.lib-id-val { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+.lib-id-val b { min-width: 0; }
+.lib-copy { flex: 0 0 auto; width: 28px; height: 28px; margin: -4px -6px -4px 0; }
 .lib-note { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-sm); }
 @media (max-width: 900px) { .lib-split { grid-template-columns: minmax(0, 1fr); } .lib-detail { position: static; } }
 

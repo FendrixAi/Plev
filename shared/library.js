@@ -69,11 +69,24 @@
     if (!goalId || !milestoneId) return null;
     return { goalId: goalId, milestoneId: milestoneId };
   }
+  /* Managed files are named "<file id>_<original name>" by the main process
+     (e.g. libfile_0123456789abcdef_Laporan.xlsx). Keep the Library item id in
+     sync with that prefix so a copied id can be searched in the local folder. */
+  function managedFileId(fileName) {
+    var parts = String(fileName || '').split('_');
+    return parts.length > 1 && parts[0] === 'libfile' && parts[1] ? 'libfile_' + parts[1] : null;
+  }
   function normItem(it, now, usedIds) {
     if (!isObj(it)) return null;
     var type = TYPES.indexOf(it.type) >= 0 ? it.type : null;
     if (!type) return null;
-    var id = idOf(it.id);
+    var fn = null, fileId = null;
+    if (type === 'file') {
+      fn = safeFileName(it.fileName || it.managedFileName);
+      if (!fn) return null;
+      fileId = managedFileId(fn);
+    }
+    var id = fileId || idOf(it.id);
     if (!id || usedIds[id]) id = model.uid('lib');
     usedIds[id] = true;
     var createdAt = num(it.createdAt) > 0 ? num(it.createdAt) : now;
@@ -92,8 +105,6 @@
         .map(normMilestoneRef).filter(Boolean)
     };
     if (type === 'file') {
-      var fn = safeFileName(it.fileName || it.managedFileName);
-      if (!fn) return null;
       base.fileName = fn;
       if (it.originalName != null) base.originalName = str(it.originalName, LIMITS.fileName);
       if (it.mimeType != null) base.mimeType = str(it.mimeType, 120);
@@ -251,8 +262,10 @@
     if (state.events.length > 5000) state.events.splice(0, state.events.length - 5000);
   }
   /**
-   * Register a managed file. input: { fileName, originalName, size, mimeType,
+   * Register a managed file. input: { id?, fileName, originalName, size, mimeType,
    * contentHash, source:{module, entityId}, taskId?, title?, description? }.
+   * id comes from the file service; the managed file name's prefix wins so the
+   * displayed id always remains searchable on disk.
    * Never creates a second record for bytes already in Library (same hash or
    * same managed file name): the existing document just gains the new context.
    * Returns { ok, item, existing, changed } or { ok:false, reason }.
@@ -275,7 +288,7 @@
     var item;
     try {
       item = createItem({
-        type: 'file', title: input.title || input.originalName || fileName, description: input.description,
+        id: input.id, type: 'file', title: input.title || input.originalName || fileName, description: input.description,
         fileName: fileName, originalName: input.originalName, mimeType: input.mimeType, size: input.size,
         contentHash: input.contentHash, source: input.source,
         taskIds: ctx.taskIds, goalIds: ctx.goalIds, milestoneRefs: ctx.milestoneRefs
