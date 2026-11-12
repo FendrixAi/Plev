@@ -11,6 +11,7 @@
   var MESSAGES = {
     'source-missing': 'File sumber tidak ditemukan.', 'not-file': 'Itu bukan file biasa.',
     'too-large': 'File terlalu besar (maksimal 25 MB).', 'unsupported-type': 'Jenis file ini belum didukung.',
+    'blocked-type': 'File jenis ini tidak dibuka langsung demi keamanan. Foldernya ditampilkan, buka manual kalau kamu yakin file ini aman.',
     'copy-failed': 'Gagal menyalin file.', 'bad-token': 'Pilihan file kedaluwarsa, coba lagi.',
     'token-expired': 'Pilihan file kedaluwarsa, coba lagi.', 'too-many': 'Maksimal 10 file sekaligus.',
     'invalid-item': 'Data file tidak valid.', 'bad-file-name': 'Nama file tidak valid.'

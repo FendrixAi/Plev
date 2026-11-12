@@ -117,3 +117,9 @@
 - **Pengaturan jadi ruang kontrol bertab**: Tampilan, Ritme fokus, Kartu mini, Musik, dan Data. Pilihan experience berupa dua kartu besar, mode warna berupa segmented control, dan kartu CapyRafi menampilkan level dan aturan XP. Pengaturan timer memakai kolom dua lajur dan saklar untuk opsi hidup/mati.
 - **Rak Pengetahuan (Library)**: dokumen tampil sebagai buku dengan punggung berwarna per jenis (file, tautan, catatan), filter jenis, dan pencarian langsung yang tidak lagi merender ulang halaman atau kehilangan fokus saat mengetik.
 - **Perbaikan visual dari tinjauan tangkapan layar**: stempel BERES tidak lagi menimpa judul, agenda kalender tidak sempit, kontrol Analitik rapi, tombol di Beranda memakai gaya Capybara, dan kartu tertaut di Goals lebih ringkas.
+
+## 2026-11-11 — Perbaikan audit keamanan (F-03, F-01a, F-02)
+- **F-03:** Library tidak lagi menerima `.js`, `.ts`, `.html`, `.css`. File lama bertipe script/HTML/executable yang sudah ada di Library tidak akan dibuka lewat OS; foldernya ditampilkan (`blocked-type`).
+- **F-01a:** `autoInstallOnAppQuit = false`. Update hanya terpasang lewat alur resmi (cadangan data dulu, hitung mundur yang bisa dibatalkan, atau "Pasang sekarang").
+- **F-02:** Electron 33.2.1 -> 45.3.0; `package-lock.json` disinkronkan (juga versi aplikasi 1.1.0).
+- Test baru: `tests/security-fixes.test.js`.

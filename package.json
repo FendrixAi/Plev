@@ -1,6 +1,6 @@
 {
   "name": "jam-fokus",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Jam analog dengan pengatur waktu fokus dan daftar tugas",
   "main": "main.js",
   "scripts": {
@@ -53,7 +53,7 @@
     ]
   },
   "devDependencies": {
-    "electron": "33.2.1",
+    "electron": "45.3.0",
     "electron-builder": "25.1.8"
   },
   "author": "Iqbal Rafi",

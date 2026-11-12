@@ -52,7 +52,7 @@ function initUpdater(deps) {
     if (au) return au;
     au = (deps.loadUpdater || function () { return require('electron-updater').autoUpdater; })();
     au.autoDownload = true;
-    au.autoInstallOnAppQuit = true;   // cadangan: kalau tidak sempat restart, terpasang saat Keluar dari tray
+    au.autoInstallOnAppQuit = false;  // pemasangan hanya lewat alur resmi (cadangan data dulu); tidak terpasang diam-diam saat Keluar
     return au;
   }
 

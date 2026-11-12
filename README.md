@@ -69,7 +69,7 @@ The selected experience can be managed through the application's display setting
 
 ## 🛠️ Built With
 
-- **Electron 33.2.1** — Desktop application framework.
+- **Electron 45.3.0** — Desktop application framework.
 - **Node.js** — JavaScript runtime.
 - **JavaScript, HTML, and CSS** — Application interface and logic.
 - **electron-builder 25.1.8** — Windows application packaging.
