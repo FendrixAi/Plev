@@ -141,3 +141,101 @@ Format sel: `berkas#fungsi: penanda` (jalur relatif ke `renderer/`).
 | Fitur | Original | mola-world | Status |
 |---|---|---|---|
 
+
+## Tampilan: fast-food
+
+### A. Simbol logika (dipindai otomatis)
+
+| Simbol | Status | Catatan |
+|---|---|---|
+| `app.breakInfo` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.currentSession` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.emit` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.findTask` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.finishOpen` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.music` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.on` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.pause` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.rawState` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.removeLegacyCopies` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.reopenTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.replaceState` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.resume` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.save` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.selectedTaskId` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.skipBreak` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.startTask` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.stopPermanent` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.storageUsage` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `app.today` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `app.todayStats` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `backup.MAX_CHARS` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `backup.validate` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `completion.chip` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `completion.start` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `completion.summaryBlock` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.addDays` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `dates.buildDay` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.dayKey` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.isDayKey` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `dates.parseDay` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `dates.startOfDay` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `documents.attachToTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.availLabel` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.availability` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.ensureFresh` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.fmtSize` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.message` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.open` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.refreshStatus` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.removeFromTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `documents.statusMap` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.METHOD_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.STATUS_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `goals.list` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `homeExperience.get` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `homeExperience.set` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.count` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.createAutosave` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.entryFor` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.save` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.setGoalLink` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `journal.summary` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `library.attachmentsForTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `library.query` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.PRIORITIES` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.PRIORITY_LABEL` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `model.isOverdue` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `report.buildReport` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `report.fileName` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `sessions.activeSeconds` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `sessions.isOpen` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `sessions.officialSeconds` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `sessions.remainingSeconds` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `sessions.summary` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.activeTasks` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `store.addTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.archiveTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.archivedTasks` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.clearFocusTargetOverride` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.deleteArchivedTasks` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.editTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.ev` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.find` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.focusTargetFor` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.overdueTasks` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `store.rescheduleTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.restoreTask` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setFocusTargetDefault` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setFocusTargetOverride` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.setRequiresOutput` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `store.upcomingTasks` | ported | dipakai langsung oleh kode Fast Food (beranda.js / experience.js) |
+| `taskUI.openEdit` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `taskUI.prefillAdd` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `updateUI.mount` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+| `xlsx.build` | na | dipakai lewat halaman Original yang dipasang langsung di Mola (JF.pages), bukan kode Mola sendiri |
+
+### B. Fitur per halaman
+
+| Fitur | Original | fast-food | Status |
+|---|---|---|---|

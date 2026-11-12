@@ -22,14 +22,18 @@
     b.title = label;
   }
   function apply(m, persist, notify) {
-    mode = m === 'dark' ? 'dark' : 'light';
-    // Mola World hanya punya mode siang: atribut tetap 'light' walau pilihan/sistem gelap.
-    document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-experience') === 'mola-world' ? 'light' : mode);
-    if (persist) { try { localStorage.setItem(KEY, mode); } catch (e) {} }
-    if (root.desk && root.desk.setTheme) { try { root.desk.setTheme(mode); } catch (e) {} }
-    paintToggle();
-    // Grafik (canvas) membaca warna saat digambar: render ulang halaman aktif.
-    if (notify && JF.app && JF.app.emit) { try { JF.app.emit('change'); } catch (e) {} }
+    var run = function () {
+      mode = m === 'dark' ? 'dark' : 'light';
+      // Mola World hanya punya mode siang: atribut tetap 'light' walau pilihan/sistem gelap.
+      document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-experience') === 'mola-world' ? 'light' : mode);
+      if (persist) { try { localStorage.setItem(KEY, mode); } catch (e) {} }
+      if (root.desk && root.desk.setTheme) { try { root.desk.setTheme(mode); } catch (e) {} }
+      paintToggle();
+      // Grafik (canvas) membaca warna saat digambar: render ulang halaman aktif.
+      if (notify && JF.app && JF.app.emit) { try { JF.app.emit('change'); } catch (e) {} }
+    };
+    // Fast Food menganimasikan perpindahan siang/malam (View Transitions); experience lain langsung berganti.
+    if (notify && JF.themeTransition && JF.themeTransition.run) JF.themeTransition.run(run); else run();
   }
 
   JF.theme = {

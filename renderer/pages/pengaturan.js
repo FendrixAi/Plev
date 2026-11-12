@@ -36,6 +36,7 @@
       select.appendChild(ui.el('option', { value: 'original' }, 'Original'));
       select.appendChild(ui.el('option', { value: 'capybara-world' }, 'Capybara World'));
       select.appendChild(ui.el('option', { value: 'mola-world' }, 'Mola World (siang)'));
+      select.appendChild(ui.el('option', { value: 'fast-food' }, 'Fast Food (siang & malam)'));
       select.value = JF.homeExperience.get();
       select.addEventListener('change', function () {
         try {

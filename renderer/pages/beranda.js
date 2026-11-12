@@ -53,12 +53,12 @@
   }
 
   function storedExperience() {
-    try { var v = localStorage.getItem('jamfokus.homeExperience'); return v === 'capybara-world' || v === 'mola-world' ? v : 'original'; }
+    try { var v = localStorage.getItem('jamfokus.homeExperience'); return v === 'capybara-world' || v === 'mola-world' || v === 'fast-food' ? v : 'original'; }
     catch (e) { return 'original'; }
   }
 
   function setStoredExperience(experience) {
-    if (experience !== 'original' && experience !== 'capybara-world' && experience !== 'mola-world') {
+    if (experience !== 'original' && experience !== 'capybara-world' && experience !== 'mola-world' && experience !== 'fast-food') {
       throw new Error('Pilihan tema Beranda tidak dikenal.');
     }
     localStorage.setItem('jamfokus.homeExperience', experience);

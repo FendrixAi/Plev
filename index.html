@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' file:; font-src 'self' file:; media-src blob:; img-src data:; connect-src 'none'">
 <title>Jam Fokus</title>
-<script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-experience',localStorage.getItem('jamfokus.homeExperience')==='capybara-world'?'capybara-world':localStorage.getItem('jamfokus.homeExperience')==='mola-world'?'mola-world':'original');if(document.documentElement.getAttribute('data-experience')==='mola-world')document.documentElement.setAttribute('data-theme','light');}catch(e){document.documentElement.setAttribute('data-experience','original');}})();</script>
+<script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-experience',localStorage.getItem('jamfokus.homeExperience')==='capybara-world'?'capybara-world':localStorage.getItem('jamfokus.homeExperience')==='mola-world'?'mola-world':localStorage.getItem('jamfokus.homeExperience')==='fast-food'?'fast-food':'original');if(document.documentElement.getAttribute('data-experience')==='mola-world')document.documentElement.setAttribute('data-theme','light');}catch(e){document.documentElement.setAttribute('data-experience','original');}})();</script>
 <link id="original-theme" rel="stylesheet" href="renderer/theme.css">
 <script>if(document.documentElement.getAttribute('data-experience')==='capybara-world'){document.getElementById('original-theme').disabled=true;}</script>
 <link rel="stylesheet" href="renderer/experiences/capybara-world/beranda.css">
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="renderer/experiences/mola-world/mola.css">
 <link rel="stylesheet" href="renderer/experiences/mola-world/fx.css">
 <link rel="stylesheet" href="renderer/experiences/mola-world/pages.css">
+<link rel="stylesheet" href="renderer/experiences/fast-food/fastfood.css">
 <link rel="stylesheet" href="renderer/update.css">
 </head>
 <body>
@@ -147,6 +148,10 @@
 <script src="renderer/experiences/mola-world/fx.js"></script>
 <script src="renderer/experiences/mola-world/beranda.js"></script>
 <script src="renderer/experiences/mola-world/pages.js"></script>
+<script src="renderer/experiences/fast-food/sprites.js"></script>
+<script src="renderer/experiences/fast-food/burger.js"></script>
+<script src="renderer/experiences/fast-food/beranda.js"></script>
+<script src="renderer/experiences/fast-food/pages.js"></script>
 <script src="renderer/pages/beranda.js"></script>
 <script src="renderer/pages/tugas.js"></script>
 <script src="renderer/pages/kalender.js"></script>
@@ -160,6 +165,7 @@
 <script src="renderer/update-ui.js"></script>
 <script src="renderer/experiences/capybara-world/experience.js"></script>
 <script src="renderer/experiences/mola-world/experience.js"></script>
+<script src="renderer/experiences/fast-food/experience.js"></script>
 <script src="renderer/boot.js"></script>
 </body>
 </html>

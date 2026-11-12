@@ -1,5 +1,16 @@
 # Catatan perubahan
 
+## Fast Food fase 1: fondasi, shell "Diner Counter", Beranda, siang dan malam
+- Experience baru **Fast Food (siang & malam)** di Pengaturan, di folder `renderer/experiences/fast-food/`. Mengikuti toggle tema (tidak dipaksa terang seperti Mola). Logika tetap dari Original (JF.app / JF.store / JF.sessions / JF.completion); XP burger dihitung dari `JF.capyrafi.compute`, tanpa penyimpanan baru.
+- **Layout**: satu layar fokus tanpa sidebar. Bilah atas tipis (merek, level burger, timer mini saat di halaman lain, musik, kartu mini, tombol siang/malam), **dock bawah** (Statistics | Settings | Menu) dan **Menu Board** chalkboard yang naik dari dock berisi 10 halaman. Halaman selain Beranda memakai kepala "neon sign".
+- **Beranda "Counter"**: timer besar, chip Focus Time, burger/fries/cup/lampu gantung, lantai kotak-kotak berperspektif; picker tugas (filter tanggal), Mulai/Pause/Lanjutkan/Hentikan/Selesai sesi/Selesai + ringkasan/Lewati istirahat; di bawahnya Papan skor, Order hari ini, Order terlambat, dan **Burger Builder** (bun, patty, keju, tomat, selada, bun atas + topi koki sesuai XP; konfeti dan toast saat naik tahap).
+- **Transisi**: pindah halaman memakai tirai kotak-kotak; siang <-> malam memakai bukaan melingkar bermata lembut dari tombol tema (View Transitions), disusul neon berkedip dan lampu menyala (malam) atau lampu berayun dan papan memantul (siang). Menghormati `prefers-reduced-motion`; tanpa View Transitions langsung berganti.
+- Aset: 20 sprite dari lembar ilustrasi + irisan bun dipotong jadi WebP transparan dan **ditanam sebagai data URI** di `sprites.js` (CSP hanya mengizinkan `img-src data:`, dan build hanya menyertakan js/css/font).
+- Halaman selain Beranda sementara memakai halaman Original di dalam panggung diner (kulit warna dan kartu berhias strip kotak-kotak). Didesain ulang per halaman di fase 2-4.
+- `theme.js`: hook `JF.themeTransition` (hanya aktif untuk perubahan tema oleh pengguna dan hanya saat Fast Food aktif). `boot.js`, `index.html`, `pengaturan.js`, `beranda.js`: pendaftaran experience ketiga.
+- Tes: `tests/fast-food.test.js` (6 tes), bagian Fast Food di `PARITY.md`. Smoke test jsdom: 10 halaman terender, sesi mulai/jeda/lanjut, ganti tema, menu board, 0 error.
+- Sisa: fase 2 (Tugas, Kalender), fase 3 (Riwayat, Laporan, Analitik), fase 4 (Goals, Jurnal, Library, Pengaturan, responsif), modal dan kartu mini.
+
 ## Perbaikan Kalender Mola: nama tugas tidak tampil
 - Penyebab: panel tanggal di samping grid membuat kolom hari hanya ±30–70px, dan aturan sel sempit (fase 1) mengubah penanda tugas jadi titik.
 - Perbaikan: panel tanggal kini selalu di bawah grid (kolom hari tetap lebar), nama tugas selalu tampil (maks. 2 baris, font kecil di sel sempit), dan setelah memilih hari halaman otomatis menggulir ke panelnya (`mola-world/pages.js`).

@@ -14,6 +14,14 @@
     return JF.homeExperience && JF.homeExperience.get() === 'mola-world';
   }
 
+  function isFastFood() {
+    return JF.homeExperience && JF.homeExperience.get() === 'fast-food';
+  }
+
+  function selectedExperienceId() {
+    return isCapybaraWorld() ? 'capybara-world' : isMolaWorld() ? 'mola-world' : isFastFood() ? 'fast-food' : 'original';
+  }
+
   function pageIdFromHash() {
     var h = (location.hash || '').replace(/^#/, '').split('?')[0];
     if (h && JF.pages.get(h)) return h;
@@ -28,12 +36,16 @@
 
     var capybaraWorld = isCapybaraWorld();
     var molaWorld = isMolaWorld();
-    activeExperience = capybaraWorld ? 'capybara-world' : molaWorld ? 'mola-world' : 'original';
+    var fastFood = isFastFood();
+    activeExperience = selectedExperienceId();
     if (JF.experiences && JF.experiences.capybaraWorld) {
       JF.experiences.capybaraWorld.setActive(capybaraWorld);
     }
     if (JF.experiences && JF.experiences.molaWorld) {
       JF.experiences.molaWorld.setActive(molaWorld);
+    }
+    if (JF.experiences && JF.experiences.fastFood) {
+      JF.experiences.fastFood.setActive(fastFood);
     }
     if (capybaraWorld) {
       JF.experiences.capybaraWorld.render(id);
@@ -41,6 +53,10 @@
     }
     if (molaWorld) {
       JF.experiences.molaWorld.render(id);
+      return;
+    }
+    if (fastFood) {
+      JF.experiences.fastFood.render(id);
       return;
     }
 
@@ -140,6 +156,8 @@
       if (JF.experiences && JF.experiences.capybaraWorld) JF.experiences.capybaraWorld.frame(ts);
     } else if (activeExperience === 'mola-world') {
       if (JF.experiences && JF.experiences.molaWorld) JF.experiences.molaWorld.frame(ts);
+    } else if (activeExperience === 'fast-food') {
+      if (JF.experiences && JF.experiences.fastFood) JF.experiences.fastFood.frame(ts);
     } else if (cur && cur.frame) { try { cur.frame(ts); } catch (e) { /* don't kill the loop */ } }
     requestAnimationFrame(frame);
   }
@@ -162,7 +180,7 @@
 
     app.on('change', function () {
       refreshBadges();
-      var selectedExperience = isCapybaraWorld() ? 'capybara-world' : isMolaWorld() ? 'mola-world' : 'original';
+      var selectedExperience = selectedExperienceId();
       if (selectedExperience !== activeExperience) {
         showPage(currentId || pageIdFromHash());
         return;
@@ -173,6 +191,10 @@
       }
       if (selectedExperience === 'mola-world') {
         JF.experiences.molaWorld.refresh(currentId || pageIdFromHash());
+        return;
+      }
+      if (selectedExperience === 'fast-food') {
+        JF.experiences.fastFood.refresh(currentId || pageIdFromHash());
         return;
       }
       refreshTopbar();
