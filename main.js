@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell, clipboard } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, nativeTheme, screen, dialog, shell, clipboard, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { initUpdater } = require('./updater');
@@ -11,10 +11,24 @@ const alive = (w) => w && !w.isDestroyed();
 let updater = { start() {}, check() {} };
 
 // Hanya jendela milik aplikasi ini (utama dan kartu mini) yang boleh memanggil IPC.
-const trusted = (e) => !!e && !!e.sender &&
-  ((alive(win) && e.sender === win.webContents) || (alive(miniWin) && e.sender === miniWin.webContents));
+const trustedContents = (wc) => !!wc &&
+  ((alive(win) && wc === win.webContents) || (alive(miniWin) && wc === miniWin.webContents));
+// IPC hanya dari frame utama jendela tepercaya; iframe/subframe tidak boleh memanggil IPC.
+const trustedFrame = (e) => !!e && !!e.sender && !!e.senderFrame && e.senderFrame === e.sender.mainFrame;
+const trusted = (e) => trustedFrame(e) && trustedContents(e.sender);
 const onTrusted = (channel, fn) => ipcMain.on(channel, (e, ...args) => { if (trusted(e)) fn(e, ...args); });
 const handleTrusted = (channel, fn) => ipcMain.handle(channel, (e, ...args) => (trusted(e) ? fn(e, ...args) : null));
+
+// Aplikasi hanya memakai notifikasi; kamera, mikrofon, lokasi, clipboard-read,
+// dan izin lain ditolak. Handler cek dan request harus sepakat.
+const allowedPermission = (wc, permission) => permission === 'notifications' && trustedContents(wc);
+function lockPermissions() {
+  const ses = session.defaultSession;
+  ses.setPermissionRequestHandler((wc, permission, callback) => {
+    callback(allowedPermission(wc, permission));
+  });
+  ses.setPermissionCheckHandler((wc, permission) => allowedPermission(wc, permission));
+}
 // Aplikasi ini tidak pernah membuka halaman luar: tolak jendela baru dan perpindahan alamat.
 const lockNavigation = (w) => {
   w.webContents.setWindowOpenHandler(({ url }) => {
@@ -91,8 +105,9 @@ function createMini() {
     webPreferences: {
       preload: path.join(__dirname, 'mini-preload.js'),
       contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
+      nodeIntegration: false,
+      sandbox: true,
+      devTools: !app.isPackaged,
       backgroundThrottling: false
     }
   });
@@ -134,11 +149,13 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', showWin);
   app.whenReady().then(() => {
     loadSettings();
-    // Pembaruan otomatis: tidak menawarkan restart selama timer fokus/istirahat masih jalan.
+    // Tidak ada menu aplikasi: hilangkan akses Reload/DevTools dari menu bawaan.
+    Menu.setApplicationMenu(null);
+    lockPermissions();
+    // Pembaruan: cek/unduh otomatis, tetapi pemasangan hanya setelah pengguna menekan "Pasang sekarang".
     updater = initUpdater({
       app,
       broadcast: (ch, payload) => { if (alive(win)) win.webContents.send(ch, payload); },
-      isBusy: () => !!_trayState && ['run', 'pause', 'brk'].includes(_trayState.mode),
       backupDir: path.join(app.getPath('userData'), 'backups'),
       beforeInstall: () => { quitting = true; }
     });
@@ -153,6 +170,7 @@ if (!app.requestSingleInstanceLock()) {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
+        devTools: !app.isPackaged,
         backgroundThrottling: false
       }
     });

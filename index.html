@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' file:; style-src 'self' 'unsafe-inline' file:; font-src 'self' file:; media-src blob:; img-src data:; connect-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; media-src blob:; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <title>Jam Fokus</title>
-<script>(function(){try{var t=localStorage.getItem('jamfokus.theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-experience',localStorage.getItem('jamfokus.homeExperience')==='capybara-world'?'capybara-world':localStorage.getItem('jamfokus.homeExperience')==='mola-world'?'mola-world':localStorage.getItem('jamfokus.homeExperience')==='fast-food'?'fast-food':'original');if(document.documentElement.getAttribute('data-experience')==='mola-world')document.documentElement.setAttribute('data-theme','light');}catch(e){document.documentElement.setAttribute('data-experience','original');}})();</script>
+<script src="renderer/initial-theme.js"></script>
 <link id="original-theme" rel="stylesheet" href="renderer/theme.css">
-<script>if(document.documentElement.getAttribute('data-experience')==='capybara-world'){document.getElementById('original-theme').disabled=true;}</script>
+<script src="renderer/initial-experience.js"></script>
 <link rel="stylesheet" href="renderer/experiences/capybara-world/beranda.css">
 <link rel="stylesheet" href="renderer/experiences/capybara-world/experience.css">
 <link rel="stylesheet" href="renderer/experiences/capybara-world/capyrafi.css">

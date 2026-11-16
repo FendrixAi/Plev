@@ -30,6 +30,27 @@ test('kedua jendela memakai sandbox dan tanpa Node di renderer', () => {
   });
 });
 
+test('F-06: izin browser dibatasi ke notifikasi dari jendela tepercaya', () => {
+  assert.match(main, /setPermissionRequestHandler\(\(wc, permission, callback\)/);
+  assert.match(main, /setPermissionCheckHandler\(\(wc, permission\)/);
+  assert.match(main, /permission === 'notifications' && trustedContents\(wc\)/);
+  assert.match(main, /callback\(allowedPermission\(wc, permission\)\)/);
+  assert.match(main, /lockPermissions\(\)/);
+});
+
+test('F-06: DevTools mati di build produksi dan menu bawaan dihapus', () => {
+  const blocks = main.match(/webPreferences: \{[\s\S]*?\}/g) || [];
+  assert.equal(blocks.length, 2);
+  blocks.forEach((b) => assert.match(b, /devTools: !app\.isPackaged/));
+  assert.match(main, /Menu\.setApplicationMenu\(null\)/);
+});
+
+test('F-07: IPC hanya diterima dari frame utama jendela tepercaya', () => {
+  assert.match(main, /const trustedFrame = \(e\) =>/);
+  assert.match(main, /e\.senderFrame === e\.sender\.mainFrame/);
+  assert.match(main, /const trusted = \(e\) => trustedFrame\(e\) && trustedContents\(e\.sender\)/);
+});
+
 test('IPC aman saat jendela sudah hancur atau payload kosong', () => {
   const popup = main.slice(main.indexOf("onTrusted('popup'"), main.indexOf("onTrusted('warn8'"));
   assert.match(popup, /if \(!alive\(win\)\) return;/);

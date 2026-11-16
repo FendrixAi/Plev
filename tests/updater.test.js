@@ -51,18 +51,15 @@ test('mode dev/portable: status unsupported, tidak memuat updater', async () => 
   assert.strictEqual(r.au.installed, null);
 });
 
-test('alur penuh: unduh → tunggu sesi selesai → hitung mundur → cadangan → pasang', async () => {
+test('alur penuh: unduh → siap → pengguna menekan Pasang sekarang → cadangan → pasang', async () => {
   const r = rig({ busy: true });
   await r.u.check(true);
   assert.deepStrictEqual(r.phases().slice(0, 4), ['checking', 'available', 'downloading', 'ready']);
-  assert.strictEqual(r.u.getStatus().waiting, true);          // sesi berjalan: belum menghitung mundur
-  assert.strictEqual(r.u.getStatus().countdown, null);
-  r.setBusy(false);
-  r.tick();                                                    // poll berikutnya → mulai hitung mundur
-  assert.strictEqual(r.u.getStatus().countdown, 10);
-  for (let i = 0; i < 9; i++) r.tick();
-  assert.strictEqual(r.u.getStatus().countdown, 1);
-  r.tick();                                                    // 0 → mulai pasang
+  assert.strictEqual(r.u.getStatus().phase, 'ready');
+  assert.strictEqual(r.u.getStatus().cancelled, false);
+  assert.strictEqual(r.queue.length, 0, 'tidak boleh ada timer pemasangan otomatis');
+  assert.strictEqual(r.au.installed, null);
+  r.u.installNow();
   assert.strictEqual(r.u.getStatus().phase, 'installing');
   assert.ok(r.sent.some((m) => m[0] === 'update:prepare'));    // minta isi data dari jendela
   assert.strictEqual(r.u.receiveBackup(STATE_JSON), true);
@@ -77,17 +74,17 @@ test('alur penuh: unduh → tunggu sesi selesai → hitung mundur → cadangan �
   assert.strictEqual(r.before, true);
 });
 
-test('sesi baru dimulai saat hitung mundur: pemasangan ditunda lagi', async () => {
-  const r = rig();
+test('update siap tidak dipasang otomatis meskipun sesi fokus sudah selesai', async () => {
+  const r = rig({ busy: true });
   await r.u.check(true);
-  assert.strictEqual(r.u.getStatus().countdown, 10);
-  r.setBusy(true);
-  r.tick();
-  assert.strictEqual(r.u.getStatus().waiting, true);
-  assert.strictEqual(r.u.getStatus().countdown, null);
+  r.setBusy(false);
+  // Tidak ada timer yang harus dijalankan: status tetap ready sampai pengguna memilih.
+  assert.strictEqual(r.queue.length, 0);
+  assert.strictEqual(r.u.getStatus().phase, 'ready');
+  assert.strictEqual(r.au.installed, null);
 });
 
-test('Batalkan menghentikan pemasangan otomatis; Pasang sekarang tetap bisa', async () => {
+test('Batalkan menandai pemasangan ditunda; Pasang sekarang tetap bisa', async () => {
   const r = rig();
   await r.u.check(true);
   r.u.cancelAuto();

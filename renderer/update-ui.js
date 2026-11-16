@@ -86,18 +86,14 @@
           head('Pemasangan ditunda', s.error, 'is-warn');
           live.appendChild(bar(100, true));
           actions(button('Coba pasang lagi', function () { call('updateInstall'); }, 'is-primary'));
-        } else if (s.waiting) {
-          head('Versi ' + s.version + ' siap dipasang', 'Menunggu sesi fokus atau istirahat selesai supaya timermu tidak terputus.', 'is-ok');
-          live.appendChild(bar(100, true));
-          actions(button('Tunda', function () { call('updateCancel'); }), button('Pasang sekarang', function () { call('updateInstall'); }, 'is-primary'));
         } else if (s.cancelled) {
-          head('Versi ' + s.version + ' siap dipasang', 'Pemasangan ditunda. Akan terpasang otomatis saat kamu Keluar dari menu tray.', 'is-ok');
+          head('Versi ' + s.version + ' siap dipasang', 'Pemasangan ditunda. Klik Pasang sekarang saat kamu siap.', 'is-ok');
           live.appendChild(bar(100, true));
           actions(button('Pasang sekarang', function () { call('updateInstall'); }, 'is-primary'));
         } else {
-          head('Memasang dalam ' + s.countdown + ' detik', 'Aplikasi akan restart sendiri dan data dicadangkan dulu.', 'is-ok');
-          live.appendChild(bar(((s.countdown || 0) / (s.countdownTotal || 10)) * 100, true, true));
-          actions(button('Batalkan', function () { call('updateCancel'); }), button('Pasang sekarang', function () { call('updateInstall'); }, 'is-primary'));
+          head('Versi ' + s.version + ' siap dipasang', 'Pemasangan hanya dimulai setelah kamu menekan Pasang sekarang.', 'is-ok');
+          live.appendChild(bar(100, true));
+          actions(button('Tunda', function () { call('updateCancel'); }), button('Pasang sekarang', function () { call('updateInstall'); }, 'is-primary'));
         }
         break;
       case 'installing':
@@ -113,7 +109,7 @@
         actions(button('Coba lagi', function () { call('updateCheck'); }, 'is-primary'));
         break;
       default:
-        head('Jam Fokus ' + ver, 'Pembaruan dicek otomatis tiap beberapa jam, diunduh sendiri, lalu dipasang saat tidak ada sesi berjalan.');
+        head('Jam Fokus ' + ver, 'Pembaruan dicek otomatis tiap beberapa jam dan diunduh sendiri. Pemasangan menunggu persetujuanmu.');
         actions(button('Cek pembaruan', function () { call('updateCheck'); }, 'is-primary'));
     }
     safe();

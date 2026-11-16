@@ -285,12 +285,14 @@ test('jalur selesai seragam: Kalender dan Goals membuka form "Selesai + ringkasa
 
 test('jendela mini: tombol ikon "Lanjut fokus" memakai slot tombol yang ada, ukuran jendela tetap', () => {
   const mini = read('mini.html');
-  assert.match(mini, /#pill\{[^}]*width:280px;height:88px/);          // ukuran pill tidak berubah
+  const miniCss = read('mini.css');
+  const miniJs = read('mini.js');
+  assert.match(miniCss, /#pill\{[^}]*width:280px;height:88px/);       // ukuran pill tidak berubah
   assert.match(read('main.js'), /const w = 296, h = 104;/);           // ukuran jendela tidak berubah
-  assert.match(mini, /var CONT=/);
-  assert.match(mini, /window\.mini\.cmd\(st\.mode==="idle"&&st\.canContinue\?"continue":"toggle"\)/);
-  assert.match(mini, /"Lanjut fokus"/);
-  assert.match(mini, /#pp\.cont\{/);
+  assert.match(miniJs, /var CONT=/);
+  assert.match(miniJs, /window\.mini\.cmd\(st\.mode==="idle"&&st\.canContinue\?"continue":"toggle"\)/);
+  assert.match(miniJs, /"Lanjut fokus"/);
+  assert.match(miniCss, /#pp\.cont\{/);
   assert.match(mini, /<button id="pp"[^>]*hidden>/);                  // tombol yang sama, tersembunyi saat tidak dipakai
   assert.strictEqual((mini.match(/<button /g) || []).length, 2);      // tidak ada tombol tambahan
   assert.match(read('main.js'), /c === 'toggle' \|\| c === 'continue'/);

@@ -8,7 +8,7 @@
     "test": "node --test \"tests/*.test.js\"",
     "build": "electron-builder --win portable",
     "build:installer": "electron-builder --win nsis",
-    "release": "electron-builder --win nsis --publish always"
+    "release": "node scripts/release.js"
   },
   "build": {
     "appId": "xyz.levia.jamfokus",
@@ -19,6 +19,8 @@
       "updater.js",
       "library-service.js",
       "mini.html",
+      "mini.css",
+      "mini.js",
       "mini-preload.js",
       "index.html",
       "icon.png",
@@ -52,9 +54,13 @@
       }
     ]
   },
+  "overrides": {
+    "minimatch@^9.0.0": "11.0.8",
+    "minimatch@^10.0.0": "11.0.8"
+  },
   "devDependencies": {
-    "electron": "45.3.0",
-    "electron-builder": "25.1.8"
+    "electron": "45.3.3",
+    "electron-builder": "26.18.0"
   },
   "author": "Iqbal Rafi",
   "license": "UNLICENSED",

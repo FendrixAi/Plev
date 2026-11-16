@@ -68,7 +68,7 @@
     renderMusic();
   }
 
-  /* Mola hanya siang: paksa terang, apa pun pilihan tema Original atau pengaturan sistem. */
+  /* Mola hanya siang: paksa terang saat aktif, lalu pulihkan pilihan tema saat keluar. */
   function setActive(value) {
     value = !!value;
     var app = document.getElementById('app');
@@ -85,6 +85,11 @@
       if (JF.molaFx) JF.molaFx.setActive(false);
       app.classList.remove('mola-world-active');
       if (shell) shell.hidden = true;
+      // Jangan biarkan atribut Mola menahan mode terang setelah pengguna pindah.
+      if (document.documentElement.getAttribute('data-experience') === 'mola-world') {
+        document.documentElement.setAttribute('data-experience', 'original');
+      }
+      if (JF.theme && JF.theme.sync) JF.theme.sync();
     }
   }
 

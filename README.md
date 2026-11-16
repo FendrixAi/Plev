@@ -52,6 +52,8 @@ Jam Fokus is a Windows desktop productivity application built with Electron. It 
 Jam Fokus supports different visual experiences:
 - **Original** — the original Jam Fokus interface.
 - **Capybara World** — a cozy, capybara-inspired workspace experience.
+- **Mola World** — a bright, illustrated world with its own focus flow.
+- **Fast Food (day & night)** — a diner-themed workspace with two visual modes.
 
 The selected experience can be managed through the application's display settings.
 
@@ -69,17 +71,18 @@ The selected experience can be managed through the application's display setting
 
 ## 🛠️ Built With
 
-- **Electron 45.3.0** — Desktop application framework.
+- **Electron 45.3.3** — Desktop application framework.
 - **Node.js** — JavaScript runtime.
 - **JavaScript, HTML, and CSS** — Application interface and logic.
-- **electron-builder 25.1.8** — Windows application packaging.
+- **electron-updater 6.8.11** — Update download and verification flow.
+- **electron-builder 26.18.0** — Windows application packaging.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 Make sure you have installed:
-- [Node.js](https://nodejs.org/)
+- [Node.js](https://nodejs.org/) (LTS recommended)
 - npm
 
 ### Installation
@@ -104,17 +107,48 @@ npm install
 
 ### Run Locally
 
-Check the available scripts in `package.json` and run the appropriate development command.
+Start the application:
+
+```bash
+npm start
+```
+
+### Test
+
+Run the full test suite:
+
+```bash
+npm test
+```
 
 ### Build for Windows
 
-To generate a Windows portable build:
+Generate the portable build:
 
 ```bash
-npx electron-builder --win portable
+npm run build
 ```
 
-The packaged application will be generated in the configured build output directory.
+Or generate the NSIS installer:
+
+```bash
+npm run build:installer
+```
+
+The packaged application is written to `dist/`.
+
+### Release and Code Signing
+
+Public releases must be code-signed. The release script refuses to publish without a certificate and a GitHub token:
+
+```powershell
+$env:WIN_CSC_LINK = "C:\path\to\certificate.pfx"
+$env:WIN_CSC_KEY_PASSWORD = "<certificate-password>"
+$env:GH_TOKEN = "<github-token>"
+npm run release
+```
+
+Never commit certificates, passwords, or tokens. Local builds without a certificate are unsigned and must not be published. Downloaded updates stop at the **ready** state and are only installed after the user presses **Pasang sekarang**.
 
 ## 📁 Project Structure
 
@@ -149,6 +183,4 @@ Jam Fokus is under active development. Features, interface designs, and user exp
 
 ## 📄 License
 
-No license has been specified yet.
-
-If you plan to make this project open source, consider adding a license file to clarify how others may use, modify, and distribute the software.
+This project is **UNLICENSED** and proprietary. No permission is granted to use, copy, modify, or distribute it without explicit permission from the author.

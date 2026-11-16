@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { EventEmitter } = require('events');
 const { createLibraryService, ALLOWED_EXT, BLOCKED_OPEN_EXT } = require('../library-service');
 const { initUpdater } = require('../updater');
@@ -80,6 +81,42 @@ test('F-01a: updater never installs silently on app quit', async () => {
   assert.ok(!/autoInstallOnAppQuit\s*=\s*true/.test(fs.readFileSync(path.join(root, 'updater.js'), 'utf8')));
 });
 
+test('F-01b: rilis tanpa code signing ditolak sebelum publish', () => {
+  const env = { ...process.env };
+  ['WIN_CSC_LINK', 'CSC_LINK', 'GH_TOKEN', 'GITHUB_TOKEN'].forEach((k) => delete env[k]);
+  const r = spawnSync(process.execPath, [path.join(root, 'scripts', 'release.js')], {
+    cwd: root, env, encoding: 'utf8'
+  });
+  assert.strictEqual(r.status, 1);
+  assert.match((r.stderr || '') + (r.stdout || ''), /Code signing belum dikonfigurasi/i);
+  const src = fs.readFileSync(path.join(root, 'scripts', 'release.js'), 'utf8');
+  assert.match(src, /forceCodeSigning=true/);
+  assert.match(src, /verifyUpdateCodeSignature=true/);
+  assert.match(src, /publisherName/);
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  assert.match(pkg.scripts.release, /scripts[\\/]release\.js/);
+});
+
+test('F-01c: update yang sudah diunduh tidak dipasang otomatis', async () => {
+  const au = new EventEmitter();
+  au.checkForUpdates = () => {
+    au.emit('update-available', { version: '1.0.2' });
+    au.emit('update-downloaded', { version: '1.0.2' });
+    return Promise.resolve();
+  };
+  const queue = [];
+  const u = initUpdater({
+    app: { isPackaged: true, getVersion: () => '1.0.1' },
+    loadUpdater: () => au,
+    backupDir: path.join(os.tmpdir(), 'jf-upd-sec'),
+    timers: { setTimeout: (fn) => { queue.push(fn); return fn; }, setInterval: () => {}, clearTimeout: () => {} }
+  });
+  await u.check(true);
+  assert.strictEqual(u.getStatus().phase, 'ready');
+  assert.strictEqual(queue.length, 0, 'tidak boleh ada timer install otomatis');
+  assert.strictEqual(au.autoInstallOnAppQuit, false);
+});
+
 /* ── F-02 ─────────────────────────────────────────────────────────── */
 test('F-02: Electron runtime is a supported major (>= 43) and the lockfile matches', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -97,4 +134,25 @@ test('F-02: preload scripts only require electron (sandbox shims removed in Elec
     assert.ok(mods.every((m) => m === 'electron'), f + ' requires ' + mods.join(','));
     assert.ok(!/\b(Buffer|setImmediate|clearImmediate)\b/.test(src), f + ' uses a removed global');
   });
+});
+
+/* ── F-08 ─────────────────────────────────────────────────────────── */
+test('F-08: build dependencies and lockfile no longer use known vulnerable versions', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
+  const builder = lock.packages['node_modules/electron-builder'];
+  assert.ok(builder, 'electron-builder ada di lockfile');
+  assert.strictEqual(builder.version, pkg.devDependencies['electron-builder']);
+  assert.ok(parseFloat(builder.version) >= 26, 'electron-builder >= 26, dapat ' + builder.version);
+
+  const vulnerable = Object.entries(lock.packages)
+    .filter(([key]) => /(^|\/)minimatch$/.test(key))
+    .map(([key, entry]) => ({ key, version: entry.version }))
+    .filter(({ version }) => {
+      const [major, minor, patch] = version.split('.').map(Number);
+      if (major < 7) return false;
+      if (major < 11) return true;
+      return major === 11 && minor === 0 && patch < 1;
+    });
+  assert.deepStrictEqual(vulnerable, [], 'minimatch rentan tersisa: ' + JSON.stringify(vulnerable));
 });

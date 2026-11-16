@@ -16,11 +16,19 @@ const pages = read('renderer', 'experiences', 'capybara-world', 'pages.js');
 const components = read('renderer', 'experiences', 'capybara-world', 'components.js');
 const styles = read('renderer', 'experiences', 'capybara-world', 'experience.css');
 const homeStyles = read('renderer', 'experiences', 'capybara-world', 'beranda.css');
+const initialTheme = read('renderer', 'initial-theme.js');
+const initialExperience = read('renderer', 'initial-experience.js');
 
 test('Experience selection is read before style and renderer initialization', () => {
-  assert.match(html, /data-experience',localStorage\.getItem\('jamfokus\.homeExperience'\)/);
-  assert.match(html, /id="original-theme" rel="stylesheet"/);
-  assert.match(html, /original-theme'\)\.disabled=true/);
+  const themePos = html.indexOf('renderer/initial-theme.js');
+  const linkPos = html.indexOf('id="original-theme" rel="stylesheet"');
+  const experiencePos = html.indexOf('renderer/initial-experience.js');
+  assert.ok(themePos >= 0 && themePos < linkPos, 'bootstrap tema harus sebelum stylesheet');
+  assert.ok(linkPos >= 0 && linkPos < experiencePos, 'bootstrap experience harus setelah stylesheet Original');
+  assert.match(initialTheme, /localStorage\.getItem\('jamfokus\.homeExperience'\)/);
+  assert.match(initialTheme, /setAttribute\('data-experience', exp\)/);
+  assert.match(initialExperience, /getElementById\('original-theme'\)/);
+  assert.match(initialExperience, /\.disabled = true/);
   assert.match(html, /renderer\/experiences\/capybara-world\/components\.js/);
   assert.match(html, /renderer\/experiences\/capybara-world\/pages\.js/);
   assert.match(originalHome, /JF\.homeExperience =/);

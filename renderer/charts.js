@@ -153,12 +153,31 @@
     function showTip(i, x) {
       var s = geom.spec;
       if (!tip) { tip = document.createElement('div'); tip.className = 'chart-tip'; wrap.appendChild(tip); }
-      var rows = s.series.filter(function (x2) { return x2.values && x2.values[i] != null; }).map(function (x2) {
-        return '<div class="r"><span class="sw" style="background:' + x2.color + '"></span>' +
-          x2.name + '<span class="vv">' + (s.tipFormat ? s.tipFormat(x2.values[i], x2) : x2.values[i]) + '</span></div>';
-      }).join('');
-      var note = (s.pointNotes && s.pointNotes[i]) ? '<div class="note">' + s.pointNotes[i] + '</div>' : '';
-      tip.innerHTML = '<div class="t">' + geom.labels[i] + '</div>' + rows + note;
+      tip.textContent = '';
+      var title = document.createElement('div');
+      title.className = 't';
+      title.textContent = geom.labels[i];
+      tip.appendChild(title);
+      s.series.filter(function (x2) { return x2.values && x2.values[i] != null; }).forEach(function (x2) {
+        var row = document.createElement('div');
+        row.className = 'r';
+        var sw = document.createElement('span');
+        sw.className = 'sw';
+        sw.style.background = x2.color;
+        var vv = document.createElement('span');
+        vv.className = 'vv';
+        vv.textContent = s.tipFormat ? s.tipFormat(x2.values[i], x2) : x2.values[i];
+        row.appendChild(sw);
+        row.appendChild(document.createTextNode(x2.name));
+        row.appendChild(vv);
+        tip.appendChild(row);
+      });
+      if (s.pointNotes && s.pointNotes[i]) {
+        var note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = s.pointNotes[i];
+        tip.appendChild(note);
+      }
       tip.style.left = Math.max(80, Math.min(geom.w - 80, x)) + 'px';
       tip.style.top = Math.max(60, (s.tipTop ? s.tipTop(i, geom) : 40)) + 'px';
       tip.style.display = 'block';

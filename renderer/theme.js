@@ -21,11 +21,14 @@
     b.setAttribute('aria-label', label);
     b.title = label;
   }
+  function paintTheme() {
+    // Mola World hanya punya mode siang: atribut tetap 'light' walau pilihan/sistem gelap.
+    document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-experience') === 'mola-world' ? 'light' : mode);
+  }
   function apply(m, persist, notify) {
     var run = function () {
       mode = m === 'dark' ? 'dark' : 'light';
-      // Mola World hanya punya mode siang: atribut tetap 'light' walau pilihan/sistem gelap.
-      document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-experience') === 'mola-world' ? 'light' : mode);
+      paintTheme();
       if (persist) { try { localStorage.setItem(KEY, mode); } catch (e) {} }
       if (root.desk && root.desk.setTheme) { try { root.desk.setTheme(mode); } catch (e) {} }
       paintToggle();
@@ -35,11 +38,14 @@
     // Fast Food menganimasikan perpindahan siang/malam (View Transitions); experience lain langsung berganti.
     if (notify && JF.themeTransition && JF.themeTransition.run) JF.themeTransition.run(run); else run();
   }
+  /** Terapkan ulang tema tersimpan tanpa mengubahnya (mis. setelah keluar dari Mola). */
+  function sync() { paintTheme(); paintToggle(); }
 
   JF.theme = {
     get: function () { return mode; },
     set: function (m) { apply(m, true, true); },
     toggle: function () { apply(mode === 'dark' ? 'light' : 'dark', true, true); },
+    sync: sync,
     /** Nilai variabel CSS saat ini, mis. css('--chart-ok'). */
     css: function (name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); },
     bodyFont: function () { return getComputedStyle(document.body).fontFamily || 'sans-serif'; }

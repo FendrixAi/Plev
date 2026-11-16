@@ -1,5 +1,60 @@
 # Catatan perubahan
 
+## Perbaikan F-09: README diselaraskan dengan versi dan alur rilis
+- Versi Electron, electron-builder, dan electron-updater di README disamakan dengan `package.json`/lockfile.
+- Perintah `npm start`, `npm test`, `npm run build`, `npm run build:installer`, dan `npm run release` didokumentasikan.
+- Persyaratan code signing (`WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD`, `GH_TOKEN`) dan larangan mempublikasikan build unsigned dijelaskan.
+- Daftar experience diperbarui: Original, Capybara World, Mola World, dan Fast Food (siang/malam).
+- `BACA-DULU.txt` diselaraskan: update tidak memasang otomatis dan rilis wajib memakai certificate.
+- Regression test ditambahkan di `tests/readme.test.js` agar versi README dan panduan update tidak kembali usang.
+
+## Perbaikan F-08: dependensi build diperbarui dan audit bersih
+- Electron `45.3.0` -> `45.3.3` (patch).
+- electron-builder `25.1.8` -> `26.18.0`; menghapus temuan high/critical dari `electron-builder`, `app-builder-lib`, `tar`, `node-gyp`, dan paket turunannya.
+- Override `minimatch@9`/`minimatch@10` ke `11.0.8` untuk menutup GHSA-g3hv-75wg-m249 (moderate, hanya dependensi build).
+- `npm audit` dan `npm audit --omit=dev` sama-sama melaporkan **0 vulnerabilities**.
+- `npx electron-builder --dir --win` dan `npm run build` (portable) berhasil; smoke test paket: Electron 45.3.3, IPC frame utama, izin, dan jendela mini tetap berjalan.
+- Regression test ditambahkan di `tests/security-fixes.test.js`.
+
+## Perbaikan F-07: IPC hanya dari frame utama jendela tepercaya
+- `trusted(e)` sekarang memeriksa `e.senderFrame === e.sender.mainFrame` sebelum memeriksa pemilik `webContents`.
+- IPC dari iframe/subframe di dalam jendela aplikasi ditolak.
+- Regression test ditambahkan di `tests/security-hardening.test.js`.
+
+## Perbaikan F-06: izin browser dibatasi dan DevTools dimatikan di produksi
+- Permission handler dan permission check handler sekarang menolak semua izin kecuali `notifications` dari jendela utama/mini yang tepercaya.
+- `devTools` di kedua BrowserWindow hanya aktif saat aplikasi belum dipaketkan (`!app.isPackaged`).
+- Menu aplikasi bawaan dihapus agar akses Reload/DevTools dari menu tidak tersedia.
+- Regression test ditambahkan di `tests/security-hardening.test.js`.
+
+## Perbaikan F-05: CSP diperketat tanpa `unsafe-inline` dan `file:`
+- `index.html` dan `mini.html` kini memakai `script-src 'self'` dan `style-src 'self'`; `'unsafe-inline'`, `'unsafe-eval'`, serta skema `file:` dihapus.
+- Script bootstrap tema/experience dipindahkan ke `renderer/initial-theme.js` dan `renderer/initial-experience.js`.
+- Style dan script jendela mini dipindahkan ke `mini.css` dan `mini.js`, lalu ditambahkan ke `build.files`.
+- Tooltip grafik membangun elemen DOM dan memakai CSSOM (`style.background`) alih-alih atribut `style` inline.
+- Regression test ditambahkan di `tests/csp.test.js`; test mini/CSP lama disesuaikan dengan aset eksternal.
+
+## Perbaikan F-04: tema dipulihkan saat keluar dari Mola World
+- Mola tetap memaksa mode terang selama aktif, tetapi saat dinonaktifkan `data-theme` kembali ke pilihan pengguna (gelap/terang).
+- Atribut `data-experience` tidak lagi tertahan di `mola-world`; experience lain yang sudah aktif tidak ditimpa.
+- Status `aria-pressed` tombol tema ikut disinkronkan lewat `JF.theme.sync()`.
+- Regression test ditambahkan di `tests/mola-theme.test.js`.
+
+## Perbaikan F-03: teks status “Tunda” pada pembaruan
+- Status siap tidak lagi mengklaim update terpasang otomatis saat aplikasi ditutup; teks sekarang meminta pengguna menekan **Pasang sekarang**.
+- Tidak ada lagi teks hitung mundur “Memasang dalam … detik” pada kartu pembaruan.
+- Regression test khusus ditambahkan di `tests/update-ui.test.js`.
+
+## Perbaikan F-02: versi lockfile disinkronkan
+- `package-lock.json` kini memakai versi proyek `1.1.2`, sama dengan `package.json`.
+- Gate tes `F-02` kembali lulus; full suite menjadi 360/360.
+
+## Perbaikan F-01: pembaruan tidak lagi dipasang otomatis dan rilis wajib ditandatangani
+- Update yang sudah diunduh berhenti di status **siap dipasang**. Aplikasi tidak lagi menghitung mundur dan restart sendiri; pengguna harus menekan **Pasang sekarang**.
+- Teks “Tunda” diperbaiki: update tidak diklaim terpasang saat keluar dari tray.
+- Script `npm run release` sekarang memakai `scripts/release.js`: menolak rilis tanpa `WIN_CSC_LINK`/`CSC_LINK`, memaksa `forceCodeSigning`, dan memeriksa `publisherName` di `app-update.yml` setelah build.
+- Catatan: certificate code-signing tetap diperlukan; tanpa certificate, rilis publik diblokir (bukan dibuat sebagai installer unsigned).
+
 ## Fast Food fase 1: fondasi, shell "Diner Counter", Beranda, siang dan malam
 - Experience baru **Fast Food (siang & malam)** di Pengaturan, di folder `renderer/experiences/fast-food/`. Mengikuti toggle tema (tidak dipaksa terang seperti Mola). Logika tetap dari Original (JF.app / JF.store / JF.sessions / JF.completion); XP burger dihitung dari `JF.capyrafi.compute`, tanpa penyimpanan baru.
 - **Layout**: satu layar fokus tanpa sidebar. Bilah atas tipis (merek, level burger, timer mini saat di halaman lain, musik, kartu mini, tombol siang/malam), **dock bawah** (Statistics | Settings | Menu) dan **Menu Board** chalkboard yang naik dari dock berisi 10 halaman. Halaman selain Beranda memakai kepala "neon sign".

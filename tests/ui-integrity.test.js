@@ -17,8 +17,10 @@ test('theme.css tidak memuat sumber dari internet dan font lokal tersedia', () =
 
 test('CSP mengizinkan font lokal dan melarang koneksi', () => {
   const html = read('index.html');
-  assert.match(html, /font-src 'self' file:/);
+  assert.match(html, /font-src 'self'/);
   assert.match(html, /connect-src 'none'/);
+  assert.doesNotMatch(html, /'unsafe-inline'/);
+  assert.doesNotMatch(html, /\bfile:/);
 });
 
 test('mode gelap mendefinisikan token yang sama dengan mode terang', () => {

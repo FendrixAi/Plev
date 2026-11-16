@@ -97,7 +97,7 @@ test('wiring: Lanjut fokus = waktu bebas (Original + Capybara), Selesai sesi, pe
   assert.match(ber, /'Waktu bebas'/);
   assert.match(ber, /'\+' \+ ui\.fmt\.mmss\(JF\.sessions\.activeSeconds/);
   assert.match(read('renderer', 'pages', 'riwayat.js'), /s\.openEnded \? 'Bebas'/);
-  assert.match(read('mini.html'), /st\.mode==="run"&&st\.open/);
+  assert.match(read('mini.js'), /st\.mode==="run"&&st\.open/);
   assert.match(read('main.js'), /s\.mode === 'run' && s\.open/);
 });
 

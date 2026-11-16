@@ -40,22 +40,29 @@ PINTASAN DAN TIPS
     Keluar sepenuhnya: klik kanan ikon tray, Keluar.
 
 MERILIS PEMBARUAN OTOMATIS
-  Sekali saja: di package.json ganti GANTI_USERNAME_GITHUB dan GANTI_NAMA_REPO
-  (repo harus publik, atau hosting sendiri lewat provider "generic").
+  Rilis publik wajib memakai certificate code-signing Windows. Tanpa certificate,
+  scripts/release.js akan menolak publish (installer unsigned tidak boleh dirilis).
+  Pastikan owner/repo di bagian build.publish pada package.json sudah benar.
   Tiap rilis:
   1. Naikkan "version" di package.json (misal 1.0.1 -> 1.0.2).
-  2. Di terminal: set GH_TOKEN=token_github_kamu   lalu   npm run release
+  2. Di terminal (PowerShell), set:
+       $env:WIN_CSC_LINK = "C:\path\certificate.pfx"
+       $env:WIN_CSC_KEY_PASSWORD = "password certificate"
+       $env:GH_TOKEN = "token_github"
+     lalu jalankan: npm run release
   3. Buka GitHub > Releases, pastikan draft rilis berisi Setup .exe dan latest.yml, lalu Publish.
-  Aplikasi di laptop pengguna mengecek tiap 6 jam (dan 15 detik setelah dibuka),
-  mengunduh sendiri, lalu menawarkan Restart. Tidak ditawarkan selama timer masih jalan.
+  Jangan pernah commit certificate, password, atau token.
+  Aplikasi di laptop pengguna mengecek tiap 6 jam (dan 15 detik setelah dibuka)
+  lalu mengunduh sendiri. Pemasangan tetap menunggu persetujuan pengguna.
   Cek manual: klik kanan ikon tray > Cek pembaruan.
   Hanya berlaku untuk versi Setup, bukan portable.
 
 PEMBARUAN DI DALAM APLIKASI
   Pengaturan > Pembaruan aplikasi (di Capybara World: tab Pembaruan) menampilkan
-  progres unduh. Setelah selesai: menunggu timer fokus/istirahat selesai, hitung
-  mundur 10 detik (bisa Batalkan), data dicadangkan ke
-  %APPDATA%\<nama app>\backups (3 terakhir), lalu pasang dan buka ulang otomatis.
+  progres unduh. Setelah selesai, versi baru berstatus siap dipasang. Tekan
+  "Pasang sekarang" untuk mencadangkan data ke %APPDATA%\<nama app>\backups
+  (3 terakhir), lalu memasang dan membuka ulang aplikasi. Tidak ada hitung mundur
+  atau pemasangan otomatis saat Keluar.
   Cadangan itu berformat sama dengan Ekspor cadangan, jadi bisa dipulihkan lewat
   Pulihkan cadangan. Jangan ubah "name", "productName", dan "appId" di package.json
   karena folder data pengguna ikut namanya.
