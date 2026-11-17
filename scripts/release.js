@@ -31,7 +31,8 @@ const signing = process.env.WIN_CSC_LINK || process.env.CSC_LINK;
 if (!signing) {
   fail(
     'Code signing belum dikonfigurasi. Set WIN_CSC_LINK atau CSC_LINK ke certificate .pfx. ' +
-    'Tanpa signature, installer tidak boleh dipublikasikan (F-01).'
+    'Tanpa signature, installer tidak boleh dipublikasikan (F-01). ' +
+    'Untuk rilis uji unsigned, gunakan npm run release:test (hanya membuat pre-release).'
   );
 }
 

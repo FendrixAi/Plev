@@ -93,8 +93,28 @@ test('F-01b: rilis tanpa code signing ditolak sebelum publish', () => {
   assert.match(src, /forceCodeSigning=true/);
   assert.match(src, /verifyUpdateCodeSignature=true/);
   assert.match(src, /publisherName/);
+  assert.match(src, /release:test/);
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.match(pkg.scripts.release, /scripts[\\/]release\.js/);
+});
+
+test('F-01d: rilis uji unsigned hanya lewat pre-release eksplisit', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  assert.match(pkg.scripts['release:test'], /scripts[\\/]release-test\.js/);
+
+  const src = fs.readFileSync(path.join(root, 'scripts', 'release-test.js'), 'utf8');
+  assert.match(src, /JF_ALLOW_UNSIGNED_RELEASE/);
+  assert.match(src, /EP_PRE_RELEASE/);
+  assert.match(src, /forceCodeSigning=false/);
+  assert.match(src, /verifyUpdateCodeSignature=false/);
+  assert.match(src, /'--publish'/);
+
+  const env = { ...process.env, JF_ALLOW_UNSIGNED_RELEASE: '', GH_TOKEN: '', GITHUB_TOKEN: '' };
+  const r = spawnSync(process.execPath, [path.join(root, 'scripts', 'release-test.js'), '--dry-run'], {
+    cwd: root, env, encoding: 'utf8'
+  });
+  assert.strictEqual(r.status, 1);
+  assert.match((r.stderr || '') + (r.stdout || ''), /JF_ALLOW_UNSIGNED_RELEASE/);
 });
 
 test('F-01c: update yang sudah diunduh tidak dipasang otomatis', async () => {

@@ -150,6 +150,25 @@ npm run release
 
 Never commit certificates, passwords, or tokens. Local builds without a certificate are unsigned and must not be published. Downloaded updates stop at the **ready** state and are only installed after the user presses **Pasang sekarang**.
 
+#### Unsigned test pre-release
+
+For testing without a certificate, use the explicit test path:
+
+```powershell
+$env:JF_ALLOW_UNSIGNED_RELEASE = "1"
+$env:GH_TOKEN = "<github-token>"
+npm run release:test
+```
+
+This builds an unsigned NSIS installer and publishes it as a GitHub **pre-release**. Normal stable updaters ignore pre-releases. Never promote this build to a stable release or distribute it as production software. Use `npm run release` for a signed production release.
+
+To build the unsigned installer without uploading:
+
+```powershell
+$env:JF_ALLOW_UNSIGNED_RELEASE = "1"
+node scripts/release-test.js --dry-run
+```
+
 ## 📁 Project Structure
 
 ```text

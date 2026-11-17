@@ -57,6 +57,15 @@ MERILIS PEMBARUAN OTOMATIS
   Cek manual: klik kanan ikon tray > Cek pembaruan.
   Hanya berlaku untuk versi Setup, bukan portable.
 
+RILIS UJI TANPA CERTIFICATE
+  Hanya untuk pengujian, bukan rilis stabil. Script ini membuat installer
+  unsigned dan mengunggahnya sebagai GitHub pre-release:
+    $env:JF_ALLOW_UNSIGNED_RELEASE = "1"
+    $env:GH_TOKEN = "token_github"
+    npm run release:test
+  Pre-release tidak dipakai oleh updater stabil. Jangan jadikan rilis stabil
+  dan jangan bagikan sebagai versi produksi.
+
 PEMBARUAN DI DALAM APLIKASI
   Pengaturan > Pembaruan aplikasi (di Capybara World: tab Pembaruan) menampilkan
   progres unduh. Setelah selesai, versi baru berstatus siap dipasang. Tekan

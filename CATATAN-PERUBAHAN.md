@@ -1,5 +1,12 @@
 # Catatan perubahan
 
+## Jalur rilis uji unsigned
+- Menambahkan `scripts/release-test.js` dan perintah `npm run release:test`.
+- Jalur ini wajib diaktifkan eksplisit dengan `JF_ALLOW_UNSIGNED_RELEASE=1`, memakai `GH_TOKEN`, dan hanya mempublikasikan **GitHub pre-release**.
+- Build uji tidak memaksa code signing dan tidak menyertakan `publisherName`; updater stabil tidak mengambil pre-release.
+- Rilis produksi tetap wajib lewat `npm run release` dengan certificate.
+- Regression test ditambahkan di `tests/security-fixes.test.js`.
+
 ## Perbaikan F-09: README diselaraskan dengan versi dan alur rilis
 - Versi Electron, electron-builder, dan electron-updater di README disamakan dengan `package.json`/lockfile.
 - Perintah `npm start`, `npm test`, `npm run build`, `npm run build:installer`, dan `npm run release` didokumentasikan.
